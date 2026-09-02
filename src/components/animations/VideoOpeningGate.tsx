@@ -1,19 +1,29 @@
 "use client";
 
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Play } from "lucide-react";
 
 interface VideoOpeningGateProps {
   videoSrc?: string | null;
   ambientAudioSrc?: string | null;
+  monogram?: string;
+  title?: string;
+  fallbackGradient?: string;
+  fallbackImage?: string;
   onOpened?: () => void;
   children: ReactNode;
 }
 
+const OPENING_TIMEOUT_MS = 4_800;
+
 export function VideoOpeningGate({
   videoSrc,
   ambientAudioSrc,
+  monogram = "E",
+  title = "Invitation",
+  fallbackGradient,
+  fallbackImage,
   onOpened,
   children,
 }: VideoOpeningGateProps) {
@@ -21,17 +31,30 @@ export function VideoOpeningGate({
   const [isFinished, setIsFinished] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedRef = useRef(false);
+  const finishedRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   function finishOpening() {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setIsFinished(true);
     onOpened?.();
-    window.setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => {
+      document.getElementById("invitation-content")?.scrollIntoView({ block: "start", behavior: "smooth" });
     }, 80);
   }
 
   async function handleStart() {
-    if (isPlaying) return;
+    if (startedRef.current) return;
+    startedRef.current = true;
     setIsPlaying(true);
 
     if (audioRef.current) {
@@ -40,9 +63,11 @@ export function VideoOpeningGate({
     }
 
     if (!videoSrc || !videoRef.current) {
-      window.setTimeout(finishOpening, 520);
+      timeoutRef.current = setTimeout(finishOpening, 900);
       return;
     }
+
+    timeoutRef.current = setTimeout(finishOpening, OPENING_TIMEOUT_MS);
 
     try {
       videoRef.current.currentTime = 0;
@@ -75,10 +100,26 @@ export function VideoOpeningGate({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(255,255,255,.22),transparent_18rem),linear-gradient(160deg,#120d0b,#3a1d22_50%,#0f0c0b)]" />
+              <>
+                {fallbackImage && <img src={fallbackImage} alt="" className="absolute inset-0 size-full object-cover opacity-70" />}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: fallbackGradient ?? "radial-gradient(circle at 50% 28%, rgba(255,255,255,.22), transparent 18rem), linear-gradient(160deg, #120d0b, #3a1d22 50%, #0f0c0b)",
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/30" />
+              </>
             )}
 
             {ambientAudioSrc && <audio ref={audioRef} src={ambientAudioSrc} preload="auto" loop />}
+
+            <div className="pointer-events-none absolute inset-x-6 top-16 text-center text-white">
+              <div className="mx-auto flex size-20 items-center justify-center rounded-full border border-white/35 bg-white/10 font-script text-4xl text-[var(--invitation-gold,#D4AF37)] shadow-2xl backdrop-blur-md">
+                {monogram}
+              </div>
+              <p className="mt-5 font-display-bold text-xs uppercase tracking-[0.24em] text-white/80">{title}</p>
+            </div>
 
             {!isPlaying && (
               <motion.button
@@ -97,14 +138,14 @@ export function VideoOpeningGate({
                   <span className="absolute inset-0 animate-ping rounded-full bg-white/30" />
                   <Play className="relative size-4 fill-current" />
                 </span>
-                Touchez pour ouvrir
+                Ouvrir l&apos;invitation
               </motion.button>
             )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className={`transition-opacity duration-700 ${isFinished ? "opacity-100" : "opacity-0"}`}>
+      <main id="invitation-content" className={`transition-opacity duration-700 ${isFinished ? "opacity-100" : "opacity-0"}`}>
         {children}
       </main>
     </div>

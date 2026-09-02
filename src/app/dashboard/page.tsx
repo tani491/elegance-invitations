@@ -101,6 +101,24 @@ export default function DashboardPage() {
     }
   }
 
+  async function saveEssentialEvent() {
+    if (!event) return;
+    await updateEvent({
+      brideName: event.brideName,
+      groomName: event.groomName,
+      eventDate: event.eventDate,
+      eventTime: event.eventTime,
+      venueName: event.venueName,
+      venueAddress: event.venueAddress,
+      venueMapUrl: event.venueMapUrl,
+      dressCode: event.dressCode,
+      coupleStory: event.coupleStory,
+      invitationQuote: event.invitationQuote,
+      musicUrl: event.musicUrl,
+      program: event.program,
+    });
+  }
+
   async function addGuest(eventForm: React.FormEvent) {
     eventForm.preventDefault();
     const response = await fetch("/api/dashboard/guests", {
@@ -305,7 +323,6 @@ export default function DashboardPage() {
                   ["venueName", "Lieu"],
                   ["venueAddress", "Adresse"],
                   ["venueMapUrl", "Lien Maps"],
-                  ["wazeUrl", "Lien Waze"],
                   ["dressCode", "Dress Code"],
                 ] as const).map(([key, label]) => (
                   <div key={key} className="space-y-2">
@@ -322,23 +339,15 @@ export default function DashboardPage() {
                   <Textarea value={event.coupleStory ?? ""} onChange={(e) => setEvent({ ...event, coupleStory: e.target.value })} />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Verset ou citation calligraphiee</Label>
+                  <Label>Sous-titre / citation calligraphiee</Label>
                   <Textarea value={event.invitationQuote ?? ""} onChange={(e) => setEvent({ ...event, invitationQuote: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Audio d'ambiance (URL)</Label>
+                  <Label>Audio d'ambiance MP3 (URL)</Label>
                   <Input value={event.musicUrl ?? ""} onChange={(e) => setEvent({ ...event, musicUrl: e.target.value })} />
                 </div>
-                <div className="space-y-2">
-                  <Label>IBAN cadeau</Label>
-                  <Input value={event.giftIban ?? ""} onChange={(e) => setEvent({ ...event, giftIban: e.target.value })} />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Wave / Mobile Money</Label>
-                  <Input value={event.giftWave ?? ""} onChange={(e) => setEvent({ ...event, giftWave: e.target.value })} />
-                </div>
                 <div className="md:col-span-2">
-                  <Button disabled={saving} onClick={() => updateEvent(event as unknown as Record<string, unknown>)}>
+                  <Button disabled={saving} onClick={() => void saveEssentialEvent()}>
                     <Save className="mr-2 size-4" />
                     {saving ? "Sauvegarde..." : "Sauvegarder les informations"}
                   </Button>

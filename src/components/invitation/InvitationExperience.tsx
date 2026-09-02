@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { VideoOpeningGate } from "@/components/animations/VideoOpeningGate";
 import { DressCodeSection } from "@/components/invitation/DressCodeSection";
 import { FloatingAudioPlayer } from "@/components/invitation/FloatingAudioPlayer";
 import { GiftListIBAN } from "@/components/invitation/GiftListIBAN";
-import { QuadEnvelopeOpener } from "@/components/invitation/QuadEnvelopeOpener";
 import { TimelineSection } from "@/components/invitation/TimelineSection";
 import { TripleScratchDate } from "@/components/invitation/TripleScratchDate";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { themeToCssVars } from "@/lib/theme-presets";
 import type { PublicEventPayload } from "@/types/database.types";
+
+type VideoTheme = PublicEventPayload["theme"] & {
+  videoUrl?: string | null;
+  customVideoUrl?: string | null;
+};
 
 function countdownParts(date: string | null) {
   if (!date) return { jours: 0, heures: 0, minutes: 0, secondes: 0 };
@@ -109,11 +114,17 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
   );
 }
 
+function openingVideoSource(theme: PublicEventPayload["theme"]) {
+  const videoTheme = theme as VideoTheme;
+  return videoTheme.customVideoUrl ?? videoTheme.videoUrl ?? theme.openingVideoUrl ?? theme.demoVideoUrl ?? null;
+}
+
 export function InvitationExperience({ event, guestToken }: { event: PublicEventPayload; guestToken?: string }) {
   const [countdown, setCountdown] = useState(() => countdownParts(event.eventDate));
   const names = `${event.brideName ?? "Mariee"} & ${event.groomName ?? "Marie"}`;
   const photos = event.officialPhotoUrls.length > 0 ? event.officialPhotoUrls : event.coverPhotoUrl ? [event.coverPhotoUrl] : [];
   const monogram = `${event.brideName?.[0] ?? "E"}${event.groomName?.[0] ?? "G"}`.toUpperCase();
+  const openingVideoUrl = openingVideoSource(event.theme);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--invitation-primary", event.theme.primaryColor);
@@ -128,7 +139,14 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
   }, [event.eventDate]);
 
   return (
-    <QuadEnvelopeOpener names={names} monogram={monogram} backgroundImage={photos[0]}>
+    <VideoOpeningGate
+      videoSrc={openingVideoUrl}
+      ambientAudioSrc={event.musicUrl}
+      monogram={monogram}
+      title={names}
+      fallbackGradient={event.theme.previewGradient}
+      fallbackImage={photos[0]}
+    >
       <div style={themeToCssVars(event.theme)} className="min-h-screen bg-[var(--invitation-secondary)] text-[#201816]">
       <FloatingAudioPlayer src={event.musicUrl} />
       <section className="relative min-h-screen overflow-hidden px-4 py-16">
@@ -197,7 +215,6 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               )}
               <div className="mt-5 flex flex-wrap gap-2">
                 {event.venueMapUrl && <Button asChild variant="outline"><a href={event.venueMapUrl} target="_blank" rel="noreferrer">Ouvrir Maps</a></Button>}
-                {event.wazeUrl && <Button asChild variant="outline"><a href={event.wazeUrl} target="_blank" rel="noreferrer">Ouvrir Waze</a></Button>}
               </div>
             </CardContent>
           </Card>
@@ -213,6 +230,6 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
         </div>
       </section>
       </div>
-    </QuadEnvelopeOpener>
+    </VideoOpeningGate>
   );
 }
