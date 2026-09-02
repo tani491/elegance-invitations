@@ -9,9 +9,15 @@ const CLIENT_API_ROUTES = ["/api/dashboard", "/api/guests", "/api/checkin"];
 const SHARED_CHECKIN_API_ROUTES = ["/api/guests/check-in"];
 const SHARED_UPLOAD_API_ROUTES = ["/api/uploads"];
 const SHARED_CHECKIN_ROLES: AuthRole[] = [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT];
+const PUBLIC_ROUTES = ["/", "/login", "/admin/login", "/builder", "/favicon.ico", "/logo.svg"];
+const PUBLIC_PREFIXES = ["/_next", "/invitation", "/carte", "/api/auth"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_ROUTES.includes(pathname) || startsWithAny(pathname, PUBLIC_PREFIXES);
 }
 
 function jsonDenied(status: 401 | 403, message: string) {
@@ -31,22 +37,13 @@ function roleAllowed(role: string | undefined, expected: AuthRole) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const session = await verifySessionToken(token);
-
-  if (pathname === "/admin/login") {
-    if (roleAllowed(session?.role, AUTH_ROLES.SUPER_ADMIN)) {
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
-    return NextResponse.next();
-  }
-
-  if (pathname === "/login") {
-    if (roleAllowed(session?.role, AUTH_ROLES.CLIENT)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    return NextResponse.next();
-  }
 
   if (startsWithAny(pathname, ADMIN_API_ROUTES)) {
     if (!session) return jsonDenied(401, "Authentification admin requise.");
@@ -83,16 +80,8 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const proxyConfig = {
+export const config = {
   matcher: [
-    "/login",
-    "/admin/:path*",
-    "/dashboard/:path*",
-    "/api/admin/:path*",
-    "/api/dashboard/:path*",
-    "/api/events/:path*",
-    "/api/guests/:path*",
-    "/api/checkin/:path*",
-    "/api/uploads/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|logo.svg).*)",
   ],
 };
