@@ -1,0 +1,83 @@
+export const AUTH_ROLES = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  CLIENT: "CLIENT",
+  PHOTOGRAPHER: "PHOTOGRAPHER",
+} as const;
+
+export type AuthRole = (typeof AUTH_ROLES)[keyof typeof AUTH_ROLES];
+
+export type PlanType = "essentielle" | "prestige" | "privilege";
+export type OpeningAnimationType =
+  | "wax_seal_burst"
+  | "botanical_envelope"
+  | "velvet_curtains"
+  | "silk_ribbon_untie"
+  | "golden_palace_doors"
+  | "ceremonial_walk";
+
+export type RsvpStatus = "pending" | "confirmed" | "declined";
+
+export interface SessionPayload {
+  sub: string;
+  email: string;
+  role: AuthRole;
+  eventId: string | null;
+  sessionId: string;
+  exp: number;
+}
+
+export interface ThemeConfig {
+  slug: string;
+  name: string;
+  category: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  goldColor: string;
+  titleFont: string;
+  animationType: OpeningAnimationType;
+  openingVideoUrl?: string | null;
+  previewGradient: string;
+  demoVideoUrl?: string | null;
+  isActive?: boolean;
+}
+
+export interface ProgramStep {
+  id: string;
+  time: string;
+  title: string;
+  location: string;
+}
+
+export interface DressCodeColor {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export interface PublicEventPayload {
+  id: string;
+  slug: string;
+  name: string;
+  organizerPhone: string | null;
+  planType: PlanType;
+  brideName: string | null;
+  groomName: string | null;
+  eventDate: string | null;
+  eventTime: string | null;
+  venueName: string | null;
+  venueAddress: string | null;
+  venueMapUrl: string | null;
+  wazeUrl: string | null;
+  dressCode: string | null;
+  dressCodeColors: DressCodeColor[];
+  program: ProgramStep[];
+  coupleStory: string | null;
+  coverPhotoUrl: string | null;
+  officialPhotoUrls: string[];
+  musicUrl: string | null;
+  invitationQuote: string | null;
+  giftIban: string | null;
+  giftWave: string | null;
+  theme: ThemeConfig;
+}

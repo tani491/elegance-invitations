@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AuthUser {
+  id                String        @id @default(cuid())
+  email             String        @unique
+  passwordHash      String
+  role              String        @default("CLIENT")
+  displayName       String
+  eventId           String?       @unique
+  temporaryPassword Boolean       @default(true)
+  isActive          Boolean       @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  event             Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  sessions          AuthSession[]
+
+  @@index([role])
+  @@index([eventId])
+}
+
+model AuthSession {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Theme {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  category        String
+  primaryColor    String   @default("#5C1D24")
+  secondaryColor  String   @default("#FAF7F2")
+  accentColor     String   @default("#C5A880")
+  goldColor       String   @default("#D4AF37")
+  titleFont       String   @default("Cormorant Garamond")
+  animationType   String   @default("envelope")
+  openingVideoUrl String?
+  previewGradient String
+  demoVideoUrl    String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  events          Event[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model Event {
+  id                     String       @id @default(cuid())
+  slug                   String       @unique
+  name                   String
+  organizerName          String
+  organizerPhone         String
+  clientEmail            String?
+  template               String       @default("medina-orientale")
+  themeId                String?
+  primaryColor           String       @default("#5C1D24")
+  secondaryColor         String       @default("#FAF7F2")
+  accentColor            String       @default("#C5A880")
+  goldColor              String       @default("#D4AF37")
+  titleFont              String       @default("Cormorant Garamond")
+  animationType          String       @default("envelope")
+  coverPhotoUrl          String?
+  coverPhotoCloudinaryId String?
+  officialPhotoUrls      Json?
+  musicUrl               String?
+  invitationQuote        String?
+  giftIban               String?
+  giftWave               String?
+  brideName              String?
+  groomName              String?
+  eventDate              DateTime?
+  eventTime              String?
+  venueName              String?
+  venueAddress           String?
+  venueMapUrl            String?
+  wazeUrl                String?
+  mairieName             String?
+  mairieAddress          String?
+  mairieDate             DateTime?
+  mairieTime             String?
+  receptionVenue         String?
+  receptionAddress       String?
+  receptionDate          DateTime?
+  receptionTime          String?
+  dressCode              String?
+  dressCodeColors        Json?
+  program                Json?
+  coupleStory            String?
+  planType               String       @default("essentielle")
+  photographerToken      String?      @unique
+  isActive               Boolean      @default(true)
+  isPaid                 Boolean      @default(false)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  theme                  Theme?       @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  client                 AuthUser?
+  guests                 EventGuest[]
+  photos                 EventPhoto[]
+
+  @@index([themeId])
+  @@index([slug])
+  @@index([clientEmail])
+}
+
+model EventGuest {
+  id           String    @id @default(cuid())
+  eventId      String
+  firstName    String?
+  lastName     String?
+  fullName     String
+  phone        String?
+  email        String?
+  accessCode   String    @unique
+  qrToken      String    @unique
+  table        String?
+  maxGuests    Int       @default(1)
+  rsvpStatus   String    @default("pending")
+  plusOnes     Int       @default(0)
+  dietaryNotes String?
+  menuChoice   String?
+  isVip        Boolean   @default(false)
+  isCheckedIn  Boolean   @default(false)
+  checkedInAt  DateTime?
+  checkedInBy  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([qrToken])
+  @@index([accessCode])
+}
+
+model EventPhoto {
+  id                 String   @id @default(cuid())
+  eventId            String
+  cloudinaryPublicId String?
+  category           String   @default("ceremonie")
+  title              String?
+  originalUrl        String?
+  thumbnailUrl       String?
+  width              Int?
+  height             Int?
+  uploadedAt         DateTime @default(now())
+
+  event              Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([category])
+}

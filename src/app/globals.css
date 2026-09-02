@@ -1,0 +1,439 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   ÉLÉGANCE — Design System
+   Palette: Crème ivoire, Or brossé, Bordeaux royal, Ébène
+   Typography: Cormorant Garamond (display), Plus Jakarta Sans (UI)
+   ============================================================ */
+
+@theme inline {
+  /* --- Semantic color mappings --- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-jakarta);
+  --font-serif: var(--font-cormorant);
+  --font-script: var(--font-great-vibes);
+
+  /* --- Sidebar tokens --- */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  /* --- Chart palette --- */
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+
+  /* --- Core semantic tokens --- */
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* --- Radius scale --- */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* --- Extended luxury tokens --- */
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dark: var(--gold-dark);
+  --color-bordeaux: var(--bordeaux);
+  --color-bordeaux-light: var(--bordeaux-light);
+  --color-ivory: var(--ivory);
+  --color-ebony: var(--ebony);
+  --color-cream: var(--cream);
+}
+
+/* ============================================================
+   LIGHT MODE — Crème ivoire, or brossé, bordeaux royal
+   ============================================================ */
+:root {
+  --radius: 0.625rem;
+
+  /* --- Core palette --- */
+  --background: #FAF7F2;               /* Crème ivoire */
+  --foreground: #1A1818;               /* Ébène */
+  --card: #FFFFFF;
+  --card-foreground: #1A1818;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1818;
+
+  /* --- Primary: Or brossé --- */
+  --primary: #D4AF37;
+  --primary-foreground: #1A1818;
+
+  /* --- Secondary: Bordeaux royal atténué --- */
+  --secondary: #5C1D24;
+  --secondary-foreground: #FAF7F2;
+
+  /* --- Muted --- */
+  --muted: #F0EBE3;
+  --muted-foreground: #6B6560;
+
+  /* --- Accent: Bordeaux royal --- */
+  --accent: #5C1D24;
+  --accent-foreground: #FAF7F2;
+
+  /* --- Destructive --- */
+  --destructive: #C0392B;
+
+  /* --- Borders & inputs --- */
+  --border: #E5DFD6;
+  --input: #E5DFD6;
+  --ring: #D4AF37;
+
+  /* --- Chart palette --- */
+  --chart-1: #D4AF37;
+  --chart-2: #5C1D24;
+  --chart-3: #7D8B6E;
+  --chart-4: #C5A880;
+  --chart-5: #8B4513;
+
+  /* --- Sidebar --- */
+  --sidebar: #F5F0E8;
+  --sidebar-foreground: #1A1818;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #1A1818;
+  --sidebar-accent: #5C1D24;
+  --sidebar-accent-foreground: #FAF7F2;
+  --sidebar-border: #E5DFD6;
+  --sidebar-ring: #D4AF37;
+
+  /* --- Extended luxury colors --- */
+  --gold: #D4AF37;
+  --gold-light: #E8D48B;
+  --gold-dark: #A8872B;
+  --bordeaux: #5C1D24;
+  --bordeaux-light: #8B3A42;
+  --ivory: #FAF7F2;
+  --ebony: #1A1818;
+  --cream: #F0EBE3;
+}
+
+/* ============================================================
+   DARK MODE --- Ébène profond, or lumineux
+   ============================================================ */
+.dark {
+  --background: #141212;
+  --foreground: #F0EBE3;
+  --card: #1E1B1B;
+  --card-foreground: #F0EBE3;
+  --popover: #1E1B1B;
+  --popover-foreground: #F0EBE3;
+
+  --primary: #E8D48B;
+  --primary-foreground: #1A1818;
+
+  --secondary: #8B3A42;
+  --secondary-foreground: #FAF7F2;
+
+  --muted: #2A2525;
+  --muted-foreground: #A09890;
+
+  --accent: #8B3A42;
+  --accent-foreground: #FAF7F2;
+
+  --destructive: #E74C3C;
+
+  --border: #333030;
+  --input: #333030;
+  --ring: #E8D48B;
+
+  --chart-1: #E8D48B;
+  --chart-2: #8B3A42;
+  --chart-3: #7D8B6E;
+  --chart-4: #C5A880;
+  --chart-5: #A0522D;
+
+  --sidebar: #1A1717;
+  --sidebar-foreground: #F0EBE3;
+  --sidebar-primary: #E8D48B;
+  --sidebar-primary-foreground: #1A1818;
+  --sidebar-accent: #8B3A42;
+  --sidebar-accent-foreground: #FAF7F2;
+  --sidebar-border: #333030;
+  --sidebar-ring: #E8D48B;
+
+  --gold: #E8D48B;
+  --gold-light: #F0E6A8;
+  --gold-dark: #D4AF37;
+  --bordeaux: #8B3A42;
+  --bordeaux-light: #A8525C;
+  --ivory: #F0EBE3;
+  --ebony: #1A1818;
+  --cream: #2A2525;
+}
+
+/* ============================================================
+   BASE LAYER
+   ============================================================ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background: #D4AF3740;
+    color: #1A1818;
+  }
+
+  .dark ::selection {
+    background: #E8D48B50;
+    color: #F0EBE3;
+  }
+}
+
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .font-display-light {
+    font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+  }
+
+  .font-display-bold {
+    font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .font-script {
+    font-family: var(--font-great-vibes), cursive;
+    font-weight: 400;
+  }
+
+  .font-body {
+    font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.7;
+  }
+
+  .tracking-luxury {
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .tracking-luxury-wide {
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+
+  .tracking-elegant {
+    letter-spacing: 0.08em;
+  }
+}
+
+/* ============================================================
+   LUXURY EFFECTS
+   ============================================================ */
+
+/* --- Gold gradient text --- */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #E8D48B, #D4AF37, #A8872B);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .text-gold-gradient {
+  background: linear-gradient(135deg, #F0E6A8, #E8D48B, #D4AF37);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* --- Champagne shimmer background --- */
+.bg-champagne-shimmer {
+  background: linear-gradient(
+    135deg,
+    #FAF7F2 0%,
+    #F0EBE3 25%,
+    #FAF7F2 50%,
+    #F0EBE3 75%,
+    #FAF7F2 100%
+  );
+  background-size: 400% 400%;
+  animation: shimmer 8s ease-in-out infinite;
+}
+
+/* --- Gold border glow --- */
+.border-gold-glow {
+  border: 1px solid #D4AF3766;
+  box-shadow: 0 0 15px #D4AF3718, inset 0 0 15px #D4AF370C;
+}
+
+.dark .border-gold-glow {
+  border-color: #E8D48B50;
+  box-shadow: 0 0 20px #E8D48B18, inset 0 0 20px #E8D48B0A;
+}
+
+/* --- Luxury card --- */
+.card-luxury {
+  background: #FFFFFF;
+  border: 1px solid #D4AF3725;
+  box-shadow: 0 1px 3px #1A181808, 0 4px 16px #1A181806;
+}
+
+.dark .card-luxury {
+  background: #1E1B1B;
+  border-color: #E8D48B1C;
+  box-shadow: 0 1px 3px #00000020, 0 4px 16px #00000014;
+}
+
+/* --- Elevated luxury card --- */
+.card-luxury-elevated {
+  background: #FEFCF8;
+  border: 1px solid #D4AF3740;
+  box-shadow: 0 2px 8px #1A181808, 0 8px 32px #1A181808;
+}
+
+.dark .card-luxury-elevated {
+  background: #242020;
+  border-color: #E8D48B28;
+  box-shadow: 0 2px 8px #00000028, 0 8px 32px #00000020;
+}
+
+/* --- Ornamental divider --- */
+.divider-ornament::before,
+.divider-ornament::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #D4AF3780, transparent);
+}
+
+/* --- Double line luxury border --- */
+.border-double-luxury {
+  border: 2px double #D4AF374C;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes gold-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 #D4AF3740; }
+  50% { box-shadow: 0 0 0 8px #D4AF3700; }
+}
+
+@keyframes slide-in-bottom {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up { animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+.animate-scale-in { animation: scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-gold-pulse { animation: gold-pulse 2s ease-in-out infinite; }
+.animate-slide-in-bottom { animation: slide-in-bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+.animate-delay-1000 { animation-delay: 1000ms; }
+
+/* ============================================================
+   CUSTOM SCROLLBAR
+   ============================================================ */
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #D4AF3740; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #D4AF3770; }
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #E8D48B30; }
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #E8D48B50; }
+
+/* ============================================================
+   BUTTON OVERRIDES
+   ============================================================ */
+.btn-luxury { transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.btn-luxury:hover {
+  box-shadow: 0 2px 8px #D4AF3730, 0 4px 16px #D4AF3718;
+}
+
+/* ============================================================
+   GLASS MORPHISM
+   ============================================================ */
+.glass-luxury {
+  background: #FFFFFFB0;
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid #D4AF371C;
+}
+
+.dark .glass-luxury {
+  background: #1E1B1B99;
+  border-color: #E8D48B14;
+}
