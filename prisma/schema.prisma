@@ -6,6 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  schemas   = ["public"]
 }
 
 model AuthUser {
@@ -26,6 +27,7 @@ model AuthUser {
 
   @@index([role])
   @@index([eventId])
+  @@schema("public")
 }
 
 model AuthSession {
@@ -41,6 +43,7 @@ model AuthSession {
 
   @@index([userId])
   @@index([expiresAt])
+  @@schema("public")
 }
 
 model Theme {
@@ -65,6 +68,7 @@ model Theme {
 
   @@index([category])
   @@index([isActive])
+  @@schema("public")
 }
 
 model Event {
@@ -124,6 +128,7 @@ model Event {
   @@index([themeId])
   @@index([slug])
   @@index([clientEmail])
+  @@schema("public")
 }
 
 model EventGuest {
@@ -154,6 +159,7 @@ model EventGuest {
   @@index([eventId])
   @@index([qrToken])
   @@index([accessCode])
+  @@schema("public")
 }
 
 model EventPhoto {
@@ -172,4 +178,5 @@ model EventPhoto {
 
   @@index([eventId])
   @@index([category])
+  @@schema("public")
 }

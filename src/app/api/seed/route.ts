@@ -1,8 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { ensureDefaultThemes } from '@/lib/theme-store'
-import { hashPassword } from '@/lib/server-auth'
+import { hashPassword, normalizeEmail } from '@/lib/server-auth'
 import { AUTH_ROLES } from '@/types/database.types'
+
+function isSeedAuthorized(request: NextRequest) {
+  if (process.env.NODE_ENV !== 'production') return true;
+
+  const configuredSecret = process.env.SEED_SECRET;
+  const providedSecret = request.nextUrl.searchParams.get('secret') ?? request.headers.get('x-seed-secret');
+  return Boolean(configuredSecret && providedSecret && configuredSecret === providedSecret);
+}
+
+async function initializeProductionEssentials() {
+  await ensureDefaultThemes();
+
+  const email = normalizeEmail(process.env.DEFAULT_ADMIN_EMAIL ?? 'admin@elegance.sn');
+  const password = process.env.DEFAULT_ADMIN_PASSWORD ?? 'EleganceAdmin2026!';
+  const existingAdmin = await db.authUser.findUnique({ where: { email } });
+
+  const admin = existingAdmin ?? await db.authUser.create({
+    data: {
+      email,
+      passwordHash: await hashPassword(password),
+      role: AUTH_ROLES.SUPER_ADMIN,
+      displayName: 'Super Admin Elegance',
+      temporaryPassword: false,
+      isActive: true,
+    },
+  });
+
+  const themeCount = await db.theme.count();
+
+  return {
+    themeCount,
+    adminCreated: !existingAdmin,
+    adminEmail: admin.email,
+  };
+}
+
+export async function GET(request: NextRequest) {
+  if (!isSeedAuthorized(request)) {
+    return NextResponse.json({ success: false, error: 'Seed non autorise.' }, { status: 403 });
+  }
+
+  try {
+    const result = await initializeProductionEssentials();
+    return NextResponse.json({
+      success: true,
+      message: 'Initialisation Supabase terminee.',
+      data: result,
+    });
+  } catch (error) {
+    console.error('Erreur lors du seed essentiel:', error);
+    return NextResponse.json(
+      { success: false, error: 'Initialisation Supabase impossible. Verifiez que prisma db push a ete execute.' },
+      { status: 500 },
+    );
+  }
+}
 
 // Seed data: 6 demo guests with French names
 const demoGuests = [
