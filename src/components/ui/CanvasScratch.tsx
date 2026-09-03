@@ -53,7 +53,7 @@ export function CanvasScratch({
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-lg ${className}`}>
+    <div className={`relative overflow-hidden ${className}`}>
       <div className="grid size-full place-items-center">{children}</div>
       <canvas
         ref={canvasRef}

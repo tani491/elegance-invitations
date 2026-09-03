@@ -28,16 +28,17 @@ function normalizePhone(phone: string | null) {
   return phone?.replace(/[^\d]/g, "") ?? "";
 }
 
-function passUrl(origin: string, token: string) {
-  return `${origin}/carte/${token}`;
+function invitationUrl(origin: string, eventSlug: string, token: string) {
+  return `${origin}/invitation/${eventSlug}?guest=${encodeURIComponent(token)}`;
 }
 
-export function GuestTable({ guests, origin }: { guests: Guest[]; origin: string }) {
+export function GuestTable({ guests, origin, eventSlug }: { guests: Guest[]; origin: string; eventSlug: string }) {
   function sendPassOnWhatsApp(guest: Guest) {
     const phone = normalizePhone(guest.phone);
     if (!phone) return;
+    const url = invitationUrl(origin, eventSlug, guest.qrToken);
     const text = encodeURIComponent(
-      `Bonjour ${guest.fullName}, voici votre Pass d'invitation personnel avec QR Code pour notre mariage : ${passUrl(origin, guest.qrToken)}`,
+      `Bonjour ${guest.fullName}, voici votre invitation personnelle pour notre mariage : ${url}`,
     );
     window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener,noreferrer");
   }
@@ -52,13 +53,13 @@ export function GuestTable({ guests, origin }: { guests: Guest[]; origin: string
             <TableHead>RSVP</TableHead>
             <TableHead>VIP</TableHead>
             <TableHead>QR</TableHead>
-            <TableHead>Pass</TableHead>
+            <TableHead>Invitation</TableHead>
             <TableHead>WhatsApp</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {guests.map((guest) => {
-            const url = passUrl(origin, guest.qrToken);
+            const url = invitationUrl(origin, eventSlug, guest.qrToken);
             const hasPhone = normalizePhone(guest.phone).length > 0;
             return (
               <TableRow key={guest.id}>
@@ -71,7 +72,7 @@ export function GuestTable({ guests, origin }: { guests: Guest[]; origin: string
                 </TableCell>
                 <TableCell>
                   <Button asChild variant="outline" size="sm">
-                    <a href={url} target="_blank" rel="noreferrer" aria-label={`Ouvrir le pass de ${guest.fullName}`}>
+                    <a href={url} target="_blank" rel="noreferrer" aria-label={`Ouvrir l'invitation de ${guest.fullName}`}>
                       <ExternalLink className="size-4" />
                     </a>
                   </Button>

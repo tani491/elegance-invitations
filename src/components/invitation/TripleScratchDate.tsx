@@ -33,14 +33,14 @@ END:VCALENDAR`)}`;
     <section className="text-center">
       <div className="text-center">
         <p className="text-xs uppercase tracking-[0.25em] text-amber-700/80">Save the date</p>
-        <h2 className="mt-3 font-serif text-2xl italic tracking-wider text-amber-950 md:text-3xl">Grattez la date</h2>
+        <h2 className="mt-3 font-serif text-2xl italic tracking-wider text-amber-950 md:text-3xl">Grattez pour révéler la date</h2>
       </div>
       <div className="mx-auto mt-5 h-px max-w-xs bg-gradient-to-r from-transparent via-[var(--invitation-gold)]/45 to-transparent" />
       <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5">
         {[
           { label: "Jour", value: parts.day },
           { label: "Mois", value: parts.month },
-          { label: "Annee", value: parts.year },
+          { label: "Année", value: parts.year },
         ].map((item) => (
           <CanvasScratch
             key={item.label}

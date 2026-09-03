@@ -5,9 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAppStore, type Guest } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -22,7 +20,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CheckCircle2, XCircle, QrCode, Download, PartyPopper } from 'lucide-react';
-import GuestPassPDF from './GuestPassPDF';
 
 /* ============================================================
    RSVP Modal — Shows QR code, allows guest to confirm/decline
@@ -35,15 +32,12 @@ export default function GuestRSVPModal() {
     selectedGuestId,
     event,
     updateGuestRSVP,
-    passModalOpen,
     setPassModalOpen,
   } = useAppStore();
 
   const guest = event.guests.find((g) => g.id === selectedGuestId);
   const [status, setStatus] = useState<string>('');
   const [plusOnes, setPlusOnes] = useState(0);
-  const [dietaryNotes, setDietaryNotes] = useState('');
-  const [menuChoice, setMenuChoice] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   if (!guest) return null;
@@ -55,8 +49,6 @@ export default function GuestRSVPModal() {
     updateGuestRSVP(guest.id, {
       rsvpStatus: status as Guest['rsvpStatus'],
       plusOnes,
-      dietaryNotes,
-      menuChoice,
     });
     setSubmitted(true);
   };
@@ -71,8 +63,6 @@ export default function GuestRSVPModal() {
     setSubmitted(false);
     setStatus('');
     setPlusOnes(0);
-    setDietaryNotes('');
-    setMenuChoice('');
   };
 
   return (
@@ -177,34 +167,6 @@ export default function GuestRSVPModal() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="font-display text-sm">Choix du menu</Label>
-                    <Select value={menuChoice} onValueChange={setMenuChoice}>
-                      <SelectTrigger className="border-gold/30">
-                        <SelectValue placeholder="Sélectionnez un menu" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="poulet">Poulet grillé</SelectItem>
-                        <SelectItem value="thieb">Thiéboudienne</SelectItem>
-                        <SelectItem value="poisson">Poisson grillé</SelectItem>
-                        <SelectItem value="vegetarien">Option végétarienne</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="font-display text-sm">
-                      Notes alimentaires / Allergies
-                    </Label>
-                    <Textarea
-                      value={dietaryNotes}
-                      onChange={(e) => setDietaryNotes(e.target.value)}
-                      placeholder="Végétarien, allergie aux arachides..."
-                      className="border-gold/30 resize-none"
-                      rows={2}
-                    />
                   </div>
                 </motion.div>
               )}
