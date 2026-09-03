@@ -12,8 +12,6 @@ const updateGuestSchema = z.object({
   table: z.string().nullable().optional(),
   maxGuests: z.number().int().min(1).max(10).optional(),
   rsvpStatus: z.enum(["pending", "confirmed", "declined"]).optional(),
-  dietaryNotes: z.string().nullable().optional(),
-  menuChoice: z.string().nullable().optional(),
   isVip: z.boolean().optional(),
 });
 

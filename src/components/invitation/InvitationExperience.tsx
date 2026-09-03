@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
+import { CheckCircle, Download, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { VideoOpeningGate } from "@/components/animations/VideoOpeningGate";
 import { DressCodeSection } from "@/components/invitation/DressCodeSection";
@@ -15,7 +15,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { themeToCssVars } from "@/lib/theme-presets";
 import type { PublicEventPayload } from "@/types/database.types";
 
@@ -36,10 +35,9 @@ function countdownParts(date: string | null) {
 }
 
 function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken?: string }) {
+  const [guestName, setGuestName] = useState("");
   const [status, setStatus] = useState("confirmed");
   const [plusOnes, setPlusOnes] = useState("0");
-  const [menuChoice, setMenuChoice] = useState("");
-  const [dietaryNotes, setDietaryNotes] = useState("");
   const [done, setDone] = useState(false);
 
   const whatsappHref = useMemo(() => {
@@ -57,7 +55,7 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
     const response = await fetch("/api/rsvp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guestToken, status, plusOnes: Number(plusOnes), menuChoice, dietaryNotes }),
+      body: JSON.stringify({ guestToken, status, plusOnes: Number(plusOnes), guestName }),
     });
     const json = await response.json();
     if (!response.ok || !json.success) {
@@ -88,6 +86,10 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
   return (
     <div className="space-y-4">
       <div className="space-y-2">
+        <Label>Nom de l&apos;invite</Label>
+        <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Votre nom complet" />
+      </div>
+      <div className="space-y-2">
         <Label>Presence</Label>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -101,16 +103,72 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
         <Label>Accompagnants</Label>
         <Input type="number" min="0" max="10" value={plusOnes} onChange={(e) => setPlusOnes(e.target.value)} />
       </div>
-      <div className="space-y-2">
-        <Label>Menu</Label>
-        <Input value={menuChoice} onChange={(e) => setMenuChoice(e.target.value)} placeholder="Poisson, poulet, vegetarien..." />
-      </div>
-      <div className="space-y-2">
-        <Label>Regime ou allergies</Label>
-        <Textarea value={dietaryNotes} onChange={(e) => setDietaryNotes(e.target.value)} />
-      </div>
       <Button onClick={submit} className="w-full bg-[var(--invitation-primary)] text-white">Confirmer</Button>
     </div>
+  );
+}
+
+function WhatsAppGroupCTA({ url }: { url: string | null }) {
+  if (!url) return null;
+
+  return (
+    <Card className="rounded-lg border-[var(--invitation-gold)]/30 bg-white/85 shadow-lg">
+      <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-[var(--invitation-gold)]/30 bg-[var(--invitation-gold)]/10">
+            <MessageCircle className="size-5 text-[var(--invitation-gold)]" />
+          </span>
+          <div>
+            <h2 className="font-display-bold text-xl text-[var(--invitation-primary)]">Rejoindre le Groupe WhatsApp du Mariage</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Photos, coulisses et informations en direct avec les proches.</p>
+          </div>
+        </div>
+        <Button asChild className="bg-[var(--invitation-primary)] text-white">
+          <a href={url} target="_blank" rel="noreferrer">
+            <MessageCircle className="mr-2 size-4" />
+            Rejoindre
+          </a>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MemoryGallery({ event }: { event: PublicEventPayload }) {
+  const photos = event.galleryPhotos;
+  if (photos.length === 0) return null;
+
+  return (
+    <section className="px-4 py-16">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 text-center">
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--invitation-gold)]">Galerie Souvenirs</p>
+          <h2 className="mt-3 font-serif text-4xl text-[var(--invitation-primary)]">Les plus beaux instants</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {photos.map((photo, index) => (
+            <motion.figure
+              key={photo.id}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.55, ease: "easeOut", delay: Math.min(index * 0.04, 0.2) }}
+              className="group relative aspect-[4/5] overflow-hidden rounded-lg border border-[var(--invitation-gold)]/25 bg-white shadow-lg"
+            >
+              <img src={photo.thumbnailUrl ?? photo.originalUrl ?? ""} alt={photo.title ?? "Photo souvenir"} className="size-full object-cover transition duration-500 group-hover:scale-105" />
+              <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/75 to-transparent p-3 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <span className="truncate text-xs">{photo.title ?? "Photo HD"}</span>
+                {photo.originalUrl && (
+                  <a href={photo.originalUrl} download target="_blank" rel="noreferrer" aria-label="Telecharger la photo HD" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-md">
+                    <Download className="size-4" />
+                  </a>
+                )}
+              </figcaption>
+            </motion.figure>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -121,6 +179,7 @@ function openingVideoSource(theme: PublicEventPayload["theme"]) {
 
 export function InvitationExperience({ event, guestToken }: { event: PublicEventPayload; guestToken?: string }) {
   const [countdown, setCountdown] = useState(() => countdownParts(event.eventDate));
+  const [isOpened, setIsOpened] = useState(false);
   const names = `${event.brideName ?? "Mariee"} & ${event.groomName ?? "Marie"}`;
   const photos = event.officialPhotoUrls.length > 0 ? event.officialPhotoUrls : event.coverPhotoUrl ? [event.coverPhotoUrl] : [];
   const monogram = `${event.brideName?.[0] ?? "E"}${event.groomName?.[0] ?? "G"}`.toUpperCase();
@@ -146,6 +205,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
       title={names}
       fallbackGradient={event.theme.previewGradient}
       fallbackImage={photos[0]}
+      onOpened={() => setIsOpened(true)}
     >
       <div style={themeToCssVars(event.theme)} className="min-h-screen bg-[var(--invitation-secondary)] text-[#201816]">
       <FloatingAudioPlayer src={event.musicUrl} />
@@ -155,7 +215,8 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
         ) : (
           <div className="absolute inset-0" style={{ background: event.theme.previewGradient }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-[var(--invitation-secondary)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-[var(--invitation-secondary)]" />
         <motion.div
           className="relative z-10 mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col items-center justify-center text-center text-white"
           initial={{ opacity: 0, y: 20 }}
@@ -163,25 +224,37 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           transition={{ duration: 0.8 }}
         >
           <Sparkles className="mb-6 size-8 text-[var(--invitation-gold)]" />
-          <h1 className="font-script text-6xl leading-tight text-[var(--invitation-gold)] md:text-8xl">{names}</h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-white/85">
+          <p className="mb-5 text-xs uppercase tracking-[0.2em] text-amber-200/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">Save the date</p>
+          <h1 className="font-serif text-5xl font-light leading-tight text-[#fff8ed] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] md:text-7xl">{names}</h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
             {event.invitationQuote ?? "L'amour ne se regarde pas, il regarde ensemble dans la meme direction."}
           </p>
-          <div className="mt-8 grid grid-cols-4 gap-2 text-center">
+          <motion.div
+            className="mt-8 grid grid-cols-4 gap-2 text-center"
+            initial={{ opacity: 0, y: 18 }}
+            animate={isOpened ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
+            transition={{ duration: 0.9, ease: "easeOut", delay: 0.15 }}
+          >
             {Object.entries(countdown).map(([label, value]) => (
-              <span key={label} className="rounded-lg border border-white/20 bg-white/10 px-3 py-3">
+              <span key={label} className="rounded-lg border border-amber-100/20 bg-black/20 px-3 py-3 shadow-[0_18px_45px_rgba(0,0,0,.22)] backdrop-blur-md">
                 <strong className="block font-display-bold text-2xl">{value}</strong>
-                <span className="text-[10px] uppercase tracking-[0.12em]">{label}</span>
+                <span className="text-[10px] uppercase tracking-[0.12em] text-amber-100/85">{label}</span>
               </span>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       </section>
 
       <section className="px-4 py-16">
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-[1fr_360px]">
           <div className="space-y-6">
-            <TripleScratchDate date={event.eventDate} title={event.name} />
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={isOpened ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+              transition={{ duration: 0.9, ease: "easeOut", delay: 0.25 }}
+            >
+              <TripleScratchDate date={event.eventDate} title={event.name} />
+            </motion.div>
             <DressCodeSection event={event} />
             <div className="rounded-lg border border-[var(--invitation-gold)]/25 bg-white/75 p-6 text-center shadow-lg">
               <h2 className="font-display-bold text-3xl uppercase tracking-[0.16em] text-[var(--invitation-primary)]">Notre Histoire</h2>
@@ -200,7 +273,12 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
       <TimelineSection event={event} />
 
+      <MemoryGallery event={event} />
+
       <section className="px-4 py-20">
+        <div className="mx-auto mb-6 max-w-4xl">
+          <WhatsAppGroupCTA url={event.whatsappGroupUrl} />
+        </div>
         <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
           <Card className="rounded-lg border-[var(--invitation-gold)]/25 bg-white/85 shadow-lg">
             <CardContent className="p-6">

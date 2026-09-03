@@ -37,6 +37,7 @@ const updateEventSchema = z.object({
   coverPhotoUrl: z.string().nullable().optional(),
   officialPhotoUrls: z.array(z.string()).optional(),
   musicUrl: z.string().nullable().optional(),
+  whatsappGroupUrl: z.string().nullable().optional(),
   invitationQuote: z.string().nullable().optional(),
   giftIban: z.string().nullable().optional(),
   giftWave: z.string().nullable().optional(),

@@ -55,6 +55,15 @@ export interface DressCodeColor {
   color: string;
 }
 
+export interface PublicGalleryPhoto {
+  id: string;
+  category: string;
+  title: string | null;
+  originalUrl: string | null;
+  thumbnailUrl: string | null;
+  uploadedAt: string;
+}
+
 export interface PublicEventPayload {
   id: string;
   slug: string;
@@ -76,8 +85,10 @@ export interface PublicEventPayload {
   coverPhotoUrl: string | null;
   officialPhotoUrls: string[];
   musicUrl: string | null;
+  whatsappGroupUrl: string | null;
   invitationQuote: string | null;
   giftIban: string | null;
   giftWave: string | null;
+  galleryPhotos: PublicGalleryPhoto[];
   theme: ThemeConfig;
 }

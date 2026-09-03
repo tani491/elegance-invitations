@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // POST /api/rsvp — Update a guest's RSVP status from the public guest token.
-// Body: { guestToken, status, plusOnes?, dietaryNotes?, menuChoice? }
+// Body: { guestToken, status, plusOnes? }
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { guestToken, status, plusOnes, dietaryNotes, menuChoice } = body
+    const { guestToken, status, plusOnes } = body
 
     if (!guestToken || !status) {
       return NextResponse.json(
@@ -35,14 +35,6 @@ export async function POST(request: NextRequest) {
         )
       }
       updateData.plusOnes = plusOnes
-    }
-
-    if (dietaryNotes !== undefined) {
-      updateData.dietaryNotes = dietaryNotes
-    }
-
-    if (menuChoice !== undefined) {
-      updateData.menuChoice = menuChoice
     }
 
     const existingGuest = await db.eventGuest.findUnique({

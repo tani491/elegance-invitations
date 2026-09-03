@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Camera, Upload, X, EyeOff, Eye, Image as ImageIcon,
+  Camera, Upload, X, EyeOff, Eye, Image as ImageIcon, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -186,7 +186,7 @@ export default function PhotographerPortal() {
 
     for (const file of filesArray) {
       if (!file.type.startsWith("image/")) continue;
-      if (file.size > 10 * 1024 * 1024) continue; // 10 MB max
+      if (file.size > 15 * 1024 * 1024) continue;
       const preview = URL.createObjectURL(file);
       newFiles.push({ file, id: generateId(), preview });
     }
@@ -240,36 +240,21 @@ export default function PhotographerPortal() {
     setUploading(true);
 
     try {
-      /* Read files as data URLs for storage */
-      const photosData = await Promise.all(
-        selectedFiles.map(async (sf) => {
-          const dataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(sf.file);
-          });
-          return {
-            title: sf.file.name.replace(/\.[^.]+$/, ""),
-            url: dataUrl,
-            width: 0,
-            height: 0,
-          };
-        })
-      );
+      const formData = new FormData();
+      formData.append("token", token);
+      formData.append("category", activeAlbum);
+      selectedFiles.forEach((selectedFile) => {
+        formData.append("files", selectedFile.file);
+      });
 
       const res = await fetch("/api/photographer/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          category: activeAlbum,
-          photos: photosData,
-        }),
+        body: formData,
       });
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         const count = selectedFiles.length;
         const albumLabel =
           ALBUMS.find((a) => a.key === activeAlbum)?.label ?? activeAlbum;
@@ -282,19 +267,7 @@ export default function PhotographerPortal() {
           },
         );
         clearAllFiles();
-        /* Refresh photos */
-        setExistingPhotos((prev) => [
-          ...prev,
-          ...photosData.map((p, i) => ({
-            id: `new-${Date.now()}-${i}`,
-            category: activeAlbum,
-            title: p.title,
-            originalUrl: p.url,
-            thumbnailUrl: null,
-            width: null,
-            height: null,
-          })),
-        ]);
+        setExistingPhotos((prev) => [...data.data, ...prev]);
       } else {
         toast.error("Erreur lors de l'envoi", {
           description: data.error || "Veuillez réessayer.",
@@ -308,6 +281,21 @@ export default function PhotographerPortal() {
 
     setUploading(false);
   };
+
+  async function deletePhoto(photoId: string) {
+    const res = await fetch("/api/photographer/photos", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, photoId }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      toast.error(data.error ?? "Suppression impossible.");
+      return;
+    }
+    setExistingPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
+    toast.success("Photo supprimee.");
+  }
 
   /* ==== Conditional renders ==== */
 
@@ -368,7 +356,7 @@ export default function PhotographerPortal() {
           </a>
 
           <h1 className="hidden sm:block font-display-bold tracking-luxury text-base text-[#1A1818]">
-            Espace Photographe
+            Espace Photographe Officiel
           </h1>
 
           <div className="w-20" />
@@ -387,10 +375,10 @@ export default function PhotographerPortal() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                Événement assigné
+                Espace Photographe Officiel
               </p>
               <h2 className="font-display-bold text-xl tracking-luxury text-[#1A1818]">
-                {coupleName}
+                Mariage de {coupleName}
               </h2>
               {formattedDate && (
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -415,7 +403,7 @@ export default function PhotographerPortal() {
 
         {/* Mobile title */}
         <h1 className="sm:hidden font-display-bold tracking-luxury text-lg text-[#1A1818] mb-6 text-center">
-          Espace Photographe
+          Espace Photographe Officiel
         </h1>
 
         {/* ---- Album selector ---- */}
@@ -506,6 +494,14 @@ export default function PhotographerPortal() {
                       <p className="text-[11px] text-white truncate">{photo.title}</p>
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => void deletePhoto(photo.id)}
+                    className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-md transition hover:bg-[#dc2626] group-hover:opacity-100"
+                    aria-label={`Supprimer ${photo.title ?? "la photo"}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -565,7 +561,7 @@ export default function PhotographerPortal() {
                   : "Glissez vos photos ici ou cliquez pour sélectionner"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                JPG, PNG, WebP — jusqu&apos;à 10 Mo par fichier
+                JPG, PNG, WebP, AVIF — jusqu&apos;à 15 Mo par fichier
               </p>
             </div>
 

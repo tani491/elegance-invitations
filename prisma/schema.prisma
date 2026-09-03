@@ -90,6 +90,7 @@ model Event {
   coverPhotoCloudinaryId String?
   officialPhotoUrls      Json?
   musicUrl               String?
+  whatsappGroupUrl       String?
   invitationQuote        String?
   giftIban               String?
   giftWave               String?

@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -133,9 +132,8 @@ export default function GuestInvitationPage() {
 
   /* RSVP state */
   const [guestName, setGuestName] = useState("");
+  const [attendanceStatus, setAttendanceStatus] = useState("confirmed");
   const [guestCount, setGuestCount] = useState("1");
-  const [menuChoice, setMenuChoice] = useState("");
-  const [notes, setNotes] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -145,14 +143,14 @@ export default function GuestInvitationPage() {
   /* ---- Handlers ---- */
 
   const handleRsvpSubmit = useCallback(() => {
-    if (!guestName.trim() || !menuChoice) return;
+    if (!guestName.trim()) return;
     setIsSubmitting(true);
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
     }, 1200);
-  }, [guestName, menuChoice]);
+  }, [guestName]);
 
   const handleDownloadPass = useCallback(() => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a7" });
@@ -477,6 +475,27 @@ export default function GuestInvitationPage() {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="attendance-status"
+                      className="font-display text-sm text-[#1A1818]"
+                    >
+                      Statut de présence
+                    </Label>
+                    <Select value={attendanceStatus} onValueChange={setAttendanceStatus}>
+                      <SelectTrigger
+                        id="attendance-status"
+                        className="w-full border-[#D4AF37]/20 bg-[#FAF7F2] font-body focus:ring-[#D4AF37]/20"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        <SelectItem value="confirmed">Présent(e)</SelectItem>
+                        <SelectItem value="declined">Absent(e)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Number of guests */}
                   <div className="space-y-2">
                     <Label
@@ -502,51 +521,10 @@ export default function GuestInvitationPage() {
                     </Select>
                   </div>
 
-                  {/* Menu choice */}
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="menu-choice"
-                      className="font-display text-sm text-[#1A1818]"
-                    >
-                      Choix de menu
-                    </Label>
-                    <Select value={menuChoice} onValueChange={setMenuChoice}>
-                      <SelectTrigger
-                        id="menu-choice"
-                        className="w-full border-[#D4AF37]/20 bg-[#FAF7F2] font-body focus:ring-[#D4AF37]/20"
-                      >
-                        <SelectValue placeholder="Sélectionnez votre menu" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="poulet">Poulet</SelectItem>
-                        <SelectItem value="poisson">Poisson</SelectItem>
-                        <SelectItem value="vegetarien">Végétarien</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Notes */}
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="notes"
-                      className="font-display text-sm text-[#1A1818]"
-                    >
-                      Notes alimentaires{" "}
-                      <span className="text-muted-foreground">(facultatif)</span>
-                    </Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Allergies, régimes spéciaux..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      className="min-h-[80px] resize-none border-[#D4AF37]/20 bg-[#FAF7F2] font-body placeholder:text-muted-foreground/60 focus-visible:border-[#D4AF37] focus-visible:ring-[#D4AF37]/20"
-                    />
-                  </div>
-
                   {/* Submit */}
                   <Button
                     onClick={handleRsvpSubmit}
-                    disabled={!guestName.trim() || !menuChoice || isSubmitting}
+                    disabled={!guestName.trim() || isSubmitting}
                     className="btn-luxury h-12 w-full bg-[#5C1D24] font-display text-base text-white hover:bg-[#5C1D24]/90"
                   >
                     {isSubmitting ? (

@@ -14,7 +14,10 @@ export default async function InvitationPage({
   const { guest } = await searchParams;
   const event = await db.event.findFirst({
     where: { slug, isActive: true },
-    include: { theme: true },
+    include: {
+      theme: true,
+      photos: { orderBy: { uploadedAt: "desc" } },
+    },
   });
 
   if (!event) notFound();

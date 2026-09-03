@@ -26,7 +26,6 @@ interface Guest {
   fullName: string;
   phone: string | null;
   rsvpStatus: string;
-  dietaryNotes: string | null;
   isVip: boolean;
   isCheckedIn: boolean;
   qrToken: string;
@@ -45,7 +44,6 @@ export default function DashboardPage() {
     firstName: "",
     lastName: "",
     phone: "",
-    dietaryNotes: "",
     isVip: false,
   });
 
@@ -115,6 +113,7 @@ export default function DashboardPage() {
       coupleStory: event.coupleStory,
       invitationQuote: event.invitationQuote,
       musicUrl: event.musicUrl,
+      whatsappGroupUrl: event.whatsappGroupUrl,
       program: event.program,
     });
   }
@@ -136,7 +135,7 @@ export default function DashboardPage() {
       return;
     }
     setGuests((prev) => [...prev, json.data]);
-    setNewGuest({ firstName: "", lastName: "", phone: "", dietaryNotes: "", isVip: false });
+    setNewGuest({ firstName: "", lastName: "", phone: "", isVip: false });
     toast.success("Invite ajoute avec pass QR individuel.");
   }
 
@@ -200,6 +199,20 @@ export default function DashboardPage() {
     const invitationUrl = `${origin}/invitation/${event.slug}`;
     const text = encodeURIComponent(
       `Chers proches, nous sommes heureux de vous inviter a notre mariage ! Decouvrez notre invitation ici : ${invitationUrl}`,
+    );
+    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function copyPhotographerLink() {
+    if (!photographerLink) return;
+    await navigator.clipboard.writeText(`${origin}${photographerLink}`);
+    toast.success("Lien photographe copie.");
+  }
+
+  function sharePhotographerLink() {
+    if (!event || !photographerLink) return;
+    const text = encodeURIComponent(
+      `Bonjour, voici votre acces photographe officiel pour le mariage de ${event.brideName ?? ""} & ${event.groomName ?? ""} : ${origin}${photographerLink}`,
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
   }
@@ -346,6 +359,14 @@ export default function DashboardPage() {
                   <Label>Audio d'ambiance MP3 (URL)</Label>
                   <Input value={event.musicUrl ?? ""} onChange={(e) => setEvent({ ...event, musicUrl: e.target.value })} />
                 </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Lien d&apos;invitation du Groupe WhatsApp</Label>
+                  <Input
+                    placeholder="https://chat.whatsapp.com/..."
+                    value={event.whatsappGroupUrl ?? ""}
+                    onChange={(e) => setEvent({ ...event, whatsappGroupUrl: e.target.value })}
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <Button disabled={saving} onClick={() => void saveEssentialEvent()}>
                     <Save className="mr-2 size-4" />
@@ -364,7 +385,6 @@ export default function DashboardPage() {
                   <Input placeholder="Prenom" value={newGuest.firstName} onChange={(e) => setNewGuest({ ...newGuest, firstName: e.target.value })} required />
                   <Input placeholder="Nom" value={newGuest.lastName} onChange={(e) => setNewGuest({ ...newGuest, lastName: e.target.value })} required />
                   <Input placeholder="WhatsApp" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} />
-                  <Input placeholder="Regime" value={newGuest.dietaryNotes} onChange={(e) => setNewGuest({ ...newGuest, dietaryNotes: e.target.value })} />
                   <Button type="submit"><Plus className="mr-2 size-4" />Ajouter</Button>
                 </form>
               </CardContent>
@@ -389,16 +409,20 @@ export default function DashboardPage() {
 
           <TabsContent value="photo">
             <Card className="card-luxury">
-              <CardHeader><CardTitle>Lien magique photographe</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Acces Photographe</CardTitle></CardHeader>
               <CardContent className="flex flex-col gap-3">
                 <p className="text-sm text-muted-foreground">
                   Page securisee pour livrer les cliches haute resolution, sans acces a la liste des invites ni aux donnees privees.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                <Input readOnly value={photographerLink ? `${window.location.origin}${photographerLink}` : "Non configure"} />
-                <Button variant="outline" onClick={() => photographerLink && navigator.clipboard.writeText(`${window.location.origin}${photographerLink}`)}>
-                  Copier
-                </Button>
+                  <Input readOnly value={photographerLink ? `${origin}${photographerLink}` : "Non configure"} />
+                  <Button variant="outline" onClick={() => void copyPhotographerLink()}>
+                    Copier
+                  </Button>
+                  <Button disabled={!photographerLink} onClick={sharePhotographerLink} className="bg-[#1f7a4c] text-white hover:bg-[#17643d]">
+                    <MessageCircle className="mr-2 size-4" />
+                    WhatsApp
+                  </Button>
                 </div>
               </CardContent>
             </Card>

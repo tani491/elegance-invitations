@@ -13,7 +13,6 @@ interface Guest {
   fullName: string;
   phone: string | null;
   rsvpStatus: string;
-  dietaryNotes: string | null;
   isVip: boolean;
   isCheckedIn: boolean;
   qrToken: string;
@@ -51,7 +50,6 @@ export function GuestTable({ guests, origin }: { guests: Guest[]; origin: string
             <TableHead>Invite</TableHead>
             <TableHead>WhatsApp</TableHead>
             <TableHead>RSVP</TableHead>
-            <TableHead>Regime</TableHead>
             <TableHead>VIP</TableHead>
             <TableHead>QR</TableHead>
             <TableHead>Pass</TableHead>
@@ -67,7 +65,6 @@ export function GuestTable({ guests, origin }: { guests: Guest[]; origin: string
                 <TableCell>{guest.fullName}</TableCell>
                 <TableCell>{guest.phone ?? "-"}</TableCell>
                 <TableCell><Badge variant="outline">{statusLabel(guest.rsvpStatus)}</Badge></TableCell>
-                <TableCell>{guest.dietaryNotes ?? "-"}</TableCell>
                 <TableCell>{guest.isVip ? <Badge>VIP</Badge> : "-"}</TableCell>
                 <TableCell>
                   <QRCodeSVG value={url} size={46} />

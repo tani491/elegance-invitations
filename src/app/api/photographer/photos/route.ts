@@ -7,6 +7,11 @@ const querySchema = z.object({
   category: z.string().min(2).optional(),
 });
 
+const deleteSchema = z.object({
+  token: z.string().min(12),
+  photoId: z.string().min(1),
+});
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const parsed = querySchema.safeParse({
@@ -39,4 +44,33 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({ success: true, data: photos });
+}
+
+export async function DELETE(request: NextRequest) {
+  const parsed = deleteSchema.safeParse(await request.json());
+
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: "Parametres invalides." }, { status: 400 });
+  }
+
+  const event = await db.event.findFirst({
+    where: {
+      photographerToken: parsed.data.token,
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  if (!event) {
+    return NextResponse.json({ success: false, error: "Token invalide." }, { status: 403 });
+  }
+
+  await db.eventPhoto.deleteMany({
+    where: {
+      id: parsed.data.photoId,
+      eventId: event.id,
+    },
+  });
+
+  return NextResponse.json({ success: true });
 }

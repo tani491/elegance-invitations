@@ -1,10 +1,10 @@
 import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme, parseJsonArray } from "@/lib/theme-presets";
 import { normalizePlan, photoLimitForPlan } from "@/lib/plan-gating";
 import { serializeTheme } from "@/lib/theme-store";
-import type { Event, Theme } from "@prisma/client";
+import type { Event, EventPhoto, Theme } from "@prisma/client";
 import type { DressCodeColor, OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
 
-type PublicEventRecord = Event & { theme?: Theme | null };
+type PublicEventRecord = Event & { theme?: Theme | null; photos?: EventPhoto[] };
 
 const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "wax_seal_burst",
@@ -48,9 +48,20 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     coverPhotoUrl: event.coverPhotoUrl,
     officialPhotoUrls: photos,
     musicUrl: event.musicUrl,
+    whatsappGroupUrl: event.whatsappGroupUrl,
     invitationQuote: event.invitationQuote,
     giftIban: event.giftIban,
     giftWave: event.giftWave,
+    galleryPhotos: (event.photos ?? [])
+      .filter((photo) => Boolean(photo.originalUrl))
+      .map((photo) => ({
+        id: photo.id,
+        category: photo.category,
+        title: photo.title,
+        originalUrl: photo.originalUrl,
+        thumbnailUrl: photo.thumbnailUrl,
+        uploadedAt: photo.uploadedAt.toISOString(),
+      })),
     theme: {
       ...theme,
       primaryColor: event.primaryColor ?? theme.primaryColor,

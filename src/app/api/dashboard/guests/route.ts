@@ -11,7 +11,6 @@ const createGuestSchema = z.object({
   email: z.string().email().optional().nullable(),
   table: z.string().optional().nullable(),
   maxGuests: z.number().int().min(1).max(10).default(1),
-  dietaryNotes: z.string().optional().nullable(),
   isVip: z.boolean().default(false),
 });
 
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest) {
       email: parsed.data.email,
       table: parsed.data.table,
       maxGuests: parsed.data.maxGuests,
-      dietaryNotes: parsed.data.dietaryNotes,
       isVip: parsed.data.isVip,
       accessCode: buildAccessCode(parsed.data.firstName, parsed.data.lastName),
       qrToken: randomToken("guest"),

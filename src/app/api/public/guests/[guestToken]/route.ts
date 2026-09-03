@@ -9,7 +9,7 @@ export async function GET(
   const { guestToken } = await params;
   const guest = await db.eventGuest.findUnique({
     where: { qrToken: guestToken },
-    include: { event: { include: { theme: true } } },
+    include: { event: { include: { theme: true, photos: { orderBy: { uploadedAt: "desc" } } } } },
   });
 
   if (!guest || !guest.event.isActive) {
@@ -28,8 +28,6 @@ export async function GET(
         maxGuests: guest.maxGuests,
         rsvpStatus: guest.rsvpStatus,
         plusOnes: guest.plusOnes,
-        dietaryNotes: guest.dietaryNotes,
-        menuChoice: guest.menuChoice,
         isVip: guest.isVip,
         qrToken: guest.qrToken,
         isCheckedIn: guest.isCheckedIn,
