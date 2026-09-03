@@ -13,29 +13,46 @@ export function GiftListIBAN({ iban, wave }: { iban?: string | null; wave?: stri
   if (!iban && !wave) return null;
 
   return (
-    <div className="rounded-lg border border-[var(--invitation-gold)]/25 bg-white/75 p-5 shadow-lg">
-      <div className="mb-4 flex items-center gap-2">
-        <Gift className="size-5 text-[var(--invitation-gold)]" />
-        <h2 className="font-display-bold text-xl text-[var(--invitation-primary)]">Cadeau des maries</h2>
+    <section className="border-y border-[var(--invitation-gold)]/25 py-8 text-center">
+      <div className="mb-6 flex flex-col items-center gap-3">
+        <span className="grid size-11 place-items-center rounded-full border border-[var(--invitation-gold)]/35 bg-[var(--invitation-gold)]/10 text-[var(--invitation-gold)]">
+          <Gift className="size-5" />
+        </span>
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-amber-700/80">Present</p>
+          <h2 className="mt-2 font-serif text-2xl italic tracking-wider text-amber-950">Cadeau des maries</h2>
+        </div>
       </div>
-      <div className="space-y-3">
+      <div className="mx-auto grid max-w-3xl gap-3 sm:grid-cols-2">
         {iban && (
-          <div className="flex items-center justify-between gap-3 rounded-lg bg-[var(--invitation-secondary)]/70 p-3 text-sm">
+          <div className="flex items-center justify-between gap-3 rounded-full border border-[var(--invitation-gold)]/25 bg-[#fffaf0]/55 px-4 py-3 text-sm text-amber-950/80">
             <span className="min-w-0 truncate">{iban}</span>
-            <Button type="button" variant="outline" size="sm" onClick={() => copy(iban, "IBAN")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 rounded-full text-[var(--invitation-gold)] hover:bg-[var(--invitation-gold)]/10"
+              onClick={() => copy(iban, "IBAN")}
+            >
               <Copy className="size-4" />
             </Button>
           </div>
         )}
         {wave && (
-          <div className="flex items-center justify-between gap-3 rounded-lg bg-[var(--invitation-secondary)]/70 p-3 text-sm">
+          <div className="flex items-center justify-between gap-3 rounded-full border border-[var(--invitation-gold)]/25 bg-[#fffaf0]/55 px-4 py-3 text-sm text-amber-950/80">
             <span className="min-w-0 truncate">Wave: {wave}</span>
-            <Button type="button" variant="outline" size="sm" onClick={() => copy(wave, "Wave")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 rounded-full text-[var(--invitation-gold)] hover:bg-[var(--invitation-gold)]/10"
+              onClick={() => copy(wave, "Wave")}
+            >
               <Copy className="size-4" />
             </Button>
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

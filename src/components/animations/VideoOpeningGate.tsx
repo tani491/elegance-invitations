@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Play } from "lucide-react";
+import { Heart } from "lucide-react";
 
 interface VideoOpeningGateProps {
   videoSrc?: string | null;
@@ -15,7 +15,7 @@ interface VideoOpeningGateProps {
   children: ReactNode;
 }
 
-const OPENING_TIMEOUT_MS = 4_800;
+const ease = [0.16, 1, 0.3, 1] as const;
 
 export function VideoOpeningGate({
   videoSrc,
@@ -27,152 +27,139 @@ export function VideoOpeningGate({
   onOpened,
   children,
 }: VideoOpeningGateProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isRevealed, setIsRevealed] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
   const [isUnmounted, setIsUnmounted] = useState(false);
-  const [hasVideoLoaded, setHasVideoLoaded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedRef = useRef(false);
-  const finishedRef = useRef(false);
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (unmountTimeoutRef.current) clearTimeout(unmountTimeoutRef.current);
     };
   }, []);
 
-  function finishOpening() {
-    if (finishedRef.current) return;
-    finishedRef.current = true;
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setIsRevealed(true);
-    onOpened?.();
-    unmountTimeoutRef.current = setTimeout(() => setIsUnmounted(true), 1_050);
-    setTimeout(() => {
-      document.getElementById("invitation-content")?.scrollIntoView({ block: "start", behavior: "smooth" });
-    }, 80);
-  }
-
-  function handleVideoProgress() {
-    const video = videoRef.current;
-    if (!video || !Number.isFinite(video.duration)) return;
-    if (video.duration > 1 && video.currentTime >= video.duration - 0.8) {
-      finishOpening();
-    }
-  }
-
-  async function handleStart() {
+  function handleStart() {
     if (startedRef.current) return;
     startedRef.current = true;
-    setIsPlaying(true);
+    setIsOpening(true);
+    onOpened?.();
 
     if (audioRef.current) {
       audioRef.current.volume = 0.42;
       audioRef.current.play().catch(() => undefined);
     }
 
-    if (!videoSrc || !videoRef.current) {
-      timeoutRef.current = setTimeout(finishOpening, 900);
-      return;
-    }
-
-    timeoutRef.current = setTimeout(finishOpening, OPENING_TIMEOUT_MS);
-
-    try {
-      videoRef.current.currentTime = 0;
-      await videoRef.current.play();
-    } catch {
-      finishOpening();
-    }
+    unmountTimeoutRef.current = setTimeout(() => setIsUnmounted(true), 1_350);
   }
 
   return (
     <div className="relative min-h-screen w-full bg-[#FAF8F5]">
+      <main id="invitation-content" className="relative z-0 min-h-screen">
+        {children}
+      </main>
+
       <AnimatePresence>
         {!isUnmounted && (
           <motion.div
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#110d0a] transition-all duration-1000 ease-out ${
-              isRevealed ? "pointer-events-none opacity-0" : "opacity-100"
+            animate={isOpening ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 1, ease: "easeInOut", delay: isOpening ? 0.35 : 0 }}
+            className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#efe4d0] ${
+              isOpening ? "pointer-events-none" : ""
             }`}
             onClick={handleStart}
             onTouchStart={handleStart}
           >
-            {fallbackImage && <img src={fallbackImage} alt="" className="absolute inset-0 size-full object-cover opacity-45 blur-sm scale-105" />}
+            <div className="absolute inset-0 bg-[#FAF8F5]" />
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 opacity-70"
               style={{
-                background: fallbackGradient ?? "radial-gradient(circle at 50% 28%, rgba(251, 191, 36, .20), transparent 18rem), linear-gradient(160deg, #140f0d, #392018 52%, #0d0b09)",
+                backgroundImage:
+                  "linear-gradient(90deg, rgba(128, 92, 40, .055) 1px, transparent 1px), linear-gradient(0deg, rgba(128, 92, 40, .04) 1px, transparent 1px), repeating-linear-gradient(110deg, rgba(255,255,255,.42) 0 1px, transparent 1px 9px)",
+                backgroundSize: "44px 44px, 44px 44px, 100% 100%",
               }}
             />
-            {videoSrc ? (
-              <video
-                ref={videoRef}
-                src={videoSrc}
-                poster={fallbackImage}
-                playsInline
-                muted
-                preload="auto"
-                onLoadedData={() => setHasVideoLoaded(true)}
-                onTimeUpdate={handleVideoProgress}
-                onEnded={finishOpening}
-                className={`relative z-0 h-full w-full object-cover transition-opacity duration-700 ${
-                  hasVideoLoaded ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,.20),transparent_18rem)]" />
+            {fallbackImage && (
+              <img src={fallbackImage} alt="" className="absolute inset-0 size-full object-cover opacity-[0.13] mix-blend-multiply saturate-0" />
             )}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-black/20" />
+            {videoSrc && (
+              <video src={videoSrc} muted playsInline preload="metadata" className="absolute inset-0 size-full object-cover opacity-[0.08] mix-blend-multiply" />
+            )}
+            <div
+              className="absolute inset-0 opacity-55"
+              style={{
+                background:
+                  fallbackGradient ??
+                  "linear-gradient(135deg, rgba(255,255,255,.72), rgba(232,211,169,.52) 48%, rgba(166,114,50,.18))",
+              }}
+            />
 
             {ambientAudioSrc && <audio ref={audioRef} src={ambientAudioSrc} preload="auto" loop />}
 
-            <div className={`pointer-events-none absolute inset-x-6 top-16 text-center text-white transition-opacity duration-500 ${isPlaying ? "opacity-0" : "opacity-100"}`}>
-              <div className="mx-auto flex size-20 items-center justify-center rounded-full border border-amber-300/40 bg-white/10 font-script text-4xl text-amber-200 shadow-[0_0_45px_rgba(251,191,36,.25)] backdrop-blur-md">
-                {monogram}
-              </div>
-              <p className="mt-5 font-serif text-xs uppercase tracking-[0.24em] text-amber-100/85">{title}</p>
-            </div>
-
-            {!isPlaying && (
-              <motion.button
-                type="button"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.45 }}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleStart();
-                }}
-                className="absolute bottom-16 left-1/2 flex -translate-x-1/2 animate-pulse items-center gap-3 rounded-full border border-amber-300/40 bg-white/10 px-6 py-3 font-serif text-xs uppercase tracking-[0.22em] text-amber-50 shadow-[0_0_45px_rgba(251,191,36,.18)] backdrop-blur-md transition-opacity duration-500 hover:bg-white/20"
+            <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center px-6 py-12 text-center">
+              <motion.div
+                className="mb-8 space-y-3"
+                animate={isOpening ? { opacity: 0, y: -12 } : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease }}
               >
-                <span className="relative flex size-8 items-center justify-center rounded-full bg-amber-200/15">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-amber-200/20" />
-                  <Play className="relative size-4 fill-current" />
-                </span>
-                Ouvrir l&apos;invitation
-              </motion.button>
-            )}
+                <p className="font-serif text-3xl italic tracking-wide text-amber-950 md:text-5xl">{title}</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-amber-800/75">Webgency Invitations</p>
+              </motion.div>
+
+              <div className="relative aspect-[1.42/1] w-full max-w-[760px] [perspective:1400px]">
+                <div className="absolute inset-x-[5%] bottom-[10%] h-[58%] bg-[#ead8b8] shadow-[0_34px_80px_rgba(83,54,20,.18)]" />
+                <div className="absolute inset-x-[5%] bottom-[10%] h-[58%] border border-amber-800/20 bg-[#f7ead2]" />
+                <div
+                  className="absolute inset-x-[5%] bottom-[10%] h-[58%] bg-[#ead7b4]"
+                  style={{ clipPath: "polygon(0 0, 50% 58%, 100% 0, 100% 100%, 0 100%)" }}
+                />
+                <motion.div
+                  className="absolute inset-x-[5%] top-[10%] h-[48%] origin-bottom border border-amber-800/15 bg-[#f3e6ce] shadow-[0_24px_50px_rgba(83,54,20,.12)]"
+                  style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)", transformStyle: "preserve-3d" }}
+                  animate={isOpening ? { rotateX: -132, y: -22, opacity: 0.72 } : { rotateX: 0, y: 0, opacity: 1 }}
+                  transition={{ duration: 1.05, ease }}
+                />
+                <motion.div
+                  className="absolute bottom-[10%] left-[5%] h-[58%] w-[45%] origin-left border border-amber-800/10 bg-[#f0dfc1]"
+                  style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)", transformStyle: "preserve-3d" }}
+                  animate={isOpening ? { rotateY: 58, x: -28, opacity: 0.76 } : { rotateY: 0, x: 0, opacity: 1 }}
+                  transition={{ duration: 1.05, ease, delay: 0.04 }}
+                />
+                <motion.div
+                  className="absolute bottom-[10%] right-[5%] h-[58%] w-[45%] origin-right border border-amber-800/10 bg-[#e7d1aa]"
+                  style={{ clipPath: "polygon(100% 0, 100% 100%, 0 50%)", transformStyle: "preserve-3d" }}
+                  animate={isOpening ? { rotateY: -58, x: 28, opacity: 0.76 } : { rotateY: 0, x: 0, opacity: 1 }}
+                  transition={{ duration: 1.05, ease, delay: 0.04 }}
+                />
+                <div className="absolute inset-x-[10%] top-[30%] h-px bg-gradient-to-r from-transparent via-amber-800/25 to-transparent" />
+                <div className="absolute inset-y-[20%] left-1/2 w-px bg-gradient-to-b from-transparent via-amber-800/20 to-transparent" />
+
+                <motion.button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleStart();
+                  }}
+                  className="group absolute left-1/2 top-[53%] grid size-32 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-[#f9e7a7]/60 bg-[radial-gradient(circle_at_32%_28%,#fff4bd,#d5a846_42%,#9b6a1f_100%)] text-amber-950 shadow-[0_22px_55px_rgba(79,50,16,.26)] ring-8 ring-amber-200/25 transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-8 focus-visible:ring-amber-600/25"
+                  animate={isOpening ? { scale: 1.22, opacity: 0, filter: "blur(12px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
+                  transition={{ duration: 0.75, ease }}
+                  whileTap={{ scale: 0.96 }}
+                  aria-label="Ouvrir l'invitation"
+                >
+                  <span className="absolute inset-3 rounded-full border border-amber-50/45" />
+                  <span className="absolute inset-5 rounded-full border border-amber-950/10" />
+                  <span className="relative font-serif text-4xl italic tracking-wide">
+                    {monogram || <Heart className="mx-auto size-9" />}
+                  </span>
+                  <span className="sr-only">Ouvrir le faire-part</span>
+                </motion.button>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <main
-        id="invitation-content"
-        className={`transition-all duration-1000 ease-out ${
-          isRevealed ? "animate-in fade-in slide-in-from-bottom-6 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
-        }`}
-      >
-        {children}
-      </main>
     </div>
   );
 }

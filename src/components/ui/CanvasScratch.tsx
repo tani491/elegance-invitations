@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function CanvasScratch({
   children,
@@ -9,6 +9,7 @@ export function CanvasScratch({
   children: React.ReactNode;
   className?: string;
 }) {
+  const [isCleared, setIsCleared] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
 
@@ -26,9 +27,9 @@ export function CanvasScratch({
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
     const gradient = context.createLinearGradient(0, 0, bounds.width, bounds.height);
-    gradient.addColorStop(0, "#fff1b8");
-    gradient.addColorStop(0.45, "#c89731");
-    gradient.addColorStop(1, "#7b5317");
+    gradient.addColorStop(0, "#fff6c7");
+    gradient.addColorStop(0.45, "#d5a846");
+    gradient.addColorStop(1, "#9b6a1f");
     context.fillStyle = gradient;
     context.fillRect(0, 0, bounds.width, bounds.height);
     context.fillStyle = "rgba(255,255,255,.35)";
@@ -40,7 +41,7 @@ export function CanvasScratch({
   function scratch(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
-    if (!canvas || !context || !drawingRef.current) return;
+    if (!canvas || !context || !drawingRef.current || isCleared) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -56,9 +57,10 @@ export function CanvasScratch({
       <div className="grid size-full place-items-center">{children}</div>
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 size-full touch-none cursor-grab"
+        className={`absolute inset-0 size-full touch-none cursor-grab transition-opacity duration-700 ease-out ${isCleared ? "pointer-events-none opacity-0" : "opacity-100"}`}
         onPointerDown={(event) => {
           drawingRef.current = true;
+          setIsCleared(true);
           event.currentTarget.setPointerCapture(event.pointerId);
           scratch(event);
         }}

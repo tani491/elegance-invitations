@@ -30,39 +30,53 @@ END:VEVENT
 END:VCALENDAR`)}`;
 
   return (
-    <div className="rounded-lg border border-[var(--invitation-gold)]/30 bg-white/80 p-5 shadow-lg">
+    <section className="text-center">
       <div className="text-center">
-        <p className="text-xs uppercase tracking-[0.22em] text-stone-500">Save the date</p>
-        <h2 className="mt-2 font-serif text-3xl text-[var(--invitation-primary)]">Grattez la date</h2>
+        <p className="text-xs uppercase tracking-[0.25em] text-amber-700/80">Save the date</p>
+        <h2 className="mt-3 font-serif text-2xl italic tracking-wider text-amber-950 md:text-3xl">Grattez la date</h2>
       </div>
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="mx-auto mt-5 h-px max-w-xs bg-gradient-to-r from-transparent via-[var(--invitation-gold)]/45 to-transparent" />
+      <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5">
         {[
           { label: "Jour", value: parts.day },
           { label: "Mois", value: parts.month },
           { label: "Annee", value: parts.year },
         ].map((item) => (
-          <CanvasScratch key={item.label} className="aspect-[4/5] border border-[#d7bd82]/50 bg-[#fffaf0]">
-            <div className="px-2 text-center">
-              <span className="block text-[10px] uppercase tracking-[0.16em] text-stone-500">{item.label}</span>
-              <strong className="mt-2 block font-serif text-2xl capitalize text-stone-950 md:text-3xl">{item.value}</strong>
+          <CanvasScratch
+            key={item.label}
+            className="aspect-square rounded-full border border-[var(--invitation-gold)]/45 bg-[#fffaf0]/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,.65),0_16px_38px_rgba(120,82,26,.08)]"
+          >
+            <div className="px-3 text-center">
+              <span className="block text-[9px] uppercase tracking-[0.18em] text-amber-800/65">{item.label}</span>
+              <strong className="mt-2 block break-words font-serif text-lg capitalize leading-tight text-amber-950 sm:text-2xl md:text-3xl">
+                {item.value}
+              </strong>
             </div>
           </CanvasScratch>
         ))}
       </div>
-      <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <Button asChild variant="outline">
+      <div className="mt-7 grid gap-2 sm:grid-cols-2">
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-full border-[var(--invitation-gold)]/35 bg-[#FAF8F5]/60 text-xs uppercase tracking-[0.18em] text-amber-950 shadow-none hover:bg-[var(--invitation-gold)]/10"
+        >
           <a href={googleCalendarUrl(date, title)} target="_blank" rel="noreferrer">
             <CalendarPlus className="size-4" />
             Google Agenda
           </a>
         </Button>
-        <Button asChild variant="outline">
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-full border-[var(--invitation-gold)]/35 bg-[#FAF8F5]/60 text-xs uppercase tracking-[0.18em] text-amber-950 shadow-none hover:bg-[var(--invitation-gold)]/10"
+        >
           <a download="elegance-invitation.ics" href={icsHref}>
             <CalendarPlus className="size-4" />
             Apple Calendar
           </a>
         </Button>
       </div>
-    </div>
+    </section>
   );
 }
