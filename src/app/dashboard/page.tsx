@@ -391,7 +391,7 @@ export default function DashboardPage() {
             </Card>
             <Card className="card-luxury">
               <CardHeader><CardTitle>Pass VIP & QR codes</CardTitle></CardHeader>
-              <CardContent><GuestTable guests={guests} origin={origin} eventSlug={event.slug} /></CardContent>
+              <CardContent><GuestTable guests={guests} origin={origin} /></CardContent>
             </Card>
           </TabsContent>
 

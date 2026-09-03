@@ -91,7 +91,7 @@ export function VideoOpeningGate({
   }
 
   return (
-    <div className="min-h-[100svh] bg-[#19110d] md:px-6">
+    <div className="min-h-[100svh] bg-[#f5efe7] md:px-6">
       <main
         id="invitation-content"
         className={`mx-auto min-h-[100svh] w-full max-w-[440px] transition-all duration-1000 ease-out ${
@@ -109,12 +109,20 @@ export function VideoOpeningGate({
             animate={isRevealed ? { opacity: 0 } : { opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className={`fixed inset-0 z-50 min-h-[100svh] overflow-hidden bg-[#110d0a] ${
+            className={`fixed inset-0 z-50 min-h-[100svh] overflow-hidden bg-[#2a2119] ${
               isRevealed ? "pointer-events-none opacity-0" : "opacity-100"
             }`}
             onClick={() => void handleStart()}
             onTouchStart={() => void handleStart()}
           >
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  fallbackGradient ??
+                  "linear-gradient(145deg, #5c1d24 0%, #b8894d 52%, #fff8ed 100%)",
+              }}
+            />
             {fallbackImage && (
               <img
                 src={fallbackImage}
@@ -122,16 +130,6 @@ export function VideoOpeningGate({
                 className={`absolute inset-0 size-full object-cover transition-opacity duration-700 ${
                   hasVideoLoaded && videoSrc ? "opacity-0" : "opacity-100"
                 }`}
-              />
-            )}
-            {!fallbackImage && !videoSrc && (
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    fallbackGradient ??
-                    "linear-gradient(145deg, #251612 0%, #7a4f1f 52%, #f5e8cf 100%)",
-                }}
               />
             )}
             {videoSrc && (
