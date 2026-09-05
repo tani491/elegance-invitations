@@ -49,7 +49,7 @@ export default function RootLayout({
         style={{
           "--font-cormorant": "Georgia, 'Times New Roman', serif",
           "--font-jakarta": "Arial, Helvetica, sans-serif",
-          "--font-great-vibes": "Georgia, 'Times New Roman', serif",
+          "--font-great-vibes": "'Segoe Script', 'Snell Roundhand', 'Brush Script MT', Georgia, serif",
         } as CSSProperties}
       >
         <ThemeProvider
