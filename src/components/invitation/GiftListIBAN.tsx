@@ -19,13 +19,13 @@ export function GiftListIBAN({ iban, wave }: { iban?: string | null; wave?: stri
           <Gift className="size-5" />
         </span>
         <div>
-          <p className="font-serif text-xs font-semibold uppercase tracking-[0.25em] text-[var(--invitation-gold)] drop-shadow-md">Cadeau</p>
-          <h2 className="mt-4 font-serif text-2xl italic tracking-wide text-[#FFFDF9] drop-shadow-md">Cadeau des mariés</h2>
+          <p className="font-serif text-xs font-semibold uppercase tracking-[0.25em] text-[var(--invitation-gold)]">Cadeau</p>
+          <h2 className="mt-4 font-serif text-2xl italic tracking-wide text-[var(--invitation-sheet-text)]">Cadeau des mariés</h2>
         </div>
       </div>
       <div className="mx-auto grid max-w-xs gap-3">
         {iban && (
-          <div className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-4 py-3 font-serif text-sm text-[#FFFDF9]/80 shadow-[0_12px_30px_rgba(0,0,0,.16)] backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--invitation-sheet-border)] bg-white/60 px-4 py-3 font-serif text-sm text-[var(--invitation-sheet-muted)] shadow-[0_12px_30px_rgba(0,0,0,.1)]">
             <span className="min-w-0 truncate">{iban}</span>
             <Button
               type="button"
@@ -39,7 +39,7 @@ export function GiftListIBAN({ iban, wave }: { iban?: string | null; wave?: stri
           </div>
         )}
         {wave && (
-          <div className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-4 py-3 font-serif text-sm text-[#FFFDF9]/80 shadow-[0_12px_30px_rgba(0,0,0,.16)] backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--invitation-sheet-border)] bg-white/60 px-4 py-3 font-serif text-sm text-[var(--invitation-sheet-muted)] shadow-[0_12px_30px_rgba(0,0,0,.1)]">
             <span className="min-w-0 truncate">Wave: {wave}</span>
             <Button
               type="button"

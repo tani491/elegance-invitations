@@ -31,6 +31,7 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     id: event.id,
     slug: event.slug,
     name: event.name,
+    organizerName: event.organizerName,
     organizerPhone: event.organizerPhone,
     planType,
     brideName: event.brideName,

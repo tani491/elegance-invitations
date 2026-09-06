@@ -30,10 +30,10 @@ END:VEVENT
 END:VCALENDAR`)}`;
 
   return (
-    <section className="text-center">
+    <div className="text-center">
       <div className="text-center">
-        <p className="text-xs uppercase tracking-[0.25em] text-amber-700/80">Save the date</p>
-        <h2 className="mt-3 font-serif text-2xl italic tracking-wider text-amber-950 md:text-3xl">Grattez pour révéler la date</h2>
+        <p className="font-serif text-xs font-semibold uppercase tracking-[0.25em] text-[var(--invitation-gold)]">La date</p>
+        <h2 className="mt-3 font-serif text-2xl italic tracking-wider text-[var(--invitation-sheet-text)] md:text-3xl">Grattez pour révéler</h2>
       </div>
       <div className="mx-auto mt-5 h-px max-w-xs bg-gradient-to-r from-transparent via-[var(--invitation-gold)]/45 to-transparent" />
       <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5">
@@ -44,11 +44,11 @@ END:VCALENDAR`)}`;
         ].map((item) => (
           <CanvasScratch
             key={item.label}
-            className="aspect-square rounded-full border border-[var(--invitation-gold)]/45 bg-[#fffaf0]/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,.65),0_16px_38px_rgba(120,82,26,.08)]"
+            className="aspect-[3/4] rounded-t-full rounded-b-[28px] border border-[color:var(--invitation-sheet-border)] bg-white/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,.65),0_16px_38px_rgba(0,0,0,.1)]"
           >
             <div className="px-3 text-center">
-              <span className="block text-[9px] uppercase tracking-[0.18em] text-amber-800/65">{item.label}</span>
-              <strong className="mt-2 block break-words font-serif text-lg capitalize leading-tight text-amber-950 sm:text-2xl md:text-3xl">
+              <span className="block font-serif text-[9px] uppercase tracking-[0.18em] text-[var(--invitation-sheet-muted)]">{item.label}</span>
+              <strong className="mt-2 block break-words font-serif text-lg capitalize leading-tight text-[var(--invitation-sheet-text)] sm:text-2xl md:text-3xl">
                 {item.value}
               </strong>
             </div>
@@ -59,7 +59,7 @@ END:VCALENDAR`)}`;
         <Button
           asChild
           variant="outline"
-          className="rounded-full border-[var(--invitation-gold)]/35 bg-[#FAF8F5]/60 text-xs uppercase tracking-[0.18em] text-amber-950 shadow-none hover:bg-[var(--invitation-gold)]/10"
+          className="rounded-full border-[color:var(--invitation-sheet-border)] bg-white/60 font-serif text-xs uppercase tracking-[0.18em] text-[var(--invitation-sheet-text)] shadow-none hover:bg-white/80"
         >
           <a href={googleCalendarUrl(date, title)} target="_blank" rel="noreferrer">
             <CalendarPlus className="size-4" />
@@ -69,14 +69,14 @@ END:VCALENDAR`)}`;
         <Button
           asChild
           variant="outline"
-          className="rounded-full border-[var(--invitation-gold)]/35 bg-[#FAF8F5]/60 text-xs uppercase tracking-[0.18em] text-amber-950 shadow-none hover:bg-[var(--invitation-gold)]/10"
+          className="rounded-full border-[color:var(--invitation-sheet-border)] bg-white/60 font-serif text-xs uppercase tracking-[0.18em] text-[var(--invitation-sheet-text)] shadow-none hover:bg-white/80"
         >
           <a download="elegance-invitation.ics" href={icsHref}>
             <CalendarPlus className="size-4" />
-            Apple Calendar
+            Apple / iPhone
           </a>
         </Button>
       </div>
-    </section>
+    </div>
   );
 }

@@ -2,12 +2,13 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, CheckCircle, Download, Flower2, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
+import { ArrowDown, CheckCircle, Download, Flower2, MapPin, MessageCircle, Phone, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { VideoOpeningGate } from "@/components/animations/VideoOpeningGate";
 import { DressCodeSection } from "@/components/invitation/DressCodeSection";
 import { GiftListIBAN } from "@/components/invitation/GiftListIBAN";
 import { TimelineSection } from "@/components/invitation/TimelineSection";
+import { TripleScratchDate } from "@/components/invitation/TripleScratchDate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,14 +21,13 @@ type VideoTheme = PublicEventPayload["theme"] & {
   customVideoUrl?: string | null;
 };
 
-const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 const ACTION_BUTTON_CLASS =
   "border-[color:var(--invitation-gold-line)] bg-[image:var(--invitation-button-bg)] text-[#FFFDF9] shadow-[0_16px_40px_rgba(0,0,0,.24)] hover:brightness-110";
 const OUTLINE_BUTTON_CLASS =
-  "border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] text-[#FFFDF9] shadow-[0_12px_30px_rgba(0,0,0,.18)] hover:bg-[color:var(--invitation-chip)]";
+  "border-[color:var(--invitation-sheet-border)] bg-white/55 text-[var(--invitation-sheet-text)] shadow-[0_12px_30px_rgba(0,0,0,.12)] hover:bg-white/75";
 const FIELD_CLASS =
-  "h-12 rounded-full border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-5 font-serif text-base text-[#FFFDF9] placeholder:text-[#FFFDF9]/55 focus-visible:ring-[var(--invitation-gold)]";
-const FIELD_LABEL_CLASS = "font-serif text-[11px] uppercase tracking-[0.22em] text-[var(--invitation-gold)] drop-shadow-md";
+  "h-12 rounded-2xl border-[color:var(--invitation-sheet-border)] bg-white/70 px-5 font-serif text-base text-[var(--invitation-sheet-text)] placeholder:text-[var(--invitation-sheet-muted)] focus-visible:ring-[var(--invitation-gold)]";
+const FIELD_LABEL_CLASS = "font-serif text-[11px] uppercase tracking-[0.22em] text-[var(--invitation-sheet-muted)]";
 
 function countdownParts(date: string | null) {
   if (!date) return { jours: 0, heures: 0, minutes: 0, secondes: 0 };
@@ -40,27 +40,15 @@ function countdownParts(date: string | null) {
   };
 }
 
-function calendarCells(date: string | null) {
-  const current = date ? new Date(date) : new Date();
-  const year = current.getFullYear();
-  const month = current.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const mondayStartIndex = (new Date(year, month, 1).getDay() + 6) % 7;
-  const cells: Array<number | null> = Array.from({ length: mondayStartIndex }, () => null);
-
-  for (let day = 1; day <= daysInMonth; day += 1) cells.push(day);
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  return {
-    cells,
-    monthLabel: current.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
-    weddingDay: date ? current.getDate() : null,
-  };
-}
-
 function openingVideoSource(theme: PublicEventPayload["theme"]) {
   const videoTheme = theme as VideoTheme;
   return videoTheme.videoUrl ?? videoTheme.customVideoUrl ?? theme.openingVideoUrl ?? theme.demoVideoUrl ?? null;
+}
+
+function buildWhatsAppHref(phone: string | null | undefined, text: string) {
+  if (!phone) return null;
+  const normalized = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
+  return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(text)}` : null;
 }
 
 function RoyalDivider({ className = "" }: { className?: string }) {
@@ -76,8 +64,8 @@ function RoyalDivider({ className = "" }: { className?: string }) {
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="text-center">
-      <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[var(--invitation-gold)] drop-shadow-md">{eyebrow}</p>
-      <h2 className="mt-4 font-serif text-3xl font-light italic leading-tight text-[#FFFDF9] drop-shadow-md">{title}</h2>
+      <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[var(--invitation-gold)]">{eyebrow}</p>
+      <h2 className="mt-4 font-serif text-3xl font-light italic leading-tight text-[var(--invitation-sheet-text)]">{title}</h2>
     </div>
   );
 }
@@ -94,79 +82,20 @@ function StorySection({
   return (
     <motion.section
       id={id}
-      className={`relative px-6 py-16 text-[#FFFDF9] drop-shadow-md ${className}`}
+      className="relative flex min-h-[82dvh] snap-start items-center px-3 py-5"
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.85, ease: "easeOut" }}
+      viewport={{ once: true, amount: 0.22, margin: "-70px" }}
+      transition={{ duration: 0.7, ease: "easeOut" }}
     >
-      {children}
-    </motion.section>
-  );
-}
-
-function SaveDateCalendar({ eventDate, eventName }: { eventDate: string | null; eventName: string }) {
-  if (!eventDate) {
-    return (
-      <div className="mx-auto mt-9 max-w-xs border-y border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-5 py-8 text-center font-serif text-lg italic text-[#FFFDF9] backdrop-blur-md">
-        Date à confirmer
-      </div>
-    );
-  }
-
-  const calendar = calendarCells(eventDate);
-  const calendarInstant = new Date(eventDate).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const calendarHref = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${calendarInstant}/${calendarInstant}`;
-
-  return (
-    <div className="mx-auto mt-9 max-w-xs">
-      <div className="border-y border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-5 py-6 shadow-[0_18px_45px_rgba(0,0,0,.18)] backdrop-blur-md">
-        <div className="flex items-center justify-between gap-4">
-          <CalendarDays className="size-5 text-[var(--invitation-gold)]" />
-          <p className="text-right font-serif text-xs font-semibold uppercase tracking-[0.24em] text-[#FFFDF9]/75">
-            {calendar.monthLabel}
-          </p>
-        </div>
-        <div className="mt-6 grid grid-cols-7 gap-y-3 text-center">
-          {WEEKDAYS.map((day) => (
-            <span key={day} className="font-serif text-[10px] uppercase tracking-[0.2em] text-[#FFFDF9]/55">
-              {day}
-            </span>
-          ))}
-          {calendar.cells.map((day, index) => {
-            const isWeddingDay = day !== null && day === calendar.weddingDay;
-            return (
-              <span key={`${day ?? "empty"}-${index}`} className="grid h-8 place-items-center font-serif text-sm text-[#FFFDF9]/72">
-                {day && (
-                  <span
-                    className={
-                      isWeddingDay
-                        ? "grid size-8 place-items-center rounded-full border border-[color:var(--invitation-gold-line)] bg-[color:var(--invitation-chip-strong)] text-[#FFFDF9] drop-shadow-md"
-                        : ""
-                    }
-                  >
-                    {day}
-                  </span>
-                )}
-              </span>
-            );
-          })}
-        </div>
-      </div>
-      <Button
-        asChild
-        variant="outline"
-        className={`mx-auto mt-6 flex h-11 w-fit rounded-full px-5 font-serif text-xs uppercase tracking-[0.2em] ${OUTLINE_BUTTON_CLASS}`}
+      <div
+        className={`relative w-full overflow-hidden rounded-[30px] border border-[color:var(--invitation-sheet-border)] bg-[color:var(--invitation-sheet-soft)] p-6 text-[var(--invitation-sheet-text)] shadow-[0_24px_70px_rgba(0,0,0,.24)] backdrop-blur-sm ${className}`}
       >
-        <a
-          href={calendarHref}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Ajouter à l&apos;agenda
-        </a>
-      </Button>
-    </div>
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--invitation-gold-line)] to-transparent" />
+        <div className="pointer-events-none absolute -top-16 left-1/2 h-32 w-48 -translate-x-1/2 rounded-full border border-[color:var(--invitation-sheet-border)] opacity-45" />
+        {children}
+      </div>
+    </motion.section>
   );
 }
 
@@ -177,10 +106,7 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
   const [done, setDone] = useState(false);
 
   const whatsappHref = useMemo(() => {
-    if (!event.organizerPhone) return null;
-    const phone = event.organizerPhone.replace(/[^\d+]/g, "").replace(/^\+/, "");
-    const text = encodeURIComponent(`Bonjour, je confirme ma réponse pour ${event.name}.`);
-    return `https://wa.me/${phone}?text=${text}`;
+    return buildWhatsAppHref(event.organizerPhone, `Bonjour, je confirme ma réponse pour ${event.name}.`);
   }, [event.name, event.organizerPhone]);
 
   async function submit() {
@@ -209,7 +135,7 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
     return (
       <div className="flex flex-col items-center py-6 text-center">
         <CheckCircle className="size-12 text-[var(--invitation-gold)]" />
-        <p className="mt-5 font-serif text-2xl italic leading-8 text-[#FFFDF9] drop-shadow-md">Merci, votre réponse est enregistrée.</p>
+        <p className="mt-5 font-serif text-2xl italic leading-8 text-[var(--invitation-sheet-text)]">Merci, votre réponse est enregistrée.</p>
         {whatsappHref && (
           <Button
             asChild
@@ -243,7 +169,7 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
           <SelectTrigger className={FIELD_CLASS}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="border-[color:var(--invitation-border)] bg-[color:var(--invitation-primary)] font-serif text-[#FFFDF9]">
+          <SelectContent className="border-[color:var(--invitation-sheet-border)] bg-[color:var(--invitation-sheet)] font-serif text-[var(--invitation-sheet-text)]">
             <SelectItem value="confirmed">Présent</SelectItem>
             <SelectItem value="declined">Absent</SelectItem>
           </SelectContent>
@@ -264,9 +190,69 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
         onClick={submit}
         className={`h-12 w-full rounded-full border font-serif text-xs uppercase tracking-[0.24em] ${ACTION_BUTTON_CLASS}`}
       >
-        Confirmer
+        <Send className="size-4" />
+        Envoyer ma réponse
       </Button>
     </div>
+  );
+}
+
+function VerseSection({ event }: { event: PublicEventPayload }) {
+  const quote = event.invitationQuote ?? "Deux familles, deux cœurs, une promesse placée sous le signe de l'amour.";
+
+  return (
+    <StorySection id="benediction" className="rounded-t-[120px] pt-12 text-center">
+      <div className="mx-auto mb-6 flex max-w-[240px] items-center justify-center gap-3 text-[var(--invitation-gold)]">
+        <span className="h-px flex-1 bg-[var(--invitation-gold-line)]" />
+        <Flower2 className="size-4" />
+        <span className="h-px flex-1 bg-[var(--invitation-gold-line)]" />
+      </div>
+      <SectionTitle eyebrow="Bénédiction" title="Avec nos familles" />
+      <blockquote
+        className="mx-auto mt-8 max-w-xs font-serif text-3xl italic leading-[1.25] text-[var(--invitation-sheet-text)]"
+        style={{ fontFamily: "var(--font-great-vibes)" }}
+      >
+        {quote}
+      </blockquote>
+      <p className="mx-auto mt-6 max-w-xs font-serif text-base leading-7 text-[var(--invitation-sheet-muted)]">
+        Que cette journée soit douce, lumineuse et entourée de ceux qui nous sont chers.
+      </p>
+    </StorySection>
+  );
+}
+
+function WhatsAppContactsSection({ event }: { event: PublicEventPayload }) {
+  const href = buildWhatsAppHref(event.organizerPhone, `Bonjour, j'ai une question au sujet de ${event.name}.`);
+  if (!href) return null;
+
+  return (
+    <StorySection id="contacts" className="text-center">
+      <SectionTitle eyebrow="Une question ?" title="Contacts WhatsApp" />
+      <div className="mt-8 rounded-[24px] border border-[color:var(--invitation-sheet-border)] bg-white/60 p-4 text-left shadow-[0_14px_34px_rgba(0,0,0,.1)]">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[color:var(--invitation-chip)] text-[var(--invitation-gold)]">
+            <Phone className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate font-serif text-xl italic text-[var(--invitation-sheet-text)]">
+              {event.organizerName ?? "Organisation"}
+            </p>
+            <p className="mt-1 font-serif text-[11px] uppercase tracking-[0.2em] text-[var(--invitation-sheet-muted)]">
+              Organisation
+            </p>
+          </div>
+        </div>
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[color:var(--invitation-sheet-border)] bg-[linear-gradient(135deg,#1f8f5a,var(--invitation-gold))] px-4 py-3 text-center font-serif text-xs uppercase tracking-[0.18em] text-white shadow-[0_14px_30px_rgba(31,143,90,.18)] transition hover:brightness-105"
+        >
+          <MessageCircle className="size-4" />
+          WhatsApp
+        </a>
+      </div>
+    </StorySection>
   );
 }
 
@@ -276,7 +262,7 @@ function WhatsAppCelebrationCTA({ url }: { url: string | null }) {
   return (
     <StorySection className="text-center">
       <SectionTitle eyebrow="Groupe WhatsApp" title="La célébration en direct" />
-      <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-[#FFFDF9]/78">
+      <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-[var(--invitation-sheet-muted)]">
         Les souvenirs, vidéos et messages des proches réunis dans un même salon.
       </p>
       <a
@@ -348,6 +334,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
   const eventDateLabel = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
     : "Date à confirmer";
+  const hasOrganizerContact = Boolean(buildWhatsAppHref(event.organizerPhone, ""));
   const invitationSurfaceStyle = useMemo(() => themeToCssVars(event.theme), [event.theme]);
 
   useEffect(() => {
@@ -374,7 +361,10 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
       surfaceStyle={invitationSurfaceStyle}
       onOpened={() => setIsOpened(true)}
     >
-      <div style={invitationSurfaceStyle} className="relative isolate mx-auto min-h-[100dvh] max-w-[440px] overflow-x-hidden bg-transparent text-[#FFFDF9] shadow-[0_0_80px_rgba(0,0,0,.35)]">
+      <div
+        style={invitationSurfaceStyle}
+        className="relative isolate mx-auto h-[100dvh] max-w-[440px] snap-y snap-proximity overflow-x-hidden overflow-y-auto scroll-smooth bg-transparent text-[#FFFDF9] shadow-[0_0_80px_rgba(0,0,0,.35)] [-webkit-overflow-scrolling:touch]"
+      >
         <div className="pointer-events-none fixed inset-y-0 left-1/2 z-0 w-full max-w-[440px] -translate-x-1/2 overflow-hidden">
           <div className="absolute left-1/2 top-20 h-[620px] w-[390px] -translate-x-1/2 rounded-t-full border border-[color:var(--invitation-border)]" />
           <div className="absolute left-1/2 top-28 h-[540px] w-[320px] -translate-x-1/2 rounded-t-full border border-[color:var(--invitation-gold-line)]" />
@@ -384,8 +374,8 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
         </div>
 
         <div className="relative z-10">
-          <section className="relative flex min-h-[100dvh] items-end overflow-hidden px-6 pb-14 pt-20 text-center">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/30" />
+          <section id="hero" className="relative flex min-h-[100dvh] snap-start items-end overflow-hidden px-5 pb-10 pt-20 text-center">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-black/30" />
 
             <motion.div
               className="relative z-10 mx-auto w-full"
@@ -394,32 +384,42 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               transition={{ duration: 1, ease: "easeOut" }}
             >
               <Sparkles className="mx-auto mb-6 size-7 text-[var(--invitation-gold)] drop-shadow-md" />
-              <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[#FFFDF9]/90 drop-shadow-md">Mariage</p>
+              <p className="font-serif text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--invitation-gold)] drop-shadow-md">
+                Avec la bénédiction de nos familles
+              </p>
               <h1
                 style={{ fontFamily: "var(--font-great-vibes)" }}
-                className="mt-6 text-6xl font-light italic leading-[0.95] tracking-wide text-[var(--invitation-gold)] drop-shadow-[0_3px_16px_rgba(0,0,0,0.55)]"
+                className="mt-6 text-6xl font-light italic leading-[0.95] tracking-wide text-[#FFFDF9] drop-shadow-[0_3px_18px_rgba(0,0,0,0.58)]"
               >
                 {names}
               </h1>
               <p className="mt-7 font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[#FFFDF9]/90 drop-shadow-md">{eventDateLabel}</p>
               <RoyalDivider className="mt-8" />
-              <div className="mx-auto mt-8 grid max-w-sm grid-cols-4">
-                {Object.entries(countdown).map(([label, value], index) => (
-                  <div key={label} className={index === 0 ? "px-2 text-center" : "border-l border-[color:var(--invitation-border)] px-2 text-center"}>
+              <div className="mx-auto mt-8 grid max-w-sm grid-cols-4 gap-2">
+                {Object.entries(countdown).map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border border-[color:var(--invitation-gold-line)] bg-black/30 px-2 py-3 text-center shadow-[0_10px_30px_rgba(0,0,0,.2)] backdrop-blur-md"
+                  >
                     <strong className="block font-serif text-3xl font-light italic text-[#FFFDF9] drop-shadow-md">{value}</strong>
                     <span className="mt-1 block text-[9px] uppercase tracking-[0.16em] text-[#FFFDF9]/70">{label}</span>
                   </div>
                 ))}
               </div>
+              <a
+                href="#date"
+                className="mx-auto mt-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-4 py-2 font-serif text-[10px] uppercase tracking-[0.22em] text-[#FFFDF9]/86 backdrop-blur-md transition hover:bg-black/35"
+              >
+                Passer
+                <ArrowDown className="size-3 animate-bounce text-[var(--invitation-gold)]" />
+              </a>
             </motion.div>
           </section>
 
-          <StorySection className="text-center">
-            <SectionTitle eyebrow="Save the date" title="Le jour précieux" />
-            <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-[#FFFDF9]/82">
-              {event.invitationQuote ?? "L'amour ne se regarde pas, il regarde ensemble dans la même direction."}
-            </p>
-            <SaveDateCalendar eventDate={event.eventDate} eventName={event.name} />
+          <VerseSection event={event} />
+
+          <StorySection id="date" className="rounded-t-[120px] pt-12 text-center">
+            <TripleScratchDate date={event.eventDate} title={event.name} />
           </StorySection>
 
           <RoyalDivider className="my-2" />
@@ -435,7 +435,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
           <StorySection className="text-center">
             <SectionTitle eyebrow="Notre histoire" title="Une promesse, deux familles" />
-            <p className="mx-auto mt-7 max-w-xs font-serif text-lg leading-[1.8] text-[#FFFDF9]/82">
+            <p className="mx-auto mt-7 max-w-xs font-serif text-lg leading-[1.8] text-[var(--invitation-sheet-muted)]">
               {event.coupleStory ?? "Nous avons hâte de célébrer cette journée avec vous."}
             </p>
             {editorialPhotos.length > 0 && (
@@ -481,9 +481,9 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               <MapPin className="size-5" />
             </span>
             <SectionTitle eyebrow="Lieu" title={event.venueName ?? "Lieu à définir"} />
-            {event.venueAddress && <p className="mx-auto mt-6 max-w-xs font-serif text-base leading-8 text-[#FFFDF9]/78">{event.venueAddress}</p>}
+            {event.venueAddress && <p className="mx-auto mt-6 max-w-xs font-serif text-base leading-8 text-[var(--invitation-sheet-muted)]">{event.venueAddress}</p>}
             {event.organizerPhone && (
-              <p className="mt-5 flex items-center justify-center gap-2 font-serif text-sm text-[#FFFDF9]/72">
+              <p className="mt-5 flex items-center justify-center gap-2 font-serif text-sm text-[var(--invitation-sheet-muted)]">
                 <Phone className="size-4 text-[var(--invitation-gold)]" />
                 {event.organizerPhone}
               </p>
@@ -501,11 +501,17 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
             )}
           </StorySection>
 
-          <RoyalDivider className="my-2" />
+          {hasOrganizerContact && (
+            <>
+              <RoyalDivider className="my-2" />
+              <WhatsAppContactsSection event={event} />
+              <RoyalDivider className="my-2" />
+            </>
+          )}
 
           <StorySection id="rsvp">
             <SectionTitle eyebrow="RSVP" title="Votre réponse" />
-            <p className="mx-auto mt-5 max-w-xs text-center font-serif text-lg italic leading-8 text-[#FFFDF9]/78">
+            <p className="mx-auto mt-5 max-w-xs text-center font-serif text-lg italic leading-8 text-[var(--invitation-sheet-muted)]">
               Merci de confirmer votre présence avec douceur.
             </p>
             <RSVPForm event={event} guestToken={guestToken} />

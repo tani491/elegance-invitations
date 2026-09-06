@@ -26,10 +26,14 @@ export function CanvasScratch({
     canvas.height = Math.floor(bounds.height * ratio);
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
+    const styles = getComputedStyle(canvas);
+    const gold = styles.getPropertyValue("--invitation-gold").trim() || "#D4AF37";
+    const accent = styles.getPropertyValue("--invitation-accent").trim() || "#C5A880";
+    const primary = styles.getPropertyValue("--invitation-primary").trim() || "#5C1D24";
     const gradient = context.createLinearGradient(0, 0, bounds.width, bounds.height);
-    gradient.addColorStop(0, "#fff6c7");
-    gradient.addColorStop(0.45, "#d5a846");
-    gradient.addColorStop(1, "#9b6a1f");
+    gradient.addColorStop(0, gold);
+    gradient.addColorStop(0.52, accent);
+    gradient.addColorStop(1, primary);
     context.fillStyle = gradient;
     context.fillRect(0, 0, bounds.width, bounds.height);
     context.fillStyle = "rgba(255,255,255,.35)";

@@ -68,6 +68,7 @@ export interface PublicEventPayload {
   id: string;
   slug: string;
   name: string;
+  organizerName: string | null;
   organizerPhone: string | null;
   planType: PlanType;
   brideName: string | null;
