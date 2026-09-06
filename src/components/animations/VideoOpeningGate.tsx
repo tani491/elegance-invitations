@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 interface VideoOpeningGateProps {
   videoSrc?: string | null;
+  backdropSrc?: string | null;
   ambientAudioSrc?: string | null;
   monogram?: string;
   title?: string;
@@ -20,6 +21,7 @@ const revealEase = [0.16, 1, 0.3, 1] as const;
 
 export function VideoOpeningGate({
   videoSrc,
+  backdropSrc,
   ambientAudioSrc,
   monogram = "E",
   title = "Invitation",
@@ -32,6 +34,8 @@ export function VideoOpeningGate({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
   const [isUnmounted, setIsUnmounted] = useState(false);
+  const [isBackdropVisible, setIsBackdropVisible] = useState(false);
+  const backgroundVideoRef = useRef<HTMLVideoElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const fallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +79,17 @@ export function VideoOpeningGate({
     }
   }
 
+  function handleBackgroundVideoEnded() {
+    const video = backgroundVideoRef.current;
+    if (!video) return;
+
+    video.pause();
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      video.currentTime = Math.max(video.duration - 0.05, 0);
+    }
+    setIsBackdropVisible(Boolean(backdropSrc));
+  }
+
   async function handleStart() {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -83,6 +98,13 @@ export function VideoOpeningGate({
     if (audioRef.current) {
       audioRef.current.volume = 0.42;
       audioRef.current.play().catch(() => undefined);
+    }
+
+    const backgroundVideo = backgroundVideoRef.current;
+    if (backgroundVideo) {
+      backgroundVideo.currentTime = 0;
+      backgroundVideo.play().catch(() => undefined);
+      setIsBackdropVisible(false);
     }
 
     if (!videoSrc || !videoRef.current) {
@@ -107,16 +129,26 @@ export function VideoOpeningGate({
     >
       <div aria-hidden="true" className="fixed inset-0 z-0 h-[100dvh] w-full overflow-hidden bg-[var(--invitation-primary)]">
         {videoSrc ? (
-          <video
-            src={videoSrc}
-            poster={fallbackImage}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            className="h-full w-full select-none object-cover pointer-events-none"
-          />
+          <>
+            <video
+              ref={backgroundVideoRef}
+              src={videoSrc}
+              poster={fallbackImage}
+              muted
+              playsInline
+              preload="auto"
+              onEnded={handleBackgroundVideoEnded}
+              className="h-full w-full select-none object-cover pointer-events-none"
+            />
+            {backdropSrc && (
+              <div
+                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${
+                  isBackdropVisible ? "opacity-100" : "opacity-0"
+                }`}
+                style={{ backgroundImage: `url("${backdropSrc}")` }}
+              />
+            )}
+          </>
         ) : (
           <div
             className="h-full w-full"

@@ -23,6 +23,7 @@ function normalizeAnimationType(value: string): OpeningAnimationType {
 
 export function serializePublicEvent(event: PublicEventRecord): PublicEventPayload {
   const theme = event.theme ? serializeTheme(event.theme) : getDefaultTheme(event.template);
+  const usesLiveTheme = Boolean(event.theme);
   const planType = normalizePlan(event.planType);
   const officialPhotoUrls = parseJsonArray<string>(event.officialPhotoUrls, []);
   const photos = [event.coverPhotoUrl, ...officialPhotoUrls].filter(Boolean).slice(0, photoLimitForPlan(planType)) as string[];
@@ -65,12 +66,12 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
       })),
     theme: {
       ...theme,
-      primaryColor: event.primaryColor ?? theme.primaryColor,
-      secondaryColor: event.secondaryColor ?? theme.secondaryColor,
-      accentColor: event.accentColor ?? theme.accentColor,
-      goldColor: event.goldColor ?? theme.goldColor,
+      primaryColor: usesLiveTheme ? theme.primaryColor : event.primaryColor ?? theme.primaryColor,
+      secondaryColor: usesLiveTheme ? theme.secondaryColor : event.secondaryColor ?? theme.secondaryColor,
+      accentColor: usesLiveTheme ? theme.accentColor : event.accentColor ?? theme.accentColor,
+      goldColor: usesLiveTheme ? theme.goldColor : event.goldColor ?? theme.goldColor,
       titleFont: event.titleFont ?? theme.titleFont,
-      animationType: normalizeAnimationType(event.animationType ?? theme.animationType),
+      animationType: usesLiveTheme ? theme.animationType : normalizeAnimationType(event.animationType ?? theme.animationType),
     },
   };
 }

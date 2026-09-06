@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Copy, ExternalLink, Film, KeyRound, Package, Palette, Phone, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Film, KeyRound, Package, Palette, Plus, Phone, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
-import type { ThemeConfig } from "@/types/database.types";
+import type { OpeningAnimationType, ScrollAnimationType, ThemeConfig } from "@/types/database.types";
 
 interface EventRow {
   id: string;
@@ -53,14 +53,46 @@ interface CreateClientResponse {
   };
 }
 
-const COLOR_FIELDS = [
-  ["primaryColor", "Primaire"],
-  ["secondaryColor", "Fond"],
-  ["accentColor", "Accent"],
-  ["goldColor", "Dore"],
+type ThemeModelForm = {
+  name: string;
+  category: string;
+  bgPrimary: string;
+  cardBg: string;
+  accentGold: string;
+  textColor: string;
+  scrollAnimation: ScrollAnimationType;
+  titleFont: string;
+  animationType: OpeningAnimationType;
+  backdropUrl: string;
+  isActive: boolean;
+};
+
+type ThemeColorField = "bgPrimary" | "cardBg" | "accentGold" | "textColor";
+
+const COLOR_FIELDS: { key: ThemeColorField; label: string; input: "color" | "text" }[] = [
+  { key: "bgPrimary", label: "Arriere-plan", input: "color" },
+  { key: "cardBg", label: "Cartes / feuillets", input: "text" },
+  { key: "accentGold", label: "Accent & or", input: "color" },
+  { key: "textColor", label: "Textes", input: "color" },
+] as const;
+
+const SCROLL_ANIMATION_OPTIONS: { value: ScrollAnimationType; label: string }[] = [
+  { value: "fade-up", label: "Fade-up" },
+  { value: "scale-in", label: "Scale-in" },
+  { value: "slide-stagger", label: "Slide stagger" },
+] as const;
+
+const OPENING_ANIMATION_OPTIONS: { value: OpeningAnimationType; label: string }[] = [
+  { value: "golden_palace_doors", label: "Portes royales" },
+  { value: "wax_seal_burst", label: "Sceau de cire" },
+  { value: "botanical_envelope", label: "Enveloppe botanique" },
+  { value: "velvet_curtains", label: "Rideaux de velours" },
+  { value: "silk_ribbon_untie", label: "Ruban de soie" },
+  { value: "ceremonial_walk", label: "Defile scenique" },
 ] as const;
 
 const THEME_VIDEO_BUCKET = "theme-videos";
+const NEW_THEME_UPLOAD_KEY = "__new_theme__";
 const MAX_THEME_VIDEO_SIZE = 50 * 1024 * 1024;
 const THEME_VIDEO_ACCEPT = "video/mp4,video/quicktime,video/webm,video/mov";
 const THEME_VIDEO_MIME_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/mov"]);
@@ -73,6 +105,36 @@ function sanitizeStorageFilename(filename: string) {
 function isSupportedThemeVideo(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase();
   return THEME_VIDEO_MIME_TYPES.has(file.type) || Boolean(extension && THEME_VIDEO_EXTENSIONS.has(extension));
+}
+
+function defaultThemeForm(): ThemeModelForm {
+  return {
+    name: "",
+    category: "Privilege",
+    bgPrimary: "#1B0F12",
+    cardBg: "rgba(255,255,255,0.85)",
+    accentGold: "#D4AF37",
+    textColor: "#1B0F12",
+    scrollAnimation: "fade-up",
+    titleFont: "Cormorant Garamond",
+    animationType: "golden_palace_doors",
+    backdropUrl: "",
+    isActive: true,
+  };
+}
+
+function themeColorValue(theme: ThemeConfig, key: ThemeColorField) {
+  if (key === "bgPrimary") return theme.bgPrimary ?? theme.primaryColor;
+  if (key === "cardBg") return theme.cardBg ?? theme.secondaryColor;
+  if (key === "accentGold") return theme.accentGold ?? theme.goldColor;
+  return theme.textColor ?? theme.primaryColor;
+}
+
+function themeColorUpdate(key: ThemeColorField, value: string): Partial<ThemeConfig> {
+  if (key === "bgPrimary") return { bgPrimary: value, primaryColor: value };
+  if (key === "cardBg") return { cardBg: value, secondaryColor: value };
+  if (key === "accentGold") return { accentGold: value, accentColor: value, goldColor: value };
+  return { textColor: value };
 }
 
 export default function AdminConsole() {
@@ -94,6 +156,9 @@ export default function AdminConsole() {
   const [uploadingTheme, setUploadingTheme] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
+  const [createThemeForm, setCreateThemeForm] = useState<ThemeModelForm>(() => defaultThemeForm());
+  const [createThemeVideo, setCreateThemeVideo] = useState<File | null>(null);
+  const [creatingTheme, setCreatingTheme] = useState(false);
 
   const stats = useMemo(() => {
     const active = events.filter((event) => event.isActive).length;
@@ -208,61 +273,128 @@ export default function AdminConsole() {
     await updateTheme(theme.slug, { name: nextName });
   }
 
-  async function uploadThemeVideo(theme: ThemeConfig, file: File) {
-    setUploadingTheme(theme.slug);
-    setUploadProgress((prev) => ({ ...prev, [theme.slug]: 1 }));
+  async function uploadThemeVideoFile(progressKey: string, file: File) {
+    setUploadingTheme(progressKey);
+    setUploadProgress((prev) => ({ ...prev, [progressKey]: 1 }));
 
     const progressTimer = window.setInterval(() => {
       setUploadProgress((prev) => {
-        const current = prev[theme.slug] ?? 1;
+        const current = prev[progressKey] ?? 1;
         if (current >= 90) return prev;
-        return { ...prev, [theme.slug]: Math.min(current + 7, 90) };
+        return { ...prev, [progressKey]: Math.min(current + 7, 90) };
       });
     }, 600);
 
     try {
       if (file.size > MAX_THEME_VIDEO_SIZE) {
         toast.error("Video trop volumineuse. Compressez-la avant l'upload (maximum 50 Mo).");
-        return;
+        return null;
       }
 
       if (!isSupportedThemeVideo(file)) {
         toast.error("Format video non autorise. Utilisez MP4, MOV/QuickTime ou WEBM.");
-        return;
+        return null;
+      }
+
+      const filePath = `${Date.now()}_${sanitizeStorageFilename(file.name)}`;
+      const signatureResponse = await fetch("/api/admin/themes/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filePath }),
+      });
+      const signatureJson = await signatureResponse.json();
+
+      if (!signatureResponse.ok || !signatureJson.success) {
+        toast.error(signatureJson.error ?? "Signature Supabase impossible.");
+        return null;
       }
 
       const supabase = createBrowserSupabaseClient();
-      const filePath = `${Date.now()}_${sanitizeStorageFilename(file.name)}`;
-      const { error } = await supabase.storage.from(THEME_VIDEO_BUCKET).upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true,
-      });
+      const { error } = await supabase.storage.from(THEME_VIDEO_BUCKET).uploadToSignedUrl(
+        signatureJson.data.path,
+        signatureJson.data.token,
+        file,
+        {
+          contentType: file.type || "video/mp4",
+          cacheControl: "3600",
+          upsert: true,
+        },
+      );
 
       if (error) {
         console.error("Erreur upload Supabase:", error);
         toast.error(error.message);
-        return;
+        return null;
       }
 
-      setUploadProgress((prev) => ({ ...prev, [theme.slug]: 100 }));
-      const { data } = supabase.storage.from(THEME_VIDEO_BUCKET).getPublicUrl(filePath);
-      const saved = await updateTheme(theme.slug, {
-        openingVideoUrl: data.publicUrl,
-        demoVideoUrl: data.publicUrl,
-      });
-      if (saved) toast.success("Video televersee.");
+      setUploadProgress((prev) => ({ ...prev, [progressKey]: 100 }));
+      const { data } = supabase.storage.from(THEME_VIDEO_BUCKET).getPublicUrl(signatureJson.data.path);
+      return data.publicUrl;
     } catch (error) {
       console.error("Erreur upload Supabase:", error);
       toast.error(error instanceof Error ? error.message : "Upload video impossible.");
+      return null;
     } finally {
       window.clearInterval(progressTimer);
       setUploadingTheme(null);
       setUploadProgress((prev) => {
         const next = { ...prev };
-        delete next[theme.slug];
+        delete next[progressKey];
         return next;
       });
     }
+  }
+
+  async function createTheme(event: React.FormEvent) {
+    event.preventDefault();
+    setCreatingTheme(true);
+
+    try {
+      const uploadedVideoUrl = createThemeVideo
+        ? await uploadThemeVideoFile(NEW_THEME_UPLOAD_KEY, createThemeVideo)
+        : null;
+
+      if (createThemeVideo && !uploadedVideoUrl) return;
+
+      const response = await fetch("/api/admin/themes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...createThemeForm,
+          backdropUrl: createThemeForm.backdropUrl.trim() || null,
+          openingVideoUrl: uploadedVideoUrl,
+          demoVideoUrl: uploadedVideoUrl,
+        }),
+      });
+      const json = await response.json();
+
+      if (!response.ok || !json.success) {
+        toast.error(json.error ?? "Creation du modele impossible.");
+        return;
+      }
+
+      setThemes((prev) => [json.data, ...prev]);
+      setCreateThemeForm(defaultThemeForm());
+      setCreateThemeVideo(null);
+      notifyThemeCatalogChanged();
+      toast.success("Modele ajoute.");
+    } catch (error) {
+      console.error("Theme create error:", error);
+      toast.error("Creation du modele impossible.");
+    } finally {
+      setCreatingTheme(false);
+    }
+  }
+
+  async function uploadThemeVideo(theme: ThemeConfig, file: File) {
+    const publicUrl = await uploadThemeVideoFile(theme.slug, file);
+    if (!publicUrl) return;
+
+    const saved = await updateTheme(theme.slug, {
+      openingVideoUrl: publicUrl,
+      demoVideoUrl: publicUrl,
+    });
+    if (saved) toast.success("Video televersee.");
   }
 
   async function deleteThemeVideo(theme: ThemeConfig) {
@@ -271,6 +403,40 @@ export default function AdminConsole() {
       demoVideoUrl: null,
     });
     toast.success("Video supprimee.");
+  }
+
+  async function deleteTheme(theme: ThemeConfig) {
+    const confirmed = window.confirm(`Supprimer le modele "${theme.name}" du catalogue ?`);
+    if (!confirmed) return;
+
+    setSavingTheme(theme.slug);
+    try {
+      const response = await fetch("/api/admin/themes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: theme.slug }),
+      });
+      const json = await response.json();
+
+      if (!response.ok || !json.success) {
+        toast.error(json.error ?? "Suppression impossible.");
+        return;
+      }
+
+      setThemes((prev) => {
+        if (json.mode === "disabled") {
+          return prev.map((item) => (item.slug === theme.slug ? json.data : item));
+        }
+        return prev.filter((item) => item.slug !== theme.slug);
+      });
+      notifyThemeCatalogChanged();
+      toast.success(json.mode === "disabled" ? "Modele desactive." : "Modele supprime.");
+    } catch (error) {
+      console.error("Theme delete error:", error);
+      toast.error("Suppression impossible.");
+    } finally {
+      setSavingTheme(null);
+    }
   }
 
   return (
@@ -410,6 +576,139 @@ export default function AdminConsole() {
           </TabsContent>
 
           <TabsContent value="themes">
+            <Card className="mb-6 overflow-hidden rounded-lg border-[#D7C4A3] bg-white shadow-sm">
+              <div
+                className="h-2"
+                style={{
+                  background: `linear-gradient(135deg, ${createThemeForm.bgPrimary}, ${createThemeForm.accentGold} 52%, ${createThemeForm.cardBg})`,
+                }}
+              />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="size-5 text-[#B89248]" />
+                  Ajouter un modele
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={createTheme} className="grid gap-4 xl:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>Nom du modele</Label>
+                    <Input
+                      value={createThemeForm.name}
+                      onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, name: event.target.value }))}
+                      placeholder="Palais Royal"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Categorie</Label>
+                    <Select
+                      value={createThemeForm.category}
+                      onValueChange={(category) => setCreateThemeForm((prev) => ({ ...prev, category }))}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Essentielle">Essentielle</SelectItem>
+                        <SelectItem value="Prestige">Prestige</SelectItem>
+                        <SelectItem value="Privilege">Privilege</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Apparition au scroll</Label>
+                    <Select
+                      value={createThemeForm.scrollAnimation}
+                      onValueChange={(scrollAnimation) =>
+                        setCreateThemeForm((prev) => ({ ...prev, scrollAnimation: scrollAnimation as ScrollAnimationType }))
+                      }
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {SCROLL_ANIMATION_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Style d'ouverture</Label>
+                    <Select
+                      value={createThemeForm.animationType}
+                      onValueChange={(animationType) =>
+                        setCreateThemeForm((prev) => ({ ...prev, animationType: animationType as OpeningAnimationType }))
+                      }
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {OPENING_ANIMATION_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {COLOR_FIELDS.map(({ key, label, input }) => (
+                    <div key={key} className="space-y-2">
+                      <Label>{label}</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type={input}
+                          value={createThemeForm[key]}
+                          onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, [key]: event.target.value }))}
+                          className={input === "color" ? "h-10 w-14 shrink-0 p-1" : ""}
+                          placeholder={key === "cardBg" ? "rgba(255,255,255,0.85)" : undefined}
+                          required
+                        />
+                        {input === "color" && (
+                          <span className="truncate rounded bg-[#F7F2EA] px-2 py-2 text-xs text-muted-foreground">
+                            {createThemeForm[key]}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="space-y-2 xl:col-span-2">
+                    <Label>Image fixe de decor ouvert</Label>
+                    <Input
+                      value={createThemeForm.backdropUrl}
+                      onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, backdropUrl: event.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Police titre</Label>
+                    <Input
+                      value={createThemeForm.titleFont}
+                      onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, titleFont: event.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Video d'ouverture</Label>
+                    <Input
+                      type="file"
+                      accept={THEME_VIDEO_ACCEPT}
+                      disabled={creatingTheme || uploadingTheme === NEW_THEME_UPLOAD_KEY}
+                      onChange={(event) => setCreateThemeVideo(event.target.files?.[0] ?? null)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {uploadingTheme === NEW_THEME_UPLOAD_KEY
+                        ? `Televersement en cours... ${uploadProgress[NEW_THEME_UPLOAD_KEY] ?? 1}%`
+                        : createThemeVideo?.name ?? "MP4, MOV/QuickTime ou WEBM - 50 Mo max"}
+                    </p>
+                  </div>
+
+                  <div className="xl:col-span-4">
+                    <Button type="submit" disabled={creatingTheme || uploadingTheme === NEW_THEME_UPLOAD_KEY} className="bg-[#171312] text-white hover:bg-[#2A2320]">
+                      <Plus className="mr-2 size-4" />
+                      {creatingTheme ? "Creation..." : "Ajouter le modele"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {themes.map((theme) => (
                 <Card key={theme.slug} className="overflow-hidden rounded-lg border-[#E5D9C7] bg-white shadow-sm">
@@ -430,12 +729,80 @@ export default function AdminConsole() {
                           }}
                           className="h-auto border-transparent bg-transparent px-0 py-0 font-display-bold text-lg shadow-none focus-visible:border-[#D6C5A8] focus-visible:px-2 focus-visible:py-1"
                         />
-                        <p className="text-sm text-muted-foreground">{theme.category}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <Badge variant={theme.isActive === false ? "outline" : "default"}>
+                            {theme.isActive === false ? "Inactif" : "Actif"}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">{theme.category}</span>
+                        </div>
                       </div>
-                      {savingTheme === theme.slug && <Badge variant="outline">Sauvegarde</Badge>}
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        {savingTheme === theme.slug && <Badge variant="outline">Sauvegarde</Badge>}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-700 hover:bg-red-50 hover:text-red-800"
+                          onClick={() => void deleteTheme(theme)}
+                          disabled={savingTheme === theme.slug}
+                        >
+                          <Trash2 className="mr-2 size-4" />
+                          Supprimer
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Categorie</Label>
+                        <Select value={theme.category} onValueChange={(category) => void updateTheme(theme.slug, { category })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Essentielle">Essentielle</SelectItem>
+                            <SelectItem value="Prestige">Prestige</SelectItem>
+                            <SelectItem value="Privilege">Privilege</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Apparition au scroll</Label>
+                        <Select
+                          value={theme.scrollAnimation ?? "fade-up"}
+                          onValueChange={(scrollAnimation) => void updateTheme(theme.slug, { scrollAnimation: scrollAnimation as ScrollAnimationType })}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {SCROLL_ANIMATION_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Style d'ouverture</Label>
+                        <Select
+                          value={theme.animationType}
+                          onValueChange={(animationType) => void updateTheme(theme.slug, { animationType: animationType as OpeningAnimationType })}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {OPENING_ANIMATION_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg border border-[#E5D9C7] bg-[#FDFBF7] px-3 py-2">
+                        <Label htmlFor={`active-${theme.slug}`}>Visible catalogue</Label>
+                        <Switch
+                          id={`active-${theme.slug}`}
+                          checked={theme.isActive !== false}
+                          onCheckedChange={(isActive) => void updateTheme(theme.slug, { isActive })}
+                        />
+                      </div>
+                    </div>
+
                     <label
                       className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#D6C5A8] bg-[#FDFBF7] p-4 text-center transition hover:border-[#B89248] hover:bg-[#FAF6EF]"
                       onDragOver={(event) => event.preventDefault()}
@@ -493,20 +860,41 @@ export default function AdminConsole() {
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-3 space-y-3 rounded-lg border border-[#E5D9C7] bg-[#FDFBF7] p-3">
                         <div className="grid grid-cols-2 gap-3">
-                          {COLOR_FIELDS.map(([key, label]) => (
+                          {COLOR_FIELDS.map(({ key, label, input }) => (
                             <div key={key} className="space-y-2">
                               <Label>{label}</Label>
                               <div className="flex items-center gap-2">
-                                <Input
-                                  type="color"
-                                  value={theme[key]}
-                                  onChange={(e) => updateTheme(theme.slug, { [key]: e.target.value } as Partial<ThemeConfig>)}
-                                  className="h-10 w-14 shrink-0 p-1"
-                                />
-                                <span className="truncate rounded bg-white px-2 py-2 text-xs text-muted-foreground">{theme[key]}</span>
+                                {input === "color" ? (
+                                  <Input
+                                    type="color"
+                                    value={themeColorValue(theme, key)}
+                                    onChange={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
+                                    className="h-10 w-14 shrink-0 p-1"
+                                  />
+                                ) : (
+                                  <Input
+                                    type="text"
+                                    defaultValue={themeColorValue(theme, key)}
+                                    onBlur={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
+                                    placeholder="rgba(255,255,255,0.85)"
+                                  />
+                                )}
+                                {input === "color" && (
+                                  <span className="truncate rounded bg-white px-2 py-2 text-xs text-muted-foreground">
+                                    {themeColorValue(theme, key)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           ))}
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Image fixe de decor ouvert</Label>
+                          <Input
+                            defaultValue={theme.backdropUrl ?? ""}
+                            placeholder="https://..."
+                            onBlur={(event) => void updateTheme(theme.slug, { backdropUrl: event.target.value.trim() || null })}
+                          />
                         </div>
                       </CollapsibleContent>
                     </Collapsible>

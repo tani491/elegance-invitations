@@ -59,7 +59,7 @@ END:VCALENDAR`)}`;
         <Button
           asChild
           variant="outline"
-          className="rounded-full border-[color:var(--invitation-sheet-border)] bg-white/60 font-serif text-xs uppercase tracking-[0.18em] text-[var(--invitation-sheet-text)] shadow-none hover:bg-white/80"
+          className="rounded-full border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)] font-serif text-xs uppercase tracking-[0.18em] text-white shadow-none hover:brightness-110"
         >
           <a href={googleCalendarUrl(date, title)} target="_blank" rel="noreferrer">
             <CalendarPlus className="size-4" />
@@ -69,7 +69,7 @@ END:VCALENDAR`)}`;
         <Button
           asChild
           variant="outline"
-          className="rounded-full border-[color:var(--invitation-sheet-border)] bg-white/60 font-serif text-xs uppercase tracking-[0.18em] text-[var(--invitation-sheet-text)] shadow-none hover:bg-white/80"
+          className="rounded-full border-[color:var(--theme-accent)] bg-white/70 font-serif text-xs uppercase tracking-[0.18em] text-[var(--theme-accent)] shadow-none hover:bg-white/85"
         >
           <a download="elegance-invitation.ics" href={icsHref}>
             <CalendarPlus className="size-4" />

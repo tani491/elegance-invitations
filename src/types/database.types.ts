@@ -15,6 +15,8 @@ export type OpeningAnimationType =
   | "golden_palace_doors"
   | "ceremonial_walk";
 
+export type ScrollAnimationType = "fade-up" | "scale-in" | "slide-stagger";
+
 export type RsvpStatus = "pending" | "confirmed" | "declined";
 
 export interface SessionPayload {
@@ -34,6 +36,12 @@ export interface ThemeConfig {
   secondaryColor: string;
   accentColor: string;
   goldColor: string;
+  bgPrimary?: string;
+  cardBg?: string;
+  accentGold?: string;
+  textColor?: string;
+  scrollAnimation?: ScrollAnimationType;
+  backdropUrl?: string | null;
   titleFont: string;
   animationType: OpeningAnimationType;
   openingVideoUrl?: string | null;

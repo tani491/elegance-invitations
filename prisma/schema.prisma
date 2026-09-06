@@ -55,6 +55,12 @@ model Theme {
   secondaryColor  String   @default("#FAF7F2")
   accentColor     String   @default("#C5A880")
   goldColor       String   @default("#D4AF37")
+  bgPrimary       String   @default("#5C1D24")
+  cardBg          String   @default("#FAF7F2")
+  accentGold      String   @default("#D4AF37")
+  textColor       String   @default("#5C1D24")
+  scrollAnimation String   @default("fade-up")
+  backdropUrl     String?
   titleFont       String   @default("Cormorant Garamond")
   animationType   String   @default("envelope")
   openingVideoUrl String?

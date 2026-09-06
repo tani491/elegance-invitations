@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { DEFAULT_THEMES, getDefaultTheme } from "@/lib/theme-presets";
 import type { Theme } from "@prisma/client";
-import type { OpeningAnimationType, ThemeConfig } from "@/types/database.types";
+import type { OpeningAnimationType, ScrollAnimationType, ThemeConfig } from "@/types/database.types";
 
 const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "wax_seal_burst",
@@ -12,10 +12,18 @@ const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "ceremonial_walk",
 ];
 
+const SCROLL_ANIMATION_TYPES: ScrollAnimationType[] = ["fade-up", "scale-in", "slide-stagger"];
+
 function normalizeAnimationType(value: string): OpeningAnimationType {
   return OPENING_ANIMATION_TYPES.includes(value as OpeningAnimationType)
     ? (value as OpeningAnimationType)
     : "wax_seal_burst";
+}
+
+function normalizeScrollAnimation(value: string | null | undefined): ScrollAnimationType {
+  return SCROLL_ANIMATION_TYPES.includes(value as ScrollAnimationType)
+    ? (value as ScrollAnimationType)
+    : "fade-up";
 }
 
 export async function ensureDefaultThemes() {
@@ -30,6 +38,12 @@ export async function ensureDefaultThemes() {
           secondaryColor: theme.secondaryColor,
           accentColor: theme.accentColor,
           goldColor: theme.goldColor,
+          bgPrimary: theme.bgPrimary ?? theme.primaryColor,
+          cardBg: theme.cardBg ?? theme.secondaryColor,
+          accentGold: theme.accentGold ?? theme.goldColor,
+          textColor: theme.textColor ?? theme.primaryColor,
+          scrollAnimation: normalizeScrollAnimation(theme.scrollAnimation),
+          backdropUrl: theme.backdropUrl,
           titleFont: theme.titleFont,
           animationType: theme.animationType,
           openingVideoUrl: theme.openingVideoUrl,
@@ -43,6 +57,12 @@ export async function ensureDefaultThemes() {
           secondaryColor: theme.secondaryColor,
           accentColor: theme.accentColor,
           goldColor: theme.goldColor,
+          bgPrimary: theme.bgPrimary ?? theme.primaryColor,
+          cardBg: theme.cardBg ?? theme.secondaryColor,
+          accentGold: theme.accentGold ?? theme.goldColor,
+          textColor: theme.textColor ?? theme.primaryColor,
+          scrollAnimation: normalizeScrollAnimation(theme.scrollAnimation),
+          backdropUrl: theme.backdropUrl,
           titleFont: theme.titleFont,
           animationType: theme.animationType,
           openingVideoUrl: theme.openingVideoUrl,
@@ -66,6 +86,12 @@ export function serializeTheme(theme: Theme | ThemeConfig | null | undefined): T
     secondaryColor: theme.secondaryColor,
     accentColor: theme.accentColor,
     goldColor: theme.goldColor,
+    bgPrimary: theme.bgPrimary ?? theme.primaryColor,
+    cardBg: theme.cardBg ?? theme.secondaryColor,
+    accentGold: theme.accentGold ?? theme.goldColor,
+    textColor: theme.textColor ?? theme.primaryColor,
+    scrollAnimation: normalizeScrollAnimation(theme.scrollAnimation),
+    backdropUrl: theme.backdropUrl,
     titleFont: theme.titleFont,
     animationType: normalizeAnimationType(theme.animationType),
     openingVideoUrl: theme.openingVideoUrl ?? theme.demoVideoUrl,

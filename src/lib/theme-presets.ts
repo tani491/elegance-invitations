@@ -176,16 +176,33 @@ function rgbaFromHex(value: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function isHexColor(value: string | null | undefined) {
+  return Boolean(value && /^#[0-9a-fA-F]{6}$/.test(value.trim()));
+}
+
+function colorWithAlpha(value: string, alpha: number, fallback: string) {
+  return isHexColor(value) ? rgbaFromHex(value, alpha) : fallback;
+}
+
 export function themeToCssVars(theme: ThemeConfig) {
-  const primaryRgb = hexToRgb(theme.primaryColor);
+  const bgPrimary = theme.bgPrimary ?? theme.primaryColor;
+  const cardBg = theme.cardBg ?? theme.secondaryColor;
+  const accentGold = theme.accentGold ?? theme.goldColor;
+  const textColor = theme.textColor ?? theme.primaryColor;
+  const primaryRgb = hexToRgb(bgPrimary);
   const accentRgb = hexToRgb(theme.accentColor);
-  const goldRgb = hexToRgb(theme.goldColor);
+  const goldRgb = hexToRgb(accentGold);
+  const mutedText = colorWithAlpha(textColor, 0.68, "rgba(44, 42, 40, 0.68)");
 
   return {
-    "--invitation-primary": theme.primaryColor,
-    "--invitation-secondary": theme.secondaryColor,
+    "--theme-bg": bgPrimary,
+    "--theme-card-bg": cardBg,
+    "--theme-accent": accentGold,
+    "--theme-text": textColor,
+    "--invitation-primary": bgPrimary,
+    "--invitation-secondary": cardBg,
     "--invitation-accent": theme.accentColor,
-    "--invitation-gold": theme.goldColor,
+    "--invitation-gold": accentGold,
     "--invitation-primary-rgb": `${primaryRgb.r} ${primaryRgb.g} ${primaryRgb.b}`,
     "--invitation-accent-rgb": `${accentRgb.r} ${accentRgb.g} ${accentRgb.b}`,
     "--invitation-gold-rgb": `${goldRgb.r} ${goldRgb.g} ${goldRgb.b}`,
@@ -193,23 +210,23 @@ export function themeToCssVars(theme: ThemeConfig) {
     "--invitation-copy": "rgba(255, 253, 249, 0.82)",
     "--invitation-muted": "rgba(255, 253, 249, 0.68)",
     "--invitation-border": rgbaFromHex(theme.accentColor, 0.4),
-    "--invitation-gold-line": rgbaFromHex(theme.goldColor, 0.48),
-    "--invitation-primary-soft": rgbaFromHex(theme.primaryColor, 0.42),
-    "--invitation-panel": rgbaFromHex(theme.primaryColor, 0.34),
-    "--invitation-panel-strong": rgbaFromHex(theme.primaryColor, 0.48),
+    "--invitation-gold-line": rgbaFromHex(accentGold, 0.48),
+    "--invitation-primary-soft": rgbaFromHex(bgPrimary, 0.42),
+    "--invitation-panel": rgbaFromHex(bgPrimary, 0.34),
+    "--invitation-panel-strong": rgbaFromHex(bgPrimary, 0.48),
     "--invitation-chip": rgbaFromHex(theme.accentColor, 0.28),
     "--invitation-chip-strong": rgbaFromHex(theme.accentColor, 0.46),
-    "--invitation-sheet": theme.secondaryColor,
-    "--invitation-sheet-soft": rgbaFromHex(theme.secondaryColor, 0.94),
-    "--invitation-sheet-text": theme.primaryColor,
-    "--invitation-sheet-muted": rgbaFromHex(theme.primaryColor, 0.68),
-    "--invitation-sheet-border": rgbaFromHex(theme.goldColor, 0.34),
-    "--invitation-button-bg": `linear-gradient(135deg, ${theme.goldColor}, ${theme.accentColor} 52%, ${theme.primaryColor})`,
+    "--invitation-sheet": cardBg,
+    "--invitation-sheet-soft": cardBg,
+    "--invitation-sheet-text": textColor,
+    "--invitation-sheet-muted": mutedText,
+    "--invitation-sheet-border": rgbaFromHex(accentGold, 0.34),
+    "--invitation-button-bg": `linear-gradient(135deg, ${accentGold}, ${theme.accentColor} 52%, ${bgPrimary})`,
     "--invitation-title-font": theme.titleFont,
-    "--primary": theme.primaryColor,
+    "--primary": bgPrimary,
     "--accent": theme.accentColor,
-    "--gold": theme.goldColor,
-    "--bg-color": theme.secondaryColor,
+    "--gold": accentGold,
+    "--bg-color": cardBg,
   } as CSSProperties;
 }
 
