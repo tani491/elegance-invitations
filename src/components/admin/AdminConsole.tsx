@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
 import type { ThemeConfig } from "@/types/database.types";
 
@@ -59,6 +60,21 @@ const COLOR_FIELDS = [
   ["goldColor", "Dore"],
 ] as const;
 
+const THEME_VIDEO_BUCKET = "theme-videos";
+const MAX_THEME_VIDEO_SIZE = 50 * 1024 * 1024;
+const THEME_VIDEO_ACCEPT = "video/mp4,video/quicktime,video/webm,video/mov";
+const THEME_VIDEO_MIME_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/mov"]);
+const THEME_VIDEO_EXTENSIONS = new Set(["mp4", "mov", "webm"]);
+
+function sanitizeStorageFilename(filename: string) {
+  return filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+}
+
+function isSupportedThemeVideo(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return THEME_VIDEO_MIME_TYPES.has(file.type) || Boolean(extension && THEME_VIDEO_EXTENSIONS.has(extension));
+}
+
 export default function AdminConsole() {
   const router = useRouter();
   const [themes, setThemes] = useState<ThemeConfig[]>([]);
@@ -76,6 +92,7 @@ export default function AdminConsole() {
   const [creating, setCreating] = useState(false);
   const [savingTheme, setSavingTheme] = useState<string | null>(null);
   const [uploadingTheme, setUploadingTheme] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
 
   const stats = useMemo(() => {
@@ -170,11 +187,16 @@ export default function AdminConsole() {
       const json = await response.json();
       if (!response.ok || !json.success) {
         toast.error(json.error ?? "Theme non sauvegarde.");
-        return;
+        return false;
       }
       setThemes((prev) => prev.map((theme) => (theme.slug === slug ? json.data : theme)));
       notifyThemeCatalogChanged();
       toast.success("Theme sauvegarde.");
+      return true;
+    } catch (error) {
+      console.error("Theme save error:", error);
+      toast.error("Theme non sauvegarde.");
+      return false;
     } finally {
       setSavingTheme(null);
     }
@@ -188,22 +210,58 @@ export default function AdminConsole() {
 
   async function uploadThemeVideo(theme: ThemeConfig, file: File) {
     setUploadingTheme(theme.slug);
+    setUploadProgress((prev) => ({ ...prev, [theme.slug]: 1 }));
+
+    const progressTimer = window.setInterval(() => {
+      setUploadProgress((prev) => {
+        const current = prev[theme.slug] ?? 1;
+        if (current >= 90) return prev;
+        return { ...prev, [theme.slug]: Math.min(current + 7, 90) };
+      });
+    }, 600);
+
     try {
-      const data = new FormData();
-      data.append("kind", "video");
-      data.append("file", file);
-      const upload = await fetch("/api/uploads", { method: "POST", body: data });
-      const uploadJson = await upload.json();
-      if (!upload.ok || !uploadJson.success) {
-        toast.error(uploadJson.error ?? "Upload video impossible.");
+      if (file.size > MAX_THEME_VIDEO_SIZE) {
+        toast.error("Video trop volumineuse. Compressez-la avant l'upload (maximum 50 Mo).");
         return;
       }
-      await updateTheme(theme.slug, {
-        openingVideoUrl: uploadJson.data.url,
-        demoVideoUrl: uploadJson.data.url,
+
+      if (!isSupportedThemeVideo(file)) {
+        toast.error("Format video non autorise. Utilisez MP4, MOV/QuickTime ou WEBM.");
+        return;
+      }
+
+      const supabase = createBrowserSupabaseClient();
+      const filePath = `${Date.now()}_${sanitizeStorageFilename(file.name)}`;
+      const { error } = await supabase.storage.from(THEME_VIDEO_BUCKET).upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true,
       });
+
+      if (error) {
+        console.error("Erreur upload Supabase:", error);
+        toast.error(error.message);
+        return;
+      }
+
+      setUploadProgress((prev) => ({ ...prev, [theme.slug]: 100 }));
+      const { data } = supabase.storage.from(THEME_VIDEO_BUCKET).getPublicUrl(filePath);
+      const saved = await updateTheme(theme.slug, {
+        openingVideoUrl: data.publicUrl,
+        demoVideoUrl: data.publicUrl,
+      });
+      if (saved) toast.success("Video televersee.");
+    } catch (error) {
+      console.error("Erreur upload Supabase:", error);
+      toast.error(error instanceof Error ? error.message : "Upload video impossible.");
     } finally {
+      window.clearInterval(progressTimer);
       setUploadingTheme(null);
+      setUploadProgress((prev) => {
+        const next = { ...prev };
+        delete next[theme.slug];
+        return next;
+      });
     }
   }
 
@@ -388,11 +446,17 @@ export default function AdminConsole() {
                       }}
                     >
                       <Upload className="mb-3 size-7 text-[#B89248]" />
-                      <span className="text-sm font-semibold">{uploadingTheme === theme.slug ? "Upload en cours..." : "Uploader la video d'ouverture"}</span>
-                      <span className="mt-1 text-xs text-muted-foreground">MP4 ou WEBM</span>
+                      <span className="text-sm font-semibold">
+                        {uploadingTheme === theme.slug
+                          ? `Televersement en cours... ${uploadProgress[theme.slug] ?? 1}%`
+                          : "Uploader la video d'ouverture"}
+                      </span>
+                      <span className="mt-1 text-xs text-muted-foreground">
+                        {uploadingTheme === theme.slug ? "Veuillez patienter" : "MP4, MOV/QuickTime ou WEBM - 50 Mo max"}
+                      </span>
                       <Input
                         type="file"
-                        accept="video/mp4,video/webm"
+                        accept={THEME_VIDEO_ACCEPT}
                         className="hidden"
                         disabled={uploadingTheme === theme.slug}
                         onChange={(event) => {
