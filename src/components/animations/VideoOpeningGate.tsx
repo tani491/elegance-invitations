@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface VideoOpeningGateProps {
@@ -10,6 +10,7 @@ interface VideoOpeningGateProps {
   title?: string;
   fallbackGradient?: string;
   fallbackImage?: string;
+  surfaceStyle?: CSSProperties;
   onOpened?: () => void;
   children: ReactNode;
 }
@@ -24,6 +25,7 @@ export function VideoOpeningGate({
   title = "Invitation",
   fallbackGradient,
   fallbackImage,
+  surfaceStyle,
   onOpened,
   children,
 }: VideoOpeningGateProps) {
@@ -100,10 +102,35 @@ export function VideoOpeningGate({
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f5efe7] md:px-6">
+    <div style={surfaceStyle} className="relative isolate min-h-[100dvh] overflow-x-hidden bg-black md:px-6">
+      <div aria-hidden="true" className="fixed inset-0 h-[100dvh] w-full -z-10 overflow-hidden bg-[var(--invitation-primary)]">
+        {videoSrc ? (
+          <video
+            src={videoSrc}
+            poster={fallbackImage}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="h-full w-full select-none object-cover pointer-events-none"
+          />
+        ) : (
+          <div
+            className="h-full w-full"
+            style={{
+              background:
+                fallbackGradient ??
+                "linear-gradient(145deg, var(--invitation-primary) 0%, var(--invitation-accent) 52%, var(--invitation-gold) 100%)",
+            }}
+          />
+        )}
+      </div>
+      <div className="fixed inset-0 -z-10 bg-black/40 backdrop-blur-[2px]" />
+
       <main
         id="invitation-content"
-        className={`mx-auto min-h-[100dvh] w-full max-w-[440px] transition-all duration-1000 ease-out ${
+        className={`relative z-10 mx-auto min-h-[100dvh] w-full max-w-[440px] transition-all duration-1000 ease-out ${
           isRevealed ? "animate-in fade-in slide-in-from-bottom-6 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
         }`}
       >
@@ -159,7 +186,11 @@ export function VideoOpeningGate({
             <div className={`absolute inset-0 bg-black/20 backdrop-blur-[1.5px] transition-opacity duration-1000 ${isPlaying ? "opacity-0" : "opacity-100"}`} />
             <motion.div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,239,170,.9),rgba(214,168,72,.42)_44%,transparent_70%)] mix-blend-screen"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-screen"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(255,253,249,.9), var(--invitation-gold-line) 44%, transparent 70%)",
+              }}
               initial={false}
               animate={isPlaying ? { opacity: [0, 0.95, 0], scale: [0.45, 2.4, 3.3] } : { opacity: 0, scale: 0.45 }}
               transition={{ duration: 1.45, ease: "easeOut" }}
@@ -170,20 +201,26 @@ export function VideoOpeningGate({
               <motion.button
                 type="button"
                 onClick={() => void handleStart()}
-                className="group flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/80"
+                className="group flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--invitation-gold)]"
                 animate={isPlaying ? { opacity: 0, scale: 0.92, y: 18 } : { opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.7, ease: revealEase }}
-                aria-label="Appuyez pour ouvrir"
+                aria-label="Ouvrir l'invitation"
               >
-                <span className="relative grid size-36 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_28%,#fff4ca,#e0b24d_36%,#8b1028_76%,#4e0718_100%)] text-[#fff1b8] shadow-[0_26px_80px_rgba(91,13,31,.34),inset_0_0_0_1px_rgba(255,244,195,.42)] ring-8 ring-amber-200/25 transition-transform duration-500 group-hover:scale-105">
-                  <span className="absolute inset-4 rounded-full border border-amber-100/50" />
-                  <span className="absolute inset-7 rounded-full border border-[#fff7d1]/35" />
+                <span
+                  className="relative grid size-36 place-items-center rounded-full text-[#FFFDF9] shadow-[0_26px_80px_rgba(0,0,0,.34),inset_0_0_0_1px_rgba(255,253,249,.42)] ring-8 ring-[var(--invitation-gold-line)] transition-transform duration-500 group-hover:scale-105"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 35% 28%, #FFFDF9, var(--invitation-gold) 36%, var(--invitation-accent) 72%, var(--invitation-primary) 100%)",
+                  }}
+                >
+                  <span className="absolute inset-4 rounded-full border border-[#FFFDF9]/50" />
+                  <span className="absolute inset-7 rounded-full border border-[var(--invitation-gold-line)]" />
                   <span className="font-serif text-5xl italic tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,.26)]">{monogram}</span>
                 </span>
-                <span className="mt-8 font-serif text-2xl italic tracking-wide text-amber-950 drop-shadow-[0_2px_10px_rgba(255,255,255,.45)]">
-                  Appuyez pour ouvrir
+                <span className="mt-8 font-serif text-2xl italic tracking-wide text-[#FFFDF9] drop-shadow-md">
+                  Ouvrir l&apos;invitation
                 </span>
-                <span className="mt-4 max-w-xs font-serif text-base italic leading-7 text-amber-950/68">{title}</span>
+                <span className="mt-4 max-w-xs font-serif text-base italic leading-7 text-[#FFFDF9]/75 drop-shadow-md">{title}</span>
               </motion.button>
             </div>
           </motion.div>

@@ -34,11 +34,11 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
     category: "Essentielle",
     primaryColor: "#2C2A28",
     secondaryColor: "#FAF7F2",
-    accentColor: "#C5A880",
-    goldColor: "#D4AF37",
+    accentColor: "#C7A45A",
+    goldColor: "#C7A45A",
     titleFont: "Plus Jakarta Sans",
     animationType: "botanical_envelope",
-    previewGradient: "linear-gradient(135deg, #FAF7F2 0%, #E5DFD6 52%, #C5A880 100%)",
+    previewGradient: "linear-gradient(135deg, #FAF7F2 0%, #EFE6D6 52%, #C7A45A 100%)",
   },
   {
     slug: "roseraie-nude",
@@ -94,11 +94,11 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
     category: "Prestige",
     primaryColor: "#7B4F5F",
     secondaryColor: "#FFF7F4",
-    accentColor: "#D4849A",
-    goldColor: "#C5A06A",
+    accentColor: "#C47B78",
+    goldColor: "#E8A598",
     titleFont: "Cormorant Garamond",
     animationType: "silk_ribbon_untie",
-    previewGradient: "linear-gradient(135deg, #7B4F5F 0%, #D4849A 48%, #FFF7F4 100%)",
+    previewGradient: "linear-gradient(135deg, #7B4F5F 0%, #C47B78 48%, #E8A598 100%)",
   },
   {
     slug: "medina-orientale",
@@ -154,12 +154,52 @@ export function getDefaultTheme(slug = "medina-orientale") {
   return DEFAULT_THEMES.find((theme) => theme.slug === slug) ?? DEFAULT_THEMES[0];
 }
 
+function hexToRgb(value: string) {
+  const normalized = value.trim().replace(/^#/, "");
+  const expanded = normalized.length === 3
+    ? normalized.split("").map((character) => character + character).join("")
+    : normalized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
+    return { r: 212, g: 175, b: 55 };
+  }
+
+  return {
+    r: Number.parseInt(expanded.slice(0, 2), 16),
+    g: Number.parseInt(expanded.slice(2, 4), 16),
+    b: Number.parseInt(expanded.slice(4, 6), 16),
+  };
+}
+
+function rgbaFromHex(value: string, alpha: number) {
+  const { r, g, b } = hexToRgb(value);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function themeToCssVars(theme: ThemeConfig) {
+  const primaryRgb = hexToRgb(theme.primaryColor);
+  const accentRgb = hexToRgb(theme.accentColor);
+  const goldRgb = hexToRgb(theme.goldColor);
+
   return {
     "--invitation-primary": theme.primaryColor,
     "--invitation-secondary": theme.secondaryColor,
     "--invitation-accent": theme.accentColor,
     "--invitation-gold": theme.goldColor,
+    "--invitation-primary-rgb": `${primaryRgb.r} ${primaryRgb.g} ${primaryRgb.b}`,
+    "--invitation-accent-rgb": `${accentRgb.r} ${accentRgb.g} ${accentRgb.b}`,
+    "--invitation-gold-rgb": `${goldRgb.r} ${goldRgb.g} ${goldRgb.b}`,
+    "--invitation-ivory": "#FFFDF9",
+    "--invitation-copy": "rgba(255, 253, 249, 0.82)",
+    "--invitation-muted": "rgba(255, 253, 249, 0.68)",
+    "--invitation-border": rgbaFromHex(theme.accentColor, 0.4),
+    "--invitation-gold-line": rgbaFromHex(theme.goldColor, 0.48),
+    "--invitation-primary-soft": rgbaFromHex(theme.primaryColor, 0.42),
+    "--invitation-panel": rgbaFromHex(theme.primaryColor, 0.34),
+    "--invitation-panel-strong": rgbaFromHex(theme.primaryColor, 0.48),
+    "--invitation-chip": rgbaFromHex(theme.accentColor, 0.28),
+    "--invitation-chip-strong": rgbaFromHex(theme.accentColor, 0.46),
+    "--invitation-button-bg": `linear-gradient(135deg, ${theme.goldColor}, ${theme.accentColor} 52%, ${theme.primaryColor})`,
     "--invitation-title-font": theme.titleFont,
     "--primary": theme.primaryColor,
     "--accent": theme.accentColor,

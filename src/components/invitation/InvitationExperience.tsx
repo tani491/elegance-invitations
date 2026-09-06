@@ -21,6 +21,13 @@ type VideoTheme = PublicEventPayload["theme"] & {
 };
 
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
+const ACTION_BUTTON_CLASS =
+  "border-[color:var(--invitation-gold-line)] bg-[image:var(--invitation-button-bg)] text-[#FFFDF9] shadow-[0_16px_40px_rgba(0,0,0,.24)] hover:brightness-110";
+const OUTLINE_BUTTON_CLASS =
+  "border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] text-[#FFFDF9] shadow-[0_12px_30px_rgba(0,0,0,.18)] hover:bg-[color:var(--invitation-chip)]";
+const FIELD_CLASS =
+  "h-12 rounded-full border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-5 font-serif text-base text-[#FFFDF9] placeholder:text-[#FFFDF9]/55 focus-visible:ring-[var(--invitation-gold)]";
+const FIELD_LABEL_CLASS = "font-serif text-[11px] uppercase tracking-[0.22em] text-[var(--invitation-gold)] drop-shadow-md";
 
 function countdownParts(date: string | null) {
   if (!date) return { jours: 0, heures: 0, minutes: 0, secondes: 0 };
@@ -59,9 +66,9 @@ function openingVideoSource(theme: PublicEventPayload["theme"]) {
 function RoyalDivider({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center justify-center gap-3 ${className}`} aria-hidden="true">
-      <span className="h-px w-20 bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
-      <Flower2 className="size-4 text-amber-500/75" />
-      <span className="h-px w-20 bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+      <span className="h-px w-20 bg-gradient-to-r from-transparent via-[var(--invitation-gold-line)] to-transparent" />
+      <Flower2 className="size-4 text-[var(--invitation-gold)] drop-shadow-md" />
+      <span className="h-px w-20 bg-gradient-to-r from-transparent via-[var(--invitation-gold-line)] to-transparent" />
     </div>
   );
 }
@@ -69,8 +76,8 @@ function RoyalDivider({ className = "" }: { className?: string }) {
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="text-center">
-      <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-amber-800">{eyebrow}</p>
-      <h2 className="mt-4 font-serif text-3xl font-light italic leading-tight text-amber-950">{title}</h2>
+      <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[var(--invitation-gold)] drop-shadow-md">{eyebrow}</p>
+      <h2 className="mt-4 font-serif text-3xl font-light italic leading-tight text-[#FFFDF9] drop-shadow-md">{title}</h2>
     </div>
   );
 }
@@ -87,7 +94,7 @@ function StorySection({
   return (
     <motion.section
       id={id}
-      className={`relative px-6 py-16 ${className}`}
+      className={`relative px-6 py-16 text-[#FFFDF9] drop-shadow-md ${className}`}
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
@@ -101,7 +108,7 @@ function StorySection({
 function SaveDateCalendar({ eventDate, eventName }: { eventDate: string | null; eventName: string }) {
   if (!eventDate) {
     return (
-      <div className="mx-auto mt-9 max-w-xs border-y border-amber-300/50 bg-[#fff7ea]/35 px-5 py-8 text-center font-serif text-lg italic text-amber-950 backdrop-blur-[1px]">
+      <div className="mx-auto mt-9 max-w-xs border-y border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-5 py-8 text-center font-serif text-lg italic text-[#FFFDF9] backdrop-blur-md">
         Date à confirmer
       </div>
     );
@@ -113,28 +120,28 @@ function SaveDateCalendar({ eventDate, eventName }: { eventDate: string | null; 
 
   return (
     <div className="mx-auto mt-9 max-w-xs">
-      <div className="border-y border-amber-300/50 bg-[#fff7ea]/35 px-5 py-6 backdrop-blur-[1px]">
+      <div className="border-y border-[color:var(--invitation-border)] bg-[color:var(--invitation-panel)] px-5 py-6 shadow-[0_18px_45px_rgba(0,0,0,.18)] backdrop-blur-md">
         <div className="flex items-center justify-between gap-4">
           <CalendarDays className="size-5 text-[var(--invitation-gold)]" />
-          <p className="text-right font-serif text-xs font-semibold uppercase tracking-[0.24em] text-amber-900/70">
+          <p className="text-right font-serif text-xs font-semibold uppercase tracking-[0.24em] text-[#FFFDF9]/75">
             {calendar.monthLabel}
           </p>
         </div>
         <div className="mt-6 grid grid-cols-7 gap-y-3 text-center">
           {WEEKDAYS.map((day) => (
-            <span key={day} className="font-serif text-[10px] uppercase tracking-[0.2em] text-amber-900/45">
+            <span key={day} className="font-serif text-[10px] uppercase tracking-[0.2em] text-[#FFFDF9]/55">
               {day}
             </span>
           ))}
           {calendar.cells.map((day, index) => {
             const isWeddingDay = day !== null && day === calendar.weddingDay;
             return (
-              <span key={`${day ?? "empty"}-${index}`} className="grid h-8 place-items-center font-serif text-sm text-stone-700/75">
+              <span key={`${day ?? "empty"}-${index}`} className="grid h-8 place-items-center font-serif text-sm text-[#FFFDF9]/72">
                 {day && (
                   <span
                     className={
                       isWeddingDay
-                        ? "grid size-8 place-items-center rounded-full border border-amber-400/80 bg-amber-100/45 text-amber-950 drop-shadow-[0_2px_10px_rgba(217,119,6,0.3)]"
+                        ? "grid size-8 place-items-center rounded-full border border-[color:var(--invitation-gold-line)] bg-[color:var(--invitation-chip-strong)] text-[#FFFDF9] drop-shadow-md"
                         : ""
                     }
                   >
@@ -149,7 +156,7 @@ function SaveDateCalendar({ eventDate, eventName }: { eventDate: string | null; 
       <Button
         asChild
         variant="outline"
-        className="mx-auto mt-6 flex h-11 w-fit rounded-full border-amber-400/35 bg-[#fff7ea]/35 px-5 font-serif text-xs uppercase tracking-[0.2em] text-amber-950 hover:bg-amber-100/35"
+        className={`mx-auto mt-6 flex h-11 w-fit rounded-full px-5 font-serif text-xs uppercase tracking-[0.2em] ${OUTLINE_BUTTON_CLASS}`}
       >
         <a
           href={calendarHref}
@@ -202,12 +209,12 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
     return (
       <div className="flex flex-col items-center py-6 text-center">
         <CheckCircle className="size-12 text-[var(--invitation-gold)]" />
-        <p className="mt-5 font-serif text-2xl italic leading-8 text-amber-950">Merci, votre réponse est enregistrée.</p>
+        <p className="mt-5 font-serif text-2xl italic leading-8 text-[#FFFDF9] drop-shadow-md">Merci, votre réponse est enregistrée.</p>
         {whatsappHref && (
           <Button
             asChild
             variant="outline"
-            className="mt-7 h-11 rounded-full border-amber-400/35 bg-transparent px-5 font-serif text-xs uppercase tracking-[0.2em] text-amber-950 hover:bg-amber-100/30"
+            className={`mt-7 h-11 rounded-full px-5 font-serif text-xs uppercase tracking-[0.2em] ${OUTLINE_BUTTON_CLASS}`}
           >
             <a href={whatsappHref} target="_blank" rel="noreferrer">
               <MessageCircle className="size-4" />
@@ -222,40 +229,40 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
   return (
     <div className="mx-auto mt-9 max-w-sm space-y-5">
       <div className="space-y-2">
-        <Label className="font-serif text-[11px] uppercase tracking-[0.22em] text-amber-900/70">Nom de l&apos;invité</Label>
+        <Label className={FIELD_LABEL_CLASS}>Nom de l&apos;invité</Label>
         <Input
           value={guestName}
           onChange={(event) => setGuestName(event.target.value)}
           placeholder="Votre nom complet"
-          className="h-12 rounded-full border-amber-300/45 bg-[#fff7ea]/45 px-5 font-serif text-base text-amber-950 placeholder:text-stone-500/55 focus-visible:ring-amber-400/25"
+          className={FIELD_CLASS}
         />
       </div>
       <div className="space-y-2">
-        <Label className="font-serif text-[11px] uppercase tracking-[0.22em] text-amber-900/70">Statut</Label>
+        <Label className={FIELD_LABEL_CLASS}>Statut</Label>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="h-12 rounded-full border-amber-300/45 bg-[#fff7ea]/45 px-5 font-serif text-base text-amber-950 focus:ring-amber-400/25">
+          <SelectTrigger className={FIELD_CLASS}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="border-amber-200 bg-[#fff7ea] font-serif text-amber-950">
+          <SelectContent className="border-[color:var(--invitation-border)] bg-[color:var(--invitation-primary)] font-serif text-[#FFFDF9]">
             <SelectItem value="confirmed">Présent</SelectItem>
             <SelectItem value="declined">Absent</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-2">
-        <Label className="font-serif text-[11px] uppercase tracking-[0.22em] text-amber-900/70">Accompagnants</Label>
+        <Label className={FIELD_LABEL_CLASS}>Accompagnants</Label>
         <Input
           type="number"
           min="0"
           max="10"
           value={plusOnes}
           onChange={(event) => setPlusOnes(event.target.value)}
-          className="h-12 rounded-full border-amber-300/45 bg-[#fff7ea]/45 px-5 font-serif text-base text-amber-950 focus-visible:ring-amber-400/25"
+          className={FIELD_CLASS}
         />
       </div>
       <Button
         onClick={submit}
-        className="h-12 w-full rounded-full border border-[#f8e8aa]/65 bg-[linear-gradient(135deg,#fae9a6,#d6a848_48%,#9d6820)] font-serif text-xs uppercase tracking-[0.24em] text-amber-950 hover:brightness-105"
+        className={`h-12 w-full rounded-full border font-serif text-xs uppercase tracking-[0.24em] ${ACTION_BUTTON_CLASS}`}
       >
         Confirmer
       </Button>
@@ -269,14 +276,14 @@ function WhatsAppCelebrationCTA({ url }: { url: string | null }) {
   return (
     <StorySection className="text-center">
       <SectionTitle eyebrow="Groupe WhatsApp" title="La célébration en direct" />
-      <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-stone-700/75">
+      <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-[#FFFDF9]/78">
         Les souvenirs, vidéos et messages des proches réunis dans un même salon.
       </p>
       <a
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full border border-[#f8e8aa]/65 bg-[linear-gradient(135deg,#fae9a6,#d6a848_48%,#9d6820)] px-5 py-3 text-center font-serif text-xs uppercase tracking-[0.15em] text-amber-950 transition hover:brightness-105"
+        className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full border px-5 py-3 text-center font-serif text-xs uppercase tracking-[0.15em] transition ${ACTION_BUTTON_CLASS}`}
       >
         <MessageCircle className="size-4 shrink-0" />
         <span>Rejoindre le Groupe WhatsApp de la Célébration</span>
@@ -300,7 +307,7 @@ function MemoryGallery({ event }: { event: PublicEventPayload }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.55, ease: "easeOut", delay: Math.min(index * 0.04, 0.2) }}
-            className="group relative aspect-[4/5] overflow-hidden rounded-[22px] bg-[#d9b56d]/25 p-[2px]"
+            className="group relative aspect-[4/5] overflow-hidden rounded-[22px] bg-[color:var(--invitation-chip)] p-[2px]"
           >
             <img
               src={photo.thumbnailUrl ?? photo.originalUrl ?? ""}
@@ -316,7 +323,7 @@ function MemoryGallery({ event }: { event: PublicEventPayload }) {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Télécharger la photo HD"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#fff7ea]/20 backdrop-blur-md"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--invitation-panel)] backdrop-blur-md"
                 >
                   <Download className="size-4" />
                 </a>
@@ -341,20 +348,15 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
   const eventDateLabel = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
     : "Date à confirmer";
-  const invitationSurfaceStyle = {
-    ...themeToCssVars(event.theme),
-    backgroundColor: "#FAF6F0",
-    backgroundImage:
-      "radial-gradient(circle_at_50%_0%,rgba(255,247,225,.95),transparent_34%),linear-gradient(115deg,rgba(255,255,255,.38)_0_1px,transparent_1px_12px),linear-gradient(90deg,rgba(151,112,47,.035)_1px,transparent_1px),linear-gradient(0deg,rgba(151,112,47,.03)_1px,transparent_1px),linear-gradient(180deg,#FAF6F0_0%,#F5EFEB_100%)",
-    backgroundSize: "100% 100%, 100% 100%, 52px 52px, 52px 52px, 100% 100%",
-  };
+  const invitationSurfaceStyle = useMemo(() => themeToCssVars(event.theme), [event.theme]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--invitation-primary", event.theme.primaryColor);
-    document.documentElement.style.setProperty("--invitation-secondary", event.theme.secondaryColor);
-    document.documentElement.style.setProperty("--invitation-accent", event.theme.accentColor);
-    document.documentElement.style.setProperty("--invitation-gold", event.theme.goldColor);
-  }, [event.theme]);
+    Object.entries(invitationSurfaceStyle).forEach(([key, value]) => {
+      if (key.startsWith("--") && value !== undefined) {
+        document.documentElement.style.setProperty(key, String(value));
+      }
+    });
+  }, [invitationSurfaceStyle]);
 
   useEffect(() => {
     const timer = setInterval(() => setCountdown(countdownParts(event.eventDate)), 1_000);
@@ -369,26 +371,21 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
       title={names}
       fallbackGradient={event.theme.previewGradient}
       fallbackImage={heroPhoto}
+      surfaceStyle={invitationSurfaceStyle}
       onOpened={() => setIsOpened(true)}
     >
-      <div style={invitationSurfaceStyle} className="relative mx-auto min-h-[100dvh] max-w-[440px] overflow-hidden bg-[#FAF6F0] text-[#2f251f] shadow-2xl">
+      <div style={invitationSurfaceStyle} className="relative isolate mx-auto min-h-[100dvh] max-w-[440px] overflow-x-hidden bg-transparent text-[#FFFDF9] shadow-[0_0_80px_rgba(0,0,0,.35)]">
         <div className="pointer-events-none fixed inset-y-0 left-1/2 z-0 w-full max-w-[440px] -translate-x-1/2 overflow-hidden">
-          <div className="absolute left-1/2 top-20 h-[620px] w-[390px] -translate-x-1/2 rounded-t-full border border-amber-300/35" />
-          <div className="absolute left-1/2 top-28 h-[540px] w-[320px] -translate-x-1/2 rounded-t-full border border-amber-200/25" />
-          <div className="absolute -left-14 top-32 h-64 w-32 rounded-full border-r border-amber-300/25" />
-          <div className="absolute -right-14 top-32 h-64 w-32 rounded-full border-l border-amber-300/25" />
-          <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-[#eadcc8]/80 to-transparent" />
+          <div className="absolute left-1/2 top-20 h-[620px] w-[390px] -translate-x-1/2 rounded-t-full border border-[color:var(--invitation-border)]" />
+          <div className="absolute left-1/2 top-28 h-[540px] w-[320px] -translate-x-1/2 rounded-t-full border border-[color:var(--invitation-gold-line)]" />
+          <div className="absolute -left-14 top-32 h-64 w-32 rounded-full border-r border-[color:var(--invitation-border)]" />
+          <div className="absolute -right-14 top-32 h-64 w-32 rounded-full border-l border-[color:var(--invitation-border)]" />
+          <div className="absolute inset-x-0 bottom-0 h-80" style={{ background: "linear-gradient(to top, var(--invitation-primary-soft), transparent)" }} />
         </div>
 
         <div className="relative z-10">
           <section className="relative flex min-h-[100dvh] items-end overflow-hidden px-6 pb-14 pt-20 text-center">
-            {heroPhoto ? (
-              <img src={heroPhoto} alt={names} className="absolute inset-0 size-full object-cover" />
-            ) : (
-              <div className="absolute inset-0" style={{ background: event.theme.previewGradient }} />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF6F0] via-black/25 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/30" />
 
             <motion.div
               className="relative z-10 mx-auto w-full"
@@ -396,21 +393,21 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               animate={isOpened ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
               transition={{ duration: 1, ease: "easeOut" }}
             >
-              <Sparkles className="mx-auto mb-6 size-7 text-[var(--invitation-gold)]" />
-              <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-amber-100/90">Mariage</p>
+              <Sparkles className="mx-auto mb-6 size-7 text-[var(--invitation-gold)] drop-shadow-md" />
+              <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[#FFFDF9]/90 drop-shadow-md">Mariage</p>
               <h1
                 style={{ fontFamily: "var(--font-great-vibes)" }}
-                className="mt-6 text-6xl font-light italic leading-[0.95] tracking-wide text-[#fff7e4] drop-shadow-[0_2px_10px_rgba(217,119,6,0.3)]"
+                className="mt-6 text-6xl font-light italic leading-[0.95] tracking-wide text-[var(--invitation-gold)] drop-shadow-[0_3px_16px_rgba(0,0,0,0.55)]"
               >
                 {names}
               </h1>
-              <p className="mt-7 font-serif text-xs font-semibold uppercase tracking-[0.3em] text-amber-100/90">{eventDateLabel}</p>
+              <p className="mt-7 font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[#FFFDF9]/90 drop-shadow-md">{eventDateLabel}</p>
               <RoyalDivider className="mt-8" />
               <div className="mx-auto mt-8 grid max-w-sm grid-cols-4">
                 {Object.entries(countdown).map(([label, value], index) => (
-                  <div key={label} className={index === 0 ? "px-2 text-center" : "border-l border-amber-200/35 px-2 text-center"}>
-                    <strong className="block font-serif text-3xl font-light italic text-[#fff7e4]">{value}</strong>
-                    <span className="mt-1 block text-[9px] uppercase tracking-[0.16em] text-amber-100/70">{label}</span>
+                  <div key={label} className={index === 0 ? "px-2 text-center" : "border-l border-[color:var(--invitation-border)] px-2 text-center"}>
+                    <strong className="block font-serif text-3xl font-light italic text-[#FFFDF9] drop-shadow-md">{value}</strong>
+                    <span className="mt-1 block text-[9px] uppercase tracking-[0.16em] text-[#FFFDF9]/70">{label}</span>
                   </div>
                 ))}
               </div>
@@ -419,7 +416,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
           <StorySection className="text-center">
             <SectionTitle eyebrow="Save the date" title="Le jour précieux" />
-            <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-stone-700/80">
+            <p className="mx-auto mt-6 max-w-xs font-serif text-lg italic leading-8 text-[#FFFDF9]/82">
               {event.invitationQuote ?? "L'amour ne se regarde pas, il regarde ensemble dans la même direction."}
             </p>
             <SaveDateCalendar eventDate={event.eventDate} eventName={event.name} />
@@ -438,7 +435,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
           <StorySection className="text-center">
             <SectionTitle eyebrow="Notre histoire" title="Une promesse, deux familles" />
-            <p className="mx-auto mt-7 max-w-xs font-serif text-lg leading-[1.8] text-stone-700/80">
+            <p className="mx-auto mt-7 max-w-xs font-serif text-lg leading-[1.8] text-[#FFFDF9]/82">
               {event.coupleStory ?? "Nous avons hâte de célébrer cette journée avec vous."}
             </p>
             {editorialPhotos.length > 0 && (
@@ -450,7 +447,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.65, ease: "easeOut", delay: index * 0.08 }}
-                    className={`aspect-[4/5] overflow-hidden rounded-[28px] bg-[#d9b56d]/25 p-[2px] ${
+                    className={`aspect-[4/5] overflow-hidden rounded-[28px] bg-[color:var(--invitation-chip)] p-[2px] ${
                       index % 2 === 0 ? "mr-8" : "ml-8"
                     }`}
                   >
@@ -480,13 +477,13 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           <RoyalDivider className="my-2" />
 
           <StorySection id="lieu" className="text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-full bg-amber-100/45 text-[var(--invitation-gold)]">
+            <span className="mx-auto grid size-12 place-items-center rounded-full bg-[color:var(--invitation-chip)] text-[var(--invitation-gold)] shadow-[0_12px_30px_rgba(0,0,0,.18)]">
               <MapPin className="size-5" />
             </span>
             <SectionTitle eyebrow="Lieu" title={event.venueName ?? "Lieu à définir"} />
-            {event.venueAddress && <p className="mx-auto mt-6 max-w-xs font-serif text-base leading-8 text-stone-700/75">{event.venueAddress}</p>}
+            {event.venueAddress && <p className="mx-auto mt-6 max-w-xs font-serif text-base leading-8 text-[#FFFDF9]/78">{event.venueAddress}</p>}
             {event.organizerPhone && (
-              <p className="mt-5 flex items-center justify-center gap-2 font-serif text-sm text-stone-700/70">
+              <p className="mt-5 flex items-center justify-center gap-2 font-serif text-sm text-[#FFFDF9]/72">
                 <Phone className="size-4 text-[var(--invitation-gold)]" />
                 {event.organizerPhone}
               </p>
@@ -495,7 +492,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               <Button
                 asChild
                 variant="outline"
-                className="mt-8 h-11 rounded-full border-amber-400/35 bg-transparent px-5 font-serif text-xs uppercase tracking-[0.2em] text-amber-950 hover:bg-amber-100/30"
+                className={`mt-8 h-11 rounded-full px-5 font-serif text-xs uppercase tracking-[0.2em] ${OUTLINE_BUTTON_CLASS}`}
               >
                 <a href={event.venueMapUrl} target="_blank" rel="noreferrer">
                   Ouvrir Maps
@@ -508,7 +505,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
           <StorySection id="rsvp">
             <SectionTitle eyebrow="RSVP" title="Votre réponse" />
-            <p className="mx-auto mt-5 max-w-xs text-center font-serif text-lg italic leading-8 text-stone-700/75">
+            <p className="mx-auto mt-5 max-w-xs text-center font-serif text-lg italic leading-8 text-[#FFFDF9]/78">
               Merci de confirmer votre présence avec douceur.
             </p>
             <RSVPForm event={event} guestToken={guestToken} />
@@ -532,7 +529,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
           <footer className="px-6 pb-10 pt-8 text-center">
             <Flower2 className="mx-auto size-5 text-[var(--invitation-gold)]" />
-            <p className="mt-4 font-serif text-xs uppercase tracking-[0.25em] text-amber-900/60">Élégance Invitations</p>
+            <p className="mt-4 font-serif text-xs uppercase tracking-[0.25em] text-[#FFFDF9]/62">Élégance Invitations</p>
           </footer>
         </div>
       </div>
