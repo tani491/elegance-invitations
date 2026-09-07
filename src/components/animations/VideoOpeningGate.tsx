@@ -34,7 +34,6 @@ export function VideoOpeningGate({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
   const [isUnmounted, setIsUnmounted] = useState(false);
-  const [isBackdropVisible, setIsBackdropVisible] = useState(false);
   const backgroundVideoRef = useRef<HTMLVideoElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -55,11 +54,21 @@ export function VideoOpeningGate({
     fallbackTimeoutRef.current = setTimeout(finishOpening, delayMs);
   }
 
-  function scheduleVideoReveal(video: HTMLVideoElement) {
-    const revealDelay = Number.isFinite(video.duration) && video.duration > 1
-      ? Math.max((video.duration - 0.8) * 1_000, 1_000)
+  function freezeVideoOnLastFrame(video: HTMLVideoElement | null) {
+    if (!video) return;
+
+    video.pause();
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      video.currentTime = Math.max(video.duration - 0.05, 0);
+    }
+  }
+
+  function scheduleVideoSafety(video: HTMLVideoElement) {
+    const revealDelay = Number.isFinite(video.duration) && video.duration > 0
+      ? Math.max(video.duration * 1_000 + 600, 1_600)
       : CINEMATIC_EMERGENCY_MS;
-    scheduleReveal(revealDelay);
+    if (fallbackTimeoutRef.current) clearTimeout(fallbackTimeoutRef.current);
+    fallbackTimeoutRef.current = setTimeout(finishVideoOpening, revealDelay);
   }
 
   function finishOpening() {
@@ -71,23 +80,14 @@ export function VideoOpeningGate({
     unmountTimeoutRef.current = setTimeout(() => setIsUnmounted(true), 1_250);
   }
 
-  function handleVideoProgress() {
-    const video = videoRef.current;
-    if (!video || !Number.isFinite(video.duration) || video.duration <= 1) return;
-    if (video.currentTime >= video.duration - 0.8) {
-      finishOpening();
-    }
+  function finishVideoOpening() {
+    freezeVideoOnLastFrame(videoRef.current);
+    freezeVideoOnLastFrame(backgroundVideoRef.current);
+    finishOpening();
   }
 
   function handleBackgroundVideoEnded() {
-    const video = backgroundVideoRef.current;
-    if (!video) return;
-
-    video.pause();
-    if (Number.isFinite(video.duration) && video.duration > 0) {
-      video.currentTime = Math.max(video.duration - 0.05, 0);
-    }
-    setIsBackdropVisible(Boolean(backdropSrc));
+    freezeVideoOnLastFrame(backgroundVideoRef.current);
   }
 
   async function handleStart() {
@@ -104,7 +104,6 @@ export function VideoOpeningGate({
     if (backgroundVideo) {
       backgroundVideo.currentTime = 0;
       backgroundVideo.play().catch(() => undefined);
-      setIsBackdropVisible(false);
     }
 
     if (!videoSrc || !videoRef.current) {
@@ -115,7 +114,7 @@ export function VideoOpeningGate({
     try {
       const video = videoRef.current;
       video.currentTime = 0;
-      scheduleVideoReveal(video);
+      scheduleVideoSafety(video);
       await video.play();
     } catch {
       scheduleReveal(1_200);
@@ -125,30 +124,24 @@ export function VideoOpeningGate({
   return (
     <div
       style={surfaceStyle}
-      className="relative min-h-[100dvh] overflow-x-hidden bg-[var(--invitation-primary)] [-webkit-overflow-scrolling:touch] md:px-6"
+      className="relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--invitation-primary)] [-webkit-overflow-scrolling:touch] md:px-6"
     >
-      <div aria-hidden="true" className="fixed inset-0 z-0 h-[100dvh] w-full overflow-hidden bg-[var(--invitation-primary)]">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 h-[100dvh] w-full overflow-hidden bg-[var(--invitation-primary)]">
         {videoSrc ? (
-          <>
-            <video
-              ref={backgroundVideoRef}
-              src={videoSrc}
-              poster={fallbackImage}
-              muted
-              playsInline
-              preload="auto"
-              onEnded={handleBackgroundVideoEnded}
-              className="h-full w-full select-none object-cover pointer-events-none"
-            />
-            {backdropSrc && (
-              <div
-                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${
-                  isBackdropVisible ? "opacity-100" : "opacity-0"
-                }`}
-                style={{ backgroundImage: `url("${backdropSrc}")` }}
-              />
-            )}
-          </>
+          <video
+            ref={backgroundVideoRef}
+            src={videoSrc}
+            muted
+            playsInline
+            preload="auto"
+            onEnded={handleBackgroundVideoEnded}
+            className="h-full w-full select-none object-cover"
+          />
+        ) : backdropSrc || fallbackImage ? (
+          <div
+            className="h-full w-full bg-cover bg-center"
+            style={{ backgroundImage: `url("${backdropSrc ?? fallbackImage}")` }}
+          />
         ) : (
           <div
             className="h-full w-full"
@@ -159,8 +152,8 @@ export function VideoOpeningGate({
             }}
           />
         )}
+        <div className="absolute inset-0 bg-black/35 backdrop-blur-[1px]" />
       </div>
-      <div className="fixed inset-0 z-0 bg-black/40 backdrop-blur-[2px]" />
 
       <main
         id="invitation-content"
@@ -222,16 +215,14 @@ export function VideoOpeningGate({
               <video
                 ref={videoRef}
                 src={videoSrc}
-                poster={fallbackImage}
                 playsInline
                 muted
                 preload="auto"
                 onLoadedMetadata={() => {
-                  if (startedRef.current && videoRef.current) scheduleVideoReveal(videoRef.current);
+                  if (startedRef.current && videoRef.current) scheduleVideoSafety(videoRef.current);
                 }}
-                onTimeUpdate={handleVideoProgress}
-                onEnded={finishOpening}
-                className="absolute inset-0 h-full w-full object-cover"
+                onEnded={finishVideoOpening}
+                className="absolute inset-0 h-full w-full select-none object-cover"
               />
             )}
             <div className="absolute inset-0 bg-black/25 backdrop-blur-[1px]" />

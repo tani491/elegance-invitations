@@ -430,7 +430,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
     >
       <div
         style={invitationSurfaceStyle}
-        className="relative isolate mx-auto h-[100dvh] max-w-[440px] snap-y snap-proximity overflow-x-hidden overflow-y-auto scroll-smooth bg-[var(--theme-bg)] text-[#FFFDF9] shadow-[0_0_80px_rgba(0,0,0,.35)] [-webkit-overflow-scrolling:touch]"
+        className="relative isolate mx-auto h-[100dvh] max-w-[440px] snap-y snap-proximity overflow-x-hidden overflow-y-auto scroll-smooth bg-transparent text-[#FFFDF9] shadow-[0_0_80px_rgba(0,0,0,.35)] [-webkit-overflow-scrolling:touch]"
       >
         <div className="pointer-events-none fixed inset-y-0 left-1/2 z-0 w-full max-w-[440px] -translate-x-1/2 overflow-hidden">
           <div className="absolute left-1/2 top-20 h-[620px] w-[390px] -translate-x-1/2 rounded-t-full border border-[color:var(--invitation-border)]" />
