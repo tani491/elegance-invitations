@@ -1,11 +1,12 @@
 "use client";
 
 import type { PublicEventPayload } from "@/types/database.types";
-import { themeToCssVars } from "@/lib/theme-presets";
+import { normalizeThemeConfig, themeToCssVars } from "@/lib/theme-presets";
 
 export function LiveMobilePreview({ event }: { event: PublicEventPayload }) {
   const names = `${event.brideName ?? "Mariee"} & ${event.groomName ?? "Marie"}`;
   const coverPhoto = event.officialPhotoUrls[0] ?? event.coverPhotoUrl;
+  const theme = normalizeThemeConfig(event.theme);
 
   return (
     <div className="mx-auto w-full max-w-[320px] rounded-[2rem] bg-[#1A1818] p-3 shadow-2xl">
@@ -13,21 +14,21 @@ export function LiveMobilePreview({ event }: { event: PublicEventPayload }) {
       <div
         className="overflow-hidden rounded-[1.25rem] border bg-white"
         style={{
-          ...themeToCssVars(event.theme),
-          borderColor: event.theme.goldColor,
+          ...themeToCssVars(theme),
+          borderColor: theme.accentGold ?? theme.goldColor,
           aspectRatio: "9/16",
         }}
       >
-        <div className="flex h-full flex-col" style={{ background: event.theme.previewGradient }}>
+        <div className="flex h-full flex-col" style={{ background: theme.previewGradient }}>
           {coverPhoto ? (
             <img
               src={coverPhoto}
               alt="Photo de couverture"
               className="h-1/2 w-full object-cover"
             />
-          ) : event.theme.demoVideoUrl ? (
+          ) : theme.demoVideoUrl ? (
             <video
-              src={event.theme.demoVideoUrl}
+              src={theme.demoVideoUrl}
               className="h-1/2 w-full object-cover"
               autoPlay
               muted

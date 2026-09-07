@@ -36,11 +36,11 @@ export interface ThemeConfig {
   secondaryColor: string;
   accentColor: string;
   goldColor: string;
-  bgPrimary?: string;
-  cardBg?: string;
-  accentGold?: string;
-  textColor?: string;
-  scrollAnimation?: ScrollAnimationType;
+  bgPrimary?: string | null;
+  cardBg?: string | null;
+  accentGold?: string | null;
+  textColor?: string | null;
+  scrollAnimation?: ScrollAnimationType | null;
   backdropUrl?: string | null;
   titleFont: string;
   animationType: OpeningAnimationType;

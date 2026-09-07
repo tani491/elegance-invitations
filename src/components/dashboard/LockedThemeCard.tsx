@@ -3,6 +3,7 @@
 import { Check, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PLAN_LABELS } from "@/lib/plan-gating";
+import { normalizeThemeConfig } from "@/lib/theme-presets";
 import { cn } from "@/lib/utils";
 import type { ThemeConfig } from "@/types/database.types";
 import type { PlanTier } from "@/types/wedding";
@@ -20,6 +21,8 @@ export function LockedThemeCard({
   requiredPlan: PlanTier;
   onSelect: () => void;
 }) {
+  const safeTheme = normalizeThemeConfig(theme);
+
   return (
     <button
       type="button"
@@ -30,9 +33,9 @@ export function LockedThemeCard({
         locked && "cursor-not-allowed grayscale opacity-60",
       )}
     >
-      <div className="mb-3 h-20 rounded-md" style={{ background: theme.previewGradient }} />
-      <p className="font-display-bold text-sm text-[#1A1818]">{theme.name}</p>
-      <p className="text-xs text-muted-foreground">{theme.category}</p>
+      <div className="mb-3 h-20 rounded-md" style={{ background: safeTheme.previewGradient }} />
+      <p className="font-display-bold text-sm text-[#1A1818]">{safeTheme.name}</p>
+      <p className="text-xs text-muted-foreground">{safeTheme.category}</p>
       {active && !locked && (
         <span className="absolute right-3 top-3 flex size-7 items-center justify-center rounded-full bg-[#D4AF37] text-[#1A1818]">
           <Check className="size-4" />

@@ -44,14 +44,25 @@ const updateEventSchema = z.object({
 });
 
 async function loadClientEvent(eventId: string) {
-  return db.event.findUnique({
-    where: { id: eventId },
-    include: {
-      theme: true,
-      guests: { orderBy: { createdAt: "asc" } },
-      photos: { orderBy: { uploadedAt: "desc" } },
-    },
-  });
+  try {
+    return await db.event.findUnique({
+      where: { id: eventId },
+      include: {
+        theme: true,
+        guests: { orderBy: { createdAt: "asc" } },
+        photos: { orderBy: { uploadedAt: "desc" } },
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard event theme relation failed, retrying without theme:", error);
+    return db.event.findUnique({
+      where: { id: eventId },
+      include: {
+        guests: { orderBy: { createdAt: "asc" } },
+        photos: { orderBy: { uploadedAt: "desc" } },
+      },
+    });
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -63,20 +74,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Aucun evenement rattache au compte." }, { status: 404 });
   }
 
-  const event = await loadClientEvent(eventId);
-  if (!event) {
-    return NextResponse.json({ success: false, error: "Evenement introuvable." }, { status: 404 });
-  }
+  try {
+    const event = await loadClientEvent(eventId);
+    if (!event) {
+      return NextResponse.json({ success: false, error: "Evenement introuvable." }, { status: 404 });
+    }
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      event: serializePublicEvent(event),
-      guests: event.guests,
-      photos: event.photos,
-      photographerLink: event.photographerToken ? `/photographer/${event.photographerToken}` : null,
-    },
-  });
+    return NextResponse.json({
+      success: true,
+      data: {
+        event: serializePublicEvent(event),
+        guests: event.guests,
+        photos: event.photos,
+        photographerLink: event.photographerToken ? `/photographer/${event.photographerToken}` : null,
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard event fetch failed:", error);
+    return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest) {
@@ -93,7 +109,13 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Donnees evenement invalides." }, { status: 400 });
   }
 
-  const currentEvent = await db.event.findUnique({ where: { id: eventId }, select: { planType: true } });
+  let currentEvent;
+  try {
+    currentEvent = await db.event.findUnique({ where: { id: eventId }, select: { planType: true } });
+  } catch (error) {
+    console.error("Dashboard event lookup failed:", error);
+    return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 500 });
+  }
   if (!currentEvent) {
     return NextResponse.json({ success: false, error: "Evenement introuvable." }, { status: 404 });
   }
@@ -127,15 +149,33 @@ export async function PATCH(request: NextRequest) {
     updateData.officialPhotoUrls = officialPhotoUrls.slice(0, photoLimitForPlan(currentEvent.planType));
   }
 
-  const updated = await db.event.update({
-    where: { id: eventId },
-    data: updateData,
-    include: {
-      theme: true,
-      guests: { orderBy: { createdAt: "asc" } },
-      photos: { orderBy: { uploadedAt: "desc" } },
-    },
-  });
+  let updated;
+  try {
+    updated = await db.event.update({
+      where: { id: eventId },
+      data: updateData,
+      include: {
+        theme: true,
+        guests: { orderBy: { createdAt: "asc" } },
+        photos: { orderBy: { uploadedAt: "desc" } },
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard event update with theme failed, retrying without theme:", error);
+    try {
+      updated = await db.event.update({
+        where: { id: eventId },
+        data: updateData,
+        include: {
+          guests: { orderBy: { createdAt: "asc" } },
+          photos: { orderBy: { uploadedAt: "desc" } },
+        },
+      });
+    } catch (retryError) {
+      console.error("Dashboard event update failed:", retryError);
+      return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 500 });
+    }
+  }
 
   return NextResponse.json({
     success: true,

@@ -10,15 +10,30 @@ type InvitationPageProps = {
   searchParams: Promise<{ guest?: string }>;
 };
 
-const getInvitationEvent = cache(async (slug: string) =>
-  db.event.findFirst({
-    where: { slug, isActive: true },
-    include: {
-      theme: true,
-      photos: { orderBy: { uploadedAt: "desc" } },
-    },
-  }),
-);
+const getInvitationEvent = cache(async (slug: string) => {
+  try {
+    return await db.event.findFirst({
+      where: { slug, isActive: true },
+      include: {
+        theme: true,
+        photos: { orderBy: { uploadedAt: "desc" } },
+      },
+    });
+  } catch (error) {
+    console.error("Invitation theme relation failed, retrying without theme:", error);
+    try {
+      return await db.event.findFirst({
+        where: { slug, isActive: true },
+        include: {
+          photos: { orderBy: { uploadedAt: "desc" } },
+        },
+      });
+    } catch (retryError) {
+      console.error("Invitation event fallback failed:", retryError);
+      return null;
+    }
+  }
+});
 
 function metadataBaseUrl() {
   const raw =

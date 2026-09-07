@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { themeToCssVars } from "@/lib/theme-presets";
+import { normalizeThemeConfig, themeToCssVars } from "@/lib/theme-presets";
 import type { PublicEventPayload, ScrollAnimationType } from "@/types/database.types";
 
 type VideoTheme = PublicEventPayload["theme"] & {
@@ -105,16 +105,17 @@ function StorySection({
   id?: string;
   children: ReactNode;
   className?: string;
-  animation?: ScrollAnimationType;
+  animation?: ScrollAnimationType | null;
   index?: number;
 }) {
-  const motionConfig = scrollMotion(animation, index);
+  const safeAnimation = animation || "fade-up";
+  const motionConfig = scrollMotion(safeAnimation, index);
 
   return (
     <motion.section
       id={id}
-      data-scroll-animation={animation}
-      className={`scroll-animation-${animation} relative flex min-h-[82dvh] snap-start items-center px-3 py-5`}
+      data-scroll-animation={safeAnimation}
+      className={`scroll-animation-${safeAnimation} relative flex min-h-[82dvh] snap-start items-center px-3 py-5`}
       initial={motionConfig.initial}
       whileInView={motionConfig.whileInView}
       viewport={{ once: true, amount: 0.22, margin: "-70px" }}
@@ -229,11 +230,19 @@ function RSVPForm({ event, guestToken }: { event: PublicEventPayload; guestToken
   );
 }
 
-function VerseSection({ event, index }: { event: PublicEventPayload; index: number }) {
+function VerseSection({
+  event,
+  index,
+  animation,
+}: {
+  event: PublicEventPayload;
+  index: number;
+  animation?: ScrollAnimationType | null;
+}) {
   const quote = event.invitationQuote ?? "Deux familles, deux cœurs, une promesse placée sous le signe de l'amour.";
 
   return (
-    <StorySection id="benediction" animation={event.theme.scrollAnimation} index={index} className="rounded-t-[120px] pt-12 text-center">
+    <StorySection id="benediction" animation={animation || "fade-up"} index={index} className="rounded-t-[120px] pt-12 text-center">
       <div className="mx-auto mb-6 flex max-w-[240px] items-center justify-center gap-3 text-[var(--invitation-gold)]">
         <span className="h-px flex-1 bg-[var(--invitation-gold-line)]" />
         <Flower2 className="size-4" />
@@ -253,12 +262,20 @@ function VerseSection({ event, index }: { event: PublicEventPayload; index: numb
   );
 }
 
-function WhatsAppContactsSection({ event, index }: { event: PublicEventPayload; index: number }) {
+function WhatsAppContactsSection({
+  event,
+  index,
+  animation,
+}: {
+  event: PublicEventPayload;
+  index: number;
+  animation?: ScrollAnimationType | null;
+}) {
   const href = buildWhatsAppHref(event.organizerPhone, `Bonjour, j'ai une question au sujet de ${event.name}.`);
   if (!href) return null;
 
   return (
-    <StorySection id="contacts" animation={event.theme.scrollAnimation} index={index} className="text-center">
+    <StorySection id="contacts" animation={animation || "fade-up"} index={index} className="text-center">
       <SectionTitle eyebrow="Une question ?" title="Contacts WhatsApp" />
       <div className="mt-8 rounded-[24px] border border-[color:var(--invitation-sheet-border)] bg-white/60 p-4 text-left shadow-[0_14px_34px_rgba(0,0,0,.1)]">
         <div className="flex items-center gap-3">
@@ -294,7 +311,7 @@ function WhatsAppCelebrationCTA({
   index,
 }: {
   url: string | null;
-  animation?: ScrollAnimationType;
+  animation?: ScrollAnimationType | null;
   index: number;
 }) {
   if (!url) return null;
@@ -318,12 +335,20 @@ function WhatsAppCelebrationCTA({
   );
 }
 
-function MemoryGallery({ event, index }: { event: PublicEventPayload; index: number }) {
+function MemoryGallery({
+  event,
+  index,
+  animation,
+}: {
+  event: PublicEventPayload;
+  index: number;
+  animation?: ScrollAnimationType | null;
+}) {
   const photos = event.galleryPhotos;
   if (photos.length === 0) return null;
 
   return (
-    <StorySection animation={event.theme.scrollAnimation} index={index}>
+    <StorySection animation={animation || "fade-up"} index={index}>
       <SectionTitle eyebrow="Galerie" title="Éclats de mémoire" />
       <div className="mt-10 grid grid-cols-2 gap-2.5">
         {photos.map((photo, index) => (
@@ -370,12 +395,13 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
   const heroPhoto = photos[0];
   const editorialPhotos = photos.slice(1, 3);
   const monogram = `${event.brideName?.[0] ?? "E"}${event.groomName?.[0] ?? "G"}`.toUpperCase();
-  const openingVideoUrl = openingVideoSource(event.theme);
+  const theme = useMemo(() => normalizeThemeConfig(event.theme), [event.theme]);
+  const openingVideoUrl = openingVideoSource(theme);
   const eventDateLabel = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
     : "Date à confirmer";
   const hasOrganizerContact = Boolean(buildWhatsAppHref(event.organizerPhone, ""));
-  const invitationSurfaceStyle = useMemo(() => themeToCssVars(event.theme), [event.theme]);
+  const invitationSurfaceStyle = useMemo(() => themeToCssVars(theme), [theme]);
 
   useEffect(() => {
     Object.entries(invitationSurfaceStyle).forEach(([key, value]) => {
@@ -393,11 +419,11 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
   return (
     <VideoOpeningGate
       videoSrc={openingVideoUrl}
-      backdropSrc={event.theme.backdropUrl}
+      backdropSrc={theme.backdropUrl}
       ambientAudioSrc={event.musicUrl}
       monogram={monogram}
       title={names}
-      fallbackGradient={event.theme.previewGradient}
+      fallbackGradient={theme.previewGradient}
       fallbackImage={heroPhoto}
       surfaceStyle={invitationSurfaceStyle}
       onOpened={() => setIsOpened(true)}
@@ -457,9 +483,9 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
             </motion.div>
           </section>
 
-          <VerseSection event={event} index={0} />
+          <VerseSection event={event} index={0} animation={theme.scrollAnimation} />
 
-          <StorySection id="date" animation={event.theme.scrollAnimation} index={1} className="rounded-t-[120px] pt-12 text-center">
+          <StorySection id="date" animation={theme.scrollAnimation} index={1} className="rounded-t-[120px] pt-12 text-center">
             <TripleScratchDate date={event.eventDate} title={event.name} />
           </StorySection>
 
@@ -467,14 +493,14 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
           {(event.dressCode || event.dressCodeColors.length > 0) && (
             <>
-              <StorySection animation={event.theme.scrollAnimation} index={2}>
+              <StorySection animation={theme.scrollAnimation} index={2}>
                 <DressCodeSection event={event} />
               </StorySection>
               <RoyalDivider className="my-2" />
             </>
           )}
 
-          <StorySection animation={event.theme.scrollAnimation} index={3} className="text-center">
+          <StorySection animation={theme.scrollAnimation} index={3} className="text-center">
             <SectionTitle eyebrow="Notre histoire" title="Une promesse, deux familles" />
             <p className="mx-auto mt-7 max-w-xs font-serif text-lg leading-[1.8] text-[var(--invitation-sheet-muted)]">
               {event.coupleStory ?? "Nous avons hâte de célébrer cette journée avec vous."}
@@ -502,7 +528,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           {event.program.length > 0 && (
             <>
               <RoyalDivider className="my-2" />
-              <StorySection animation={event.theme.scrollAnimation} index={4}>
+              <StorySection animation={theme.scrollAnimation} index={4}>
                 <TimelineSection event={event} />
               </StorySection>
             </>
@@ -511,13 +537,13 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           {event.galleryPhotos.length > 0 && (
             <>
               <RoyalDivider className="my-2" />
-              <MemoryGallery event={event} index={5} />
+              <MemoryGallery event={event} index={5} animation={theme.scrollAnimation} />
             </>
           )}
 
           <RoyalDivider className="my-2" />
 
-          <StorySection id="lieu" animation={event.theme.scrollAnimation} index={6} className="text-center">
+          <StorySection id="lieu" animation={theme.scrollAnimation} index={6} className="text-center">
             <span className="mx-auto grid size-12 place-items-center rounded-full bg-[color:var(--invitation-chip)] text-[var(--invitation-gold)] shadow-[0_12px_30px_rgba(0,0,0,.18)]">
               <MapPin className="size-5" />
             </span>
@@ -545,12 +571,12 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           {hasOrganizerContact && (
             <>
               <RoyalDivider className="my-2" />
-              <WhatsAppContactsSection event={event} index={7} />
+              <WhatsAppContactsSection event={event} index={7} animation={theme.scrollAnimation} />
               <RoyalDivider className="my-2" />
             </>
           )}
 
-          <StorySection id="rsvp" animation={event.theme.scrollAnimation} index={8}>
+          <StorySection id="rsvp" animation={theme.scrollAnimation} index={8}>
             <SectionTitle eyebrow="RSVP" title="Votre réponse" />
             <p className="mx-auto mt-5 max-w-xs text-center font-serif text-lg italic leading-8 text-[var(--invitation-sheet-muted)]">
               Merci de confirmer votre présence avec douceur.
@@ -561,14 +587,14 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           {event.whatsappGroupUrl && (
             <>
               <RoyalDivider className="my-2" />
-              <WhatsAppCelebrationCTA url={event.whatsappGroupUrl} animation={event.theme.scrollAnimation} index={9} />
+              <WhatsAppCelebrationCTA url={event.whatsappGroupUrl} animation={theme.scrollAnimation} index={9} />
             </>
           )}
 
           {(event.giftIban || event.giftWave) && (
             <>
               <RoyalDivider className="my-2" />
-              <StorySection animation={event.theme.scrollAnimation} index={10}>
+              <StorySection animation={theme.scrollAnimation} index={10}>
                 <GiftListIBAN iban={event.giftIban} wave={event.giftWave} />
               </StorySection>
             </>

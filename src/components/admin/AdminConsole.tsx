@@ -170,13 +170,22 @@ export default function AdminConsole() {
   }, [events, themes]);
 
   async function loadAdminData() {
-    const [themesRes, eventsRes] = await Promise.all([
-      fetch("/api/admin/themes", { cache: "no-store" }),
-      fetch("/api/admin/events"),
+    const [themesResult, eventsResult] = await Promise.allSettled([
+      fetch("/api/admin/themes", { cache: "no-store" }).then((response) => response.json()),
+      fetch("/api/admin/events", { cache: "no-store" }).then((response) => response.json()),
     ]);
-    const [themesJson, eventsJson] = await Promise.all([themesRes.json(), eventsRes.json()]);
-    if (themesJson.success) setThemes(themesJson.data);
-    if (eventsJson.success) setEvents(eventsJson.data);
+
+    if (themesResult.status === "fulfilled" && themesResult.value.success) {
+      setThemes(themesResult.value.data ?? []);
+    } else {
+      console.error("Admin themes load failed:", themesResult);
+    }
+
+    if (eventsResult.status === "fulfilled" && eventsResult.value.success) {
+      setEvents(eventsResult.value.data ?? []);
+    } else {
+      console.error("Admin events load failed:", eventsResult);
+    }
   }
 
   useEffect(() => {

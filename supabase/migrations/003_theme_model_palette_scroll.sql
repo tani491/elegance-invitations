@@ -1,18 +1,32 @@
 alter table if exists public."Theme"
-  add column if not exists "bgPrimary" text not null default '#5C1D24',
-  add column if not exists "cardBg" text not null default '#FAF7F2',
-  add column if not exists "accentGold" text not null default '#D4AF37',
-  add column if not exists "textColor" text not null default '#5C1D24',
-  add column if not exists "scrollAnimation" text not null default 'fade-up',
+  add column if not exists "bgPrimary" text default '#FAF6F0',
+  add column if not exists "cardBg" text default 'rgba(255, 255, 255, 0.85)',
+  add column if not exists "accentGold" text default '#D4AF37',
+  add column if not exists "textColor" text default '#2D2013',
+  add column if not exists "scrollAnimation" text default 'fade-up',
   add column if not exists "backdropUrl" text;
 
 alter table if exists public.themes
-  add column if not exists bg_primary text not null default '#5C1D24',
-  add column if not exists card_bg text not null default '#FAF7F2',
-  add column if not exists accent_gold text not null default '#D4AF37',
-  add column if not exists text_color text not null default '#5C1D24',
-  add column if not exists scroll_animation text not null default 'fade-up',
+  add column if not exists bg_primary text default '#FAF6F0',
+  add column if not exists card_bg text default 'rgba(255, 255, 255, 0.85)',
+  add column if not exists accent_gold text default '#D4AF37',
+  add column if not exists text_color text default '#2D2013',
+  add column if not exists scroll_animation text default 'fade-up',
   add column if not exists backdrop_url text;
+
+alter table if exists public."Theme"
+  alter column "bgPrimary" drop not null,
+  alter column "cardBg" drop not null,
+  alter column "accentGold" drop not null,
+  alter column "textColor" drop not null,
+  alter column "scrollAnimation" drop not null;
+
+alter table if exists public.themes
+  alter column bg_primary drop not null,
+  alter column card_bg drop not null,
+  alter column accent_gold drop not null,
+  alter column text_color drop not null,
+  alter column scroll_animation drop not null;
 
 do $$
 begin

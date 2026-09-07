@@ -117,93 +117,106 @@ export async function GET(request: NextRequest) {
   const { session, response } = await requireApiRole(request, [AUTH_ROLES.CLIENT, AUTH_ROLES.SUPER_ADMIN]);
   if (response) return response;
 
-  const role = session.user.role as ScannerRole;
-  const eventId = await resolveEventId(role, session.user.eventId, request.nextUrl.searchParams.get("eventId"));
-  if (!eventId) {
-    return NextResponse.json({ success: false, error: "Aucun evenement scanner disponible." }, { status: 404 });
-  }
+  try {
+    const role = session.user.role as ScannerRole;
+    const eventId = await resolveEventId(role, session.user.eventId, request.nextUrl.searchParams.get("eventId"));
+    if (!eventId) {
+      return NextResponse.json({ success: false, error: "Aucun evenement scanner disponible." }, { status: 404 });
+    }
 
-  const snapshot = await getScannerSnapshot(eventId);
-  if (!snapshot.event || !snapshot.event.isActive) {
-    return NextResponse.json({ success: false, error: "Evenement introuvable ou suspendu." }, { status: 404 });
-  }
+    const snapshot = await getScannerSnapshot(eventId);
+    if (!snapshot.event || !snapshot.event.isActive) {
+      return NextResponse.json({ success: false, error: "Evenement introuvable ou suspendu." }, { status: 404 });
+    }
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      ...snapshot,
-      guests: snapshot.guests.map(serializeGuest),
-    },
-  });
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...snapshot,
+        guests: snapshot.guests.map(serializeGuest),
+      },
+    });
+  } catch (error) {
+    console.error("Scanner snapshot error:", error);
+    return NextResponse.json({ success: false, error: "Impossible de charger le scanner." }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
   const { session, response } = await requireApiRole(request, [AUTH_ROLES.CLIENT, AUTH_ROLES.SUPER_ADMIN]);
   if (response) return response;
 
-  const body = await request.json().catch(() => ({}));
-  const guestToken = extractGuestToken(body.token);
-  if (!guestToken) {
-    return NextResponse.json({ success: false, result: "invalid", message: "Invitation non reconnue ou annulee." }, { status: 400 });
-  }
-
-  const role = session.user.role as ScannerRole;
-  const eventId = await resolveEventId(role, session.user.eventId, typeof body.eventId === "string" ? body.eventId : null);
-  if (!eventId) {
-    return NextResponse.json({ success: false, result: "invalid", message: "Evenement scanner introuvable." }, { status: 404 });
-  }
-
-  const staffLabel =
-    typeof body.staffLabel === "string" && body.staffLabel.trim()
-      ? body.staffLabel.trim().slice(0, 80)
-      : session.user.displayName || "Staff";
-
-  const result = await db.$transaction(async (tx) => {
-    const guest = await tx.eventGuest.findFirst({
-      where: { eventId, qrToken: guestToken, event: { isActive: true } },
-    });
-
-    if (!guest) return { result: "invalid" as const, guest: null };
-
-    if (guest.isCheckedIn) {
-      return { result: "already" as const, guest };
+  try {
+    const body = await request.json().catch(() => ({}));
+    const guestToken = extractGuestToken(body.token);
+    if (!guestToken) {
+      return NextResponse.json({ success: false, result: "invalid", message: "Invitation non reconnue ou annulee." }, { status: 400 });
     }
 
-    const checkedInAt = new Date();
-    const update = await tx.eventGuest.updateMany({
-      where: { id: guest.id, isCheckedIn: false },
-      data: { isCheckedIn: true, checkedInAt, checkedInBy: staffLabel },
+    const role = session.user.role as ScannerRole;
+    const eventId = await resolveEventId(role, session.user.eventId, typeof body.eventId === "string" ? body.eventId : null);
+    if (!eventId) {
+      return NextResponse.json({ success: false, result: "invalid", message: "Evenement scanner introuvable." }, { status: 404 });
+    }
+
+    const staffLabel =
+      typeof body.staffLabel === "string" && body.staffLabel.trim()
+        ? body.staffLabel.trim().slice(0, 80)
+        : session.user.displayName || "Staff";
+
+    const result = await db.$transaction(async (tx) => {
+      const guest = await tx.eventGuest.findFirst({
+        where: { eventId, qrToken: guestToken, event: { isActive: true } },
+      });
+
+      if (!guest) return { result: "invalid" as const, guest: null };
+
+      if (guest.isCheckedIn) {
+        return { result: "already" as const, guest };
+      }
+
+      const checkedInAt = new Date();
+      const update = await tx.eventGuest.updateMany({
+        where: { id: guest.id, isCheckedIn: false },
+        data: { isCheckedIn: true, checkedInAt, checkedInBy: staffLabel },
+      });
+
+      const freshGuest = await tx.eventGuest.findUnique({ where: { id: guest.id } });
+      if (update.count === 0 || !freshGuest) return { result: "already" as const, guest: freshGuest ?? guest };
+
+      return { result: "success" as const, guest: freshGuest };
     });
 
-    const freshGuest = await tx.eventGuest.findUnique({ where: { id: guest.id } });
-    if (update.count === 0 || !freshGuest) return { result: "already" as const, guest: freshGuest ?? guest };
+    const snapshot = await getScannerSnapshot(eventId);
 
-    return { result: "success" as const, guest: freshGuest };
-  });
+    if (result.result === "invalid" || !result.guest) {
+      return NextResponse.json({
+        success: false,
+        result: "invalid",
+        message: "Invitation non reconnue ou annulee.",
+        data: { ...snapshot, guests: snapshot.guests.map(serializeGuest) },
+      });
+    }
 
-  const snapshot = await getScannerSnapshot(eventId);
+    const guest = serializeGuest(result.guest);
+    const alreadyTime = formatScanTime(result.guest.checkedInAt);
+    const alreadyBy = result.guest.checkedInBy || "un membre du staff";
 
-  if (result.result === "invalid" || !result.guest) {
     return NextResponse.json({
-      success: false,
-      result: "invalid",
-      message: "Invitation non reconnue ou annulee.",
+      success: result.result === "success",
+      result: result.result,
+      message:
+        result.result === "success"
+          ? `Bienvenue ${result.guest.fullName}. Entree validee.`
+          : `Attention : Ce Pass a deja ete valide${alreadyTime ? ` a ${alreadyTime}` : ""} par ${alreadyBy}.`,
+      guest,
       data: { ...snapshot, guests: snapshot.guests.map(serializeGuest) },
     });
+  } catch (error) {
+    console.error("Scanner check-in error:", error);
+    return NextResponse.json(
+      { success: false, result: "invalid", message: "Validation du pass indisponible." },
+      { status: 500 },
+    );
   }
-
-  const guest = serializeGuest(result.guest);
-  const alreadyTime = formatScanTime(result.guest.checkedInAt);
-  const alreadyBy = result.guest.checkedInBy || "un membre du staff";
-
-  return NextResponse.json({
-    success: result.result === "success",
-    result: result.result,
-    message:
-      result.result === "success"
-        ? `Bienvenue ${result.guest.fullName}. Entree validee.`
-        : `Attention : Ce Pass a deja ete valide${alreadyTime ? ` a ${alreadyTime}` : ""} par ${alreadyBy}.`,
-    guest,
-    data: { ...snapshot, guests: snapshot.guests.map(serializeGuest) },
-  });
 }

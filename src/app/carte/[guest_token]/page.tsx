@@ -4,10 +4,12 @@ import { CalendarDays, Clock, Crown, MapPin, Sparkles, UsersRound } from "lucide
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PassQrCode } from "@/components/invitation/PassQrCode";
-import { DEFAULT_PROGRAM, getDefaultTheme, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
+import { DEFAULT_PROGRAM, getDefaultTheme, normalizeThemeConfig, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
 import { serializeTheme } from "@/lib/theme-store";
 import { db } from "@/lib/db";
 import type { ProgramStep } from "@/types/database.types";
+
+type SerializableTheme = Parameters<typeof serializeTheme>[0];
 
 function formatEventDate(date: Date | null) {
   if (!date) return "Date à confirmer";
@@ -22,27 +24,43 @@ function formatEventDate(date: Date | null) {
 
 export default async function GuestPassPage({ params }: { params: Promise<{ guest_token: string }> }) {
   const { guest_token } = await params;
-  const guest = await db.eventGuest.findUnique({
-    where: { qrToken: guest_token },
-    include: {
-      event: {
-        include: { theme: true },
+  let guest;
+
+  try {
+    guest = await db.eventGuest.findUnique({
+      where: { qrToken: guest_token },
+      include: {
+        event: {
+          include: { theme: true },
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("Guest pass theme relation failed, retrying without theme:", error);
+    try {
+      guest = await db.eventGuest.findUnique({
+        where: { qrToken: guest_token },
+        include: { event: true },
+      });
+    } catch (retryError) {
+      console.error("Guest pass fallback failed:", retryError);
+      guest = null;
+    }
+  }
 
   if (!guest || !guest.event.isActive) notFound();
 
   const event = guest.event;
-  const baseTheme = event.theme ? serializeTheme(event.theme) : getDefaultTheme(event.template);
-  const theme = {
+  const eventTheme = "theme" in event ? (event.theme as SerializableTheme) : null;
+  const baseTheme = eventTheme ? serializeTheme(eventTheme) : getDefaultTheme(event.template);
+  const theme = normalizeThemeConfig({
     ...baseTheme,
     primaryColor: event.primaryColor ?? baseTheme.primaryColor,
     secondaryColor: event.secondaryColor ?? baseTheme.secondaryColor,
     accentColor: event.accentColor ?? baseTheme.accentColor,
     goldColor: event.goldColor ?? baseTheme.goldColor,
     titleFont: event.titleFont ?? baseTheme.titleFont,
-  };
+  });
   const officialPhotos = parseJsonArray<string>(event.officialPhotoUrls, []);
   const heroPhoto = event.coverPhotoUrl ?? officialPhotos[0] ?? null;
   const program = parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM).slice(0, 3);

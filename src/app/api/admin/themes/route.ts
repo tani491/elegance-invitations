@@ -96,7 +96,7 @@ function normalizeThemeWriteData(data: z.infer<typeof themePayloadSchema>) {
 
 async function nextAvailableSlug(name: string, requestedSlug?: string) {
   const base = slugify(requestedSlug ?? name);
-  const existing = await db.theme.findUnique({ where: { slug: base } });
+  const existing = await db.theme.findUnique({ where: { slug: base }, select: { id: true } });
   return existing ? uniqueSlug(base) : base;
 }
 
@@ -104,15 +104,23 @@ export async function GET(request: NextRequest) {
   const { session, response } = await requireApiRole(request, [AUTH_ROLES.SUPER_ADMIN]);
   if (!session) return response;
 
-  await ensureDefaultThemes();
-  const themes = await db.theme.findMany({
-    orderBy: [{ category: "asc" }, { name: "asc" }],
-  });
+  try {
+    await ensureDefaultThemes();
+    const themes = await db.theme.findMany({
+      orderBy: [{ category: "asc" }, { name: "asc" }],
+    });
 
-  return NextResponse.json(
-    { success: true, data: themes.map(serializeTheme) },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+    return NextResponse.json(
+      { success: true, data: themes.map(serializeTheme) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    console.error("Admin themes fetch failed:", error);
+    return NextResponse.json(
+      { success: true, data: DEFAULT_THEMES.map((theme) => serializeTheme(theme)), source: "static-fallback" },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -124,44 +132,49 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Configuration de theme invalide." }, { status: 400 });
   }
 
-  const { slug, ...payload } = parsed.data;
-  const data = normalizeThemeWriteData({
-    ...payload,
-    primaryColor: payload.bgPrimary,
-    secondaryColor: payload.cardBg,
-    accentColor: payload.accentGold,
-    goldColor: payload.accentGold,
-    previewGradient: payload.previewGradient ?? previewGradientFrom(payload),
-  });
+  try {
+    const { slug, ...payload } = parsed.data;
+    const data = normalizeThemeWriteData({
+      ...payload,
+      primaryColor: payload.bgPrimary,
+      secondaryColor: payload.cardBg,
+      accentColor: payload.accentGold,
+      goldColor: payload.accentGold,
+      previewGradient: payload.previewGradient ?? previewGradientFrom(payload),
+    });
 
-  const created = await db.theme.create({
-    data: {
-      slug: await nextAvailableSlug(payload.name, slug),
-      name: payload.name,
-      category: payload.category,
-      primaryColor: data.primaryColor ?? payload.bgPrimary,
-      secondaryColor: data.secondaryColor ?? payload.cardBg,
-      accentColor: data.accentColor ?? payload.accentGold,
-      goldColor: data.goldColor ?? payload.accentGold,
-      bgPrimary: data.bgPrimary ?? payload.bgPrimary,
-      cardBg: data.cardBg ?? payload.cardBg,
-      accentGold: data.accentGold ?? payload.accentGold,
-      textColor: data.textColor ?? payload.textColor,
-      scrollAnimation: data.scrollAnimation ?? payload.scrollAnimation,
-      backdropUrl: data.backdropUrl ?? null,
-      titleFont: payload.titleFont,
-      animationType: payload.animationType,
-      openingVideoUrl: data.openingVideoUrl ?? null,
-      previewGradient: data.previewGradient ?? previewGradientFrom(payload),
-      demoVideoUrl: data.demoVideoUrl ?? null,
-      isActive: data.isActive ?? true,
-    },
-  });
+    const created = await db.theme.create({
+      data: {
+        slug: await nextAvailableSlug(payload.name, slug),
+        name: payload.name,
+        category: payload.category,
+        primaryColor: data.primaryColor ?? payload.bgPrimary,
+        secondaryColor: data.secondaryColor ?? payload.cardBg,
+        accentColor: data.accentColor ?? payload.accentGold,
+        goldColor: data.goldColor ?? payload.accentGold,
+        bgPrimary: data.bgPrimary ?? payload.bgPrimary,
+        cardBg: data.cardBg ?? payload.cardBg,
+        accentGold: data.accentGold ?? payload.accentGold,
+        textColor: data.textColor ?? payload.textColor,
+        scrollAnimation: data.scrollAnimation ?? payload.scrollAnimation,
+        backdropUrl: data.backdropUrl ?? null,
+        titleFont: payload.titleFont,
+        animationType: payload.animationType,
+        openingVideoUrl: data.openingVideoUrl ?? null,
+        previewGradient: data.previewGradient ?? previewGradientFrom(payload),
+        demoVideoUrl: data.demoVideoUrl ?? null,
+        isActive: data.isActive ?? true,
+      },
+    });
 
-  return NextResponse.json(
-    { success: true, data: serializeTheme(created) },
-    { status: 201, headers: { "Cache-Control": "no-store" } },
-  );
+    return NextResponse.json(
+      { success: true, data: serializeTheme(created) },
+      { status: 201, headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    console.error("Admin theme create failed:", error);
+    return NextResponse.json({ success: false, error: "Creation du modele impossible." }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest) {
@@ -173,16 +186,21 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Configuration de theme invalide." }, { status: 400 });
   }
 
-  const { slug, ...data } = parsed.data;
-  const updated = await db.theme.update({
-    where: { slug },
-    data: normalizeThemeWriteData(data),
-  });
+  try {
+    const { slug, ...data } = parsed.data;
+    const updated = await db.theme.update({
+      where: { slug },
+      data: normalizeThemeWriteData(data),
+    });
 
-  return NextResponse.json(
-    { success: true, data: serializeTheme(updated) },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+    return NextResponse.json(
+      { success: true, data: serializeTheme(updated) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    console.error("Admin theme update failed:", error);
+    return NextResponse.json({ success: false, error: "Theme non sauvegarde." }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {
@@ -194,22 +212,27 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Modele invalide." }, { status: 400 });
   }
 
-  if (DEFAULT_THEME_SLUGS.has(parsed.data.slug)) {
-    const disabled = await db.theme.update({
-      where: { slug: parsed.data.slug },
-      data: { isActive: false },
-    });
+  try {
+    if (DEFAULT_THEME_SLUGS.has(parsed.data.slug)) {
+      const disabled = await db.theme.update({
+        where: { slug: parsed.data.slug },
+        data: { isActive: false },
+      });
+
+      return NextResponse.json(
+        { success: true, data: serializeTheme(disabled), mode: "disabled" },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
+    await db.theme.delete({ where: { slug: parsed.data.slug } });
 
     return NextResponse.json(
-      { success: true, data: serializeTheme(disabled), mode: "disabled" },
+      { success: true, data: { slug: parsed.data.slug }, mode: "deleted" },
       { headers: { "Cache-Control": "no-store" } },
     );
+  } catch (error) {
+    console.error("Admin theme delete failed:", error);
+    return NextResponse.json({ success: false, error: "Suppression impossible." }, { status: 500 });
   }
-
-  await db.theme.delete({ where: { slug: parsed.data.slug } });
-
-  return NextResponse.json(
-    { success: true, data: { slug: parsed.data.slug }, mode: "deleted" },
-    { headers: { "Cache-Control": "no-store" } },
-  );
 }

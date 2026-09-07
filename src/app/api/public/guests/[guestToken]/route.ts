@@ -7,10 +7,25 @@ export async function GET(
   { params }: { params: Promise<{ guestToken: string }> },
 ) {
   const { guestToken } = await params;
-  const guest = await db.eventGuest.findUnique({
-    where: { qrToken: guestToken },
-    include: { event: { include: { theme: true, photos: { orderBy: { uploadedAt: "desc" } } } } },
-  });
+  let guest;
+
+  try {
+    guest = await db.eventGuest.findUnique({
+      where: { qrToken: guestToken },
+      include: { event: { include: { theme: true, photos: { orderBy: { uploadedAt: "desc" } } } } },
+    });
+  } catch (error) {
+    console.error("Public guest theme relation failed, retrying without theme:", error);
+    try {
+      guest = await db.eventGuest.findUnique({
+        where: { qrToken: guestToken },
+        include: { event: { include: { photos: { orderBy: { uploadedAt: "desc" } } } } },
+      });
+    } catch (retryError) {
+      console.error("Public guest fallback failed:", retryError);
+      return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 500 });
+    }
+  }
 
   if (!guest || !guest.event.isActive) {
     return NextResponse.json({ success: false, error: "Pass introuvable." }, { status: 404 });

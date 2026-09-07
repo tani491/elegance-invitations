@@ -54,17 +54,24 @@ export default function DashboardPage() {
   }), [guests]);
 
   async function loadDashboard() {
-    const [eventRes, themesRes] = await Promise.all([
-      fetch("/api/dashboard/event"),
-      fetch("/api/themes", { cache: "no-store" }),
+    const [eventResult, themesResult] = await Promise.allSettled([
+      fetch("/api/dashboard/event").then((response) => response.json()),
+      fetch("/api/themes", { cache: "no-store" }).then((response) => response.json()),
     ]);
-    const [eventJson, themesJson] = await Promise.all([eventRes.json(), themesRes.json()]);
-    if (eventJson.success) {
-      setEvent(eventJson.data.event);
-      setGuests(eventJson.data.guests);
-      setPhotographerLink(eventJson.data.photographerLink);
+
+    if (eventResult.status === "fulfilled" && eventResult.value.success) {
+      setEvent(eventResult.value.data.event);
+      setGuests(eventResult.value.data.guests ?? []);
+      setPhotographerLink(eventResult.value.data.photographerLink ?? null);
+    } else {
+      console.error("Dashboard event load failed:", eventResult);
     }
-    if (themesJson.success) setThemes(themesJson.data);
+
+    if (themesResult.status === "fulfilled" && themesResult.value.success) {
+      setThemes(themesResult.value.data ?? []);
+    } else {
+      console.error("Theme catalog load failed:", themesResult);
+    }
   }
 
   useEffect(() => {
@@ -300,7 +307,7 @@ export default function DashboardPage() {
                       Les cadenas indiquent les modeles reserves aux formules superieures. Les photos sont limitees a {photoLimit} pour votre offre.
                     </p>
                   </div>
-                  <ThemeSelector themes={themes} selectedSlug={event.theme.slug} planType={event.planType} onSelect={(themeSlug) => updateEvent({ themeSlug })} />
+                  <ThemeSelector themes={themes} selectedSlug={event.theme?.slug ?? "medina-orientale"} planType={event.planType} onSelect={(themeSlug) => updateEvent({ themeSlug })} />
                   <div className="space-y-2">
                     <Label>Photos officielles ({officialPhotos.length}/{photoLimit})</Label>
                     <ImageUploader

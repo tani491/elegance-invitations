@@ -154,6 +154,62 @@ export function getDefaultTheme(slug = "medina-orientale") {
   return DEFAULT_THEMES.find((theme) => theme.slug === slug) ?? DEFAULT_THEMES[0];
 }
 
+const SAFE_THEME_FALLBACK = {
+  slug: "medina-orientale",
+  name: "Medina Orientale",
+  category: "Privilege",
+  primaryColor: "#FAF6F0",
+  secondaryColor: "rgba(255, 255, 255, 0.85)",
+  accentColor: "#D4AF37",
+  goldColor: "#D4AF37",
+  bgPrimary: "#FAF6F0",
+  cardBg: "rgba(255, 255, 255, 0.85)",
+  accentGold: "#D4AF37",
+  textColor: "#2D2013",
+  scrollAnimation: "fade-up",
+  titleFont: "Cormorant Garamond",
+  animationType: "golden_palace_doors",
+  previewGradient: "linear-gradient(135deg, #FAF6F0 0%, #D4AF37 52%, rgba(255, 255, 255, 0.85) 100%)",
+  demoVideoUrl: null,
+  openingVideoUrl: null,
+  backdropUrl: null,
+  isActive: true,
+} satisfies ThemeConfig;
+
+type ThemeConfigInput = {
+  [Key in keyof ThemeConfig]?: ThemeConfig[Key] | null;
+};
+
+export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined): ThemeConfig {
+  const fallback = theme?.slug ? getDefaultTheme(theme.slug) : SAFE_THEME_FALLBACK;
+  const primaryColor = theme?.primaryColor || theme?.bgPrimary || fallback.primaryColor || SAFE_THEME_FALLBACK.primaryColor;
+  const secondaryColor = theme?.secondaryColor || theme?.cardBg || fallback.secondaryColor || SAFE_THEME_FALLBACK.secondaryColor;
+  const accentColor = theme?.accentColor || theme?.accentGold || fallback.accentColor || SAFE_THEME_FALLBACK.accentColor;
+  const goldColor = theme?.goldColor || theme?.accentGold || fallback.goldColor || SAFE_THEME_FALLBACK.goldColor;
+
+  return {
+    slug: theme?.slug || fallback.slug || SAFE_THEME_FALLBACK.slug,
+    name: theme?.name || fallback.name || SAFE_THEME_FALLBACK.name,
+    category: theme?.category || fallback.category || SAFE_THEME_FALLBACK.category,
+    primaryColor,
+    secondaryColor,
+    accentColor,
+    goldColor,
+    bgPrimary: theme?.bgPrimary || primaryColor || "#FAF6F0",
+    cardBg: theme?.cardBg || secondaryColor || "rgba(255, 255, 255, 0.85)",
+    accentGold: theme?.accentGold || goldColor || "#D4AF37",
+    textColor: theme?.textColor || primaryColor || "#2D2013",
+    scrollAnimation: theme?.scrollAnimation || "fade-up",
+    titleFont: theme?.titleFont || fallback.titleFont || SAFE_THEME_FALLBACK.titleFont,
+    animationType: theme?.animationType || fallback.animationType || SAFE_THEME_FALLBACK.animationType,
+    openingVideoUrl: theme?.openingVideoUrl ?? fallback.openingVideoUrl ?? null,
+    previewGradient: theme?.previewGradient || fallback.previewGradient || SAFE_THEME_FALLBACK.previewGradient,
+    demoVideoUrl: theme?.demoVideoUrl ?? fallback.demoVideoUrl ?? null,
+    backdropUrl: theme?.backdropUrl ?? fallback.backdropUrl ?? null,
+    isActive: theme?.isActive ?? fallback.isActive ?? true,
+  };
+}
+
 function hexToRgb(value: string) {
   const normalized = value.trim().replace(/^#/, "");
   const expanded = normalized.length === 3
@@ -184,13 +240,14 @@ function colorWithAlpha(value: string, alpha: number, fallback: string) {
   return isHexColor(value) ? rgbaFromHex(value, alpha) : fallback;
 }
 
-export function themeToCssVars(theme: ThemeConfig) {
-  const bgPrimary = theme.bgPrimary ?? theme.primaryColor;
-  const cardBg = theme.cardBg ?? theme.secondaryColor;
-  const accentGold = theme.accentGold ?? theme.goldColor;
-  const textColor = theme.textColor ?? theme.primaryColor;
+export function themeToCssVars(theme: ThemeConfigInput | null | undefined) {
+  const safeTheme = normalizeThemeConfig(theme);
+  const bgPrimary = safeTheme.bgPrimary || "#FAF6F0";
+  const cardBg = safeTheme.cardBg || "rgba(255, 255, 255, 0.85)";
+  const accentGold = safeTheme.accentGold || "#D4AF37";
+  const textColor = safeTheme.textColor || "#2D2013";
   const primaryRgb = hexToRgb(bgPrimary);
-  const accentRgb = hexToRgb(theme.accentColor);
+  const accentRgb = hexToRgb(safeTheme.accentColor);
   const goldRgb = hexToRgb(accentGold);
   const mutedText = colorWithAlpha(textColor, 0.68, "rgba(44, 42, 40, 0.68)");
 
@@ -201,7 +258,7 @@ export function themeToCssVars(theme: ThemeConfig) {
     "--theme-text": textColor,
     "--invitation-primary": bgPrimary,
     "--invitation-secondary": cardBg,
-    "--invitation-accent": theme.accentColor,
+    "--invitation-accent": safeTheme.accentColor,
     "--invitation-gold": accentGold,
     "--invitation-primary-rgb": `${primaryRgb.r} ${primaryRgb.g} ${primaryRgb.b}`,
     "--invitation-accent-rgb": `${accentRgb.r} ${accentRgb.g} ${accentRgb.b}`,
@@ -209,22 +266,22 @@ export function themeToCssVars(theme: ThemeConfig) {
     "--invitation-ivory": "#FFFDF9",
     "--invitation-copy": "rgba(255, 253, 249, 0.82)",
     "--invitation-muted": "rgba(255, 253, 249, 0.68)",
-    "--invitation-border": rgbaFromHex(theme.accentColor, 0.4),
+    "--invitation-border": rgbaFromHex(safeTheme.accentColor, 0.4),
     "--invitation-gold-line": rgbaFromHex(accentGold, 0.48),
     "--invitation-primary-soft": rgbaFromHex(bgPrimary, 0.42),
     "--invitation-panel": rgbaFromHex(bgPrimary, 0.34),
     "--invitation-panel-strong": rgbaFromHex(bgPrimary, 0.48),
-    "--invitation-chip": rgbaFromHex(theme.accentColor, 0.28),
-    "--invitation-chip-strong": rgbaFromHex(theme.accentColor, 0.46),
+    "--invitation-chip": rgbaFromHex(safeTheme.accentColor, 0.28),
+    "--invitation-chip-strong": rgbaFromHex(safeTheme.accentColor, 0.46),
     "--invitation-sheet": cardBg,
     "--invitation-sheet-soft": cardBg,
     "--invitation-sheet-text": textColor,
     "--invitation-sheet-muted": mutedText,
     "--invitation-sheet-border": rgbaFromHex(accentGold, 0.34),
-    "--invitation-button-bg": `linear-gradient(135deg, ${accentGold}, ${theme.accentColor} 52%, ${bgPrimary})`,
-    "--invitation-title-font": theme.titleFont,
+    "--invitation-button-bg": `linear-gradient(135deg, ${accentGold}, ${safeTheme.accentColor} 52%, ${bgPrimary})`,
+    "--invitation-title-font": safeTheme.titleFont,
     "--primary": bgPrimary,
-    "--accent": theme.accentColor,
+    "--accent": safeTheme.accentColor,
     "--gold": accentGold,
     "--bg-color": cardBg,
   } as CSSProperties;
