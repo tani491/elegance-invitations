@@ -172,8 +172,10 @@ const SAFE_THEME_FALLBACK = {
   previewGradient: "linear-gradient(135deg, #FAF6F0 0%, #D4AF37 52%, rgba(255, 255, 255, 0.85) 100%)",
   demoVideoUrl: null,
   openingVideoUrl: null,
+  videoUrl: null,
   backdropUrl: null,
   isActive: true,
+  isVisible: true,
 } satisfies ThemeConfig;
 
 type ThemeConfigInput = {
@@ -186,8 +188,12 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
   const secondaryColor = theme?.secondaryColor || theme?.cardBg || fallback.secondaryColor || SAFE_THEME_FALLBACK.secondaryColor;
   const accentColor = theme?.accentColor || theme?.accentGold || fallback.accentColor || SAFE_THEME_FALLBACK.accentColor;
   const goldColor = theme?.goldColor || theme?.accentGold || fallback.goldColor || SAFE_THEME_FALLBACK.goldColor;
+  const animationType = theme?.animationType || theme?.openingStyle || fallback.animationType || SAFE_THEME_FALLBACK.animationType;
+  const videoUrl = theme?.videoUrl ?? theme?.openingVideoUrl ?? theme?.demoVideoUrl ?? fallback.openingVideoUrl ?? fallback.demoVideoUrl ?? null;
+  const isActive = theme?.isActive ?? theme?.isVisible ?? fallback.isActive ?? true;
 
   return {
+    id: theme?.id,
     slug: theme?.slug || fallback.slug || SAFE_THEME_FALLBACK.slug,
     name: theme?.name || fallback.name || SAFE_THEME_FALLBACK.name,
     category: theme?.category || fallback.category || SAFE_THEME_FALLBACK.category,
@@ -201,12 +207,15 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
     textColor: theme?.textColor || primaryColor || "#2D2013",
     scrollAnimation: theme?.scrollAnimation || "fade-up",
     titleFont: theme?.titleFont || fallback.titleFont || SAFE_THEME_FALLBACK.titleFont,
-    animationType: theme?.animationType || fallback.animationType || SAFE_THEME_FALLBACK.animationType,
-    openingVideoUrl: theme?.openingVideoUrl ?? fallback.openingVideoUrl ?? null,
+    animationType,
+    openingStyle: theme?.openingStyle || animationType,
+    videoUrl,
+    openingVideoUrl: videoUrl,
     previewGradient: theme?.previewGradient || fallback.previewGradient || SAFE_THEME_FALLBACK.previewGradient,
-    demoVideoUrl: theme?.demoVideoUrl ?? fallback.demoVideoUrl ?? null,
+    demoVideoUrl: theme?.demoVideoUrl ?? videoUrl,
     backdropUrl: theme?.backdropUrl ?? fallback.backdropUrl ?? null,
-    isActive: theme?.isActive ?? fallback.isActive ?? true,
+    isActive,
+    isVisible: theme?.isVisible ?? isActive,
   };
 }
 

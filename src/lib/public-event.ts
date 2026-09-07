@@ -1,10 +1,10 @@
 import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme, parseJsonArray } from "@/lib/theme-presets";
 import { normalizePlan, photoLimitForPlan } from "@/lib/plan-gating";
-import { serializeTheme } from "@/lib/theme-store";
-import type { Event, EventPhoto, Theme } from "@prisma/client";
+import { serializeTheme, type SerializableThemeInput } from "@/lib/theme-store";
+import type { Event, EventPhoto } from "@prisma/client";
 import type { DressCodeColor, OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
 
-type PublicEventRecord = Event & { theme?: Theme | null; photos?: EventPhoto[] };
+type PublicEventRecord = Event & { theme?: SerializableThemeInput; photos?: EventPhoto[] };
 
 const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "wax_seal_burst",

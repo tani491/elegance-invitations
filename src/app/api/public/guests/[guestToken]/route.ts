@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializePublicEvent } from "@/lib/public-event";
+import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 
 export async function GET(
   _request: NextRequest,
@@ -15,15 +16,30 @@ export async function GET(
       include: { event: { include: { theme: true, photos: { orderBy: { uploadedAt: "desc" } } } } },
     });
   } catch (error) {
-    console.error("Public guest theme relation failed, retrying without theme:", error);
+    console.error("Public guest theme relation failed, retrying with compatible theme columns:", error);
     try {
       guest = await db.eventGuest.findUnique({
         where: { qrToken: guestToken },
-        include: { event: { include: { photos: { orderBy: { uploadedAt: "desc" } } } } },
+        include: {
+          event: {
+            include: {
+              theme: { select: THEME_COMPAT_SELECT },
+              photos: { orderBy: { uploadedAt: "desc" } },
+            },
+          },
+        },
       });
-    } catch (retryError) {
-      console.error("Public guest fallback failed:", retryError);
-      return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 500 });
+    } catch (compatError) {
+      console.error("Public guest compatible theme relation failed, retrying without theme:", compatError);
+      try {
+        guest = await db.eventGuest.findUnique({
+          where: { qrToken: guestToken },
+          include: { event: { include: { photos: { orderBy: { uploadedAt: "desc" } } } } },
+        });
+      } catch (retryError) {
+        console.error("Public guest fallback failed:", retryError);
+        return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 500 });
+      }
     }
   }
 

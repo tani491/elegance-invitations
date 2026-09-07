@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getThemeOrDefault } from "@/lib/theme-store";
+import { getThemeOrDefault, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { serializePublicEvent } from "@/lib/public-event";
 import { canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
 import { requireApiRole } from "@/lib/server-auth";
@@ -54,14 +54,26 @@ async function loadClientEvent(eventId: string) {
       },
     });
   } catch (error) {
-    console.error("Dashboard event theme relation failed, retrying without theme:", error);
-    return db.event.findUnique({
-      where: { id: eventId },
-      include: {
-        guests: { orderBy: { createdAt: "asc" } },
-        photos: { orderBy: { uploadedAt: "desc" } },
-      },
-    });
+    console.error("Dashboard event theme relation failed, retrying with compatible theme columns:", error);
+    try {
+      return await db.event.findUnique({
+        where: { id: eventId },
+        include: {
+          theme: { select: THEME_COMPAT_SELECT },
+          guests: { orderBy: { createdAt: "asc" } },
+          photos: { orderBy: { uploadedAt: "desc" } },
+        },
+      });
+    } catch (compatError) {
+      console.error("Dashboard event compatible theme relation failed, retrying without theme:", compatError);
+      return db.event.findUnique({
+        where: { id: eventId },
+        include: {
+          guests: { orderBy: { createdAt: "asc" } },
+          photos: { orderBy: { uploadedAt: "desc" } },
+        },
+      });
+    }
   }
 }
 
@@ -161,19 +173,32 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Dashboard event update with theme failed, retrying without theme:", error);
+    console.error("Dashboard event update with theme failed, retrying with compatible theme columns:", error);
     try {
       updated = await db.event.update({
         where: { id: eventId },
         data: updateData,
         include: {
+          theme: { select: THEME_COMPAT_SELECT },
           guests: { orderBy: { createdAt: "asc" } },
           photos: { orderBy: { uploadedAt: "desc" } },
         },
       });
-    } catch (retryError) {
-      console.error("Dashboard event update failed:", retryError);
-      return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 500 });
+    } catch (compatError) {
+      console.error("Dashboard event update with compatible theme failed, retrying without theme:", compatError);
+      try {
+        updated = await db.event.update({
+          where: { id: eventId },
+          data: updateData,
+          include: {
+            guests: { orderBy: { createdAt: "asc" } },
+            photos: { orderBy: { uploadedAt: "desc" } },
+          },
+        });
+      } catch (retryError) {
+        console.error("Dashboard event update failed:", retryError);
+        return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 500 });
+      }
     }
   }
 

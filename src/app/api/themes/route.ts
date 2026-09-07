@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { ensureDefaultThemes, serializeTheme } from "@/lib/theme-store";
+import { ensureDefaultThemes, serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { DEFAULT_THEMES } from "@/lib/theme-presets";
 
 function fallbackThemesResponse() {
@@ -14,10 +14,23 @@ export async function GET() {
   try {
     await ensureDefaultThemes();
 
-    const themes = await db.theme.findMany({
-      where: { isActive: true },
-      orderBy: [{ category: "asc" }, { name: "asc" }],
-    });
+    let themes;
+    let source = "database";
+
+    try {
+      themes = await db.theme.findMany({
+        where: { isActive: true },
+        orderBy: [{ category: "asc" }, { name: "asc" }],
+      });
+    } catch (error) {
+      console.error("Database full theme fetch failed in /api/themes, retrying with compatible columns:", error);
+      themes = await db.theme.findMany({
+        where: { isActive: true },
+        orderBy: [{ category: "asc" }, { name: "asc" }],
+        select: THEME_COMPAT_SELECT,
+      });
+      source = "database-compat";
+    }
 
     if (themes.length === 0) {
       console.error("Database error in /api/themes:", new Error("Theme table is empty after initialization."));
@@ -25,7 +38,7 @@ export async function GET() {
     }
 
     return NextResponse.json(
-      { success: true, data: themes.map(serializeTheme), source: "database" },
+      { success: true, data: themes.map(serializeTheme), source },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (err) {

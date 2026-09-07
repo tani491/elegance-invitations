@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PassQrCode } from "@/components/invitation/PassQrCode";
 import { DEFAULT_PROGRAM, getDefaultTheme, normalizeThemeConfig, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
-import { serializeTheme } from "@/lib/theme-store";
+import { serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { db } from "@/lib/db";
 import type { ProgramStep } from "@/types/database.types";
 
@@ -36,15 +36,23 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
       },
     });
   } catch (error) {
-    console.error("Guest pass theme relation failed, retrying without theme:", error);
+    console.error("Guest pass theme relation failed, retrying with compatible theme columns:", error);
     try {
       guest = await db.eventGuest.findUnique({
         where: { qrToken: guest_token },
-        include: { event: true },
+        include: { event: { include: { theme: { select: THEME_COMPAT_SELECT } } } },
       });
-    } catch (retryError) {
-      console.error("Guest pass fallback failed:", retryError);
-      guest = null;
+    } catch (compatError) {
+      console.error("Guest pass compatible theme relation failed, retrying without theme:", compatError);
+      try {
+        guest = await db.eventGuest.findUnique({
+          where: { qrToken: guest_token },
+          include: { event: true },
+        });
+      } catch (retryError) {
+        console.error("Guest pass fallback failed:", retryError);
+        guest = null;
+      }
     }
   }
 

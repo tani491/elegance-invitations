@@ -2,15 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Copy, ExternalLink, Film, KeyRound, Package, Palette, Plus, Phone, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Film, KeyRound, Package, Palette, Phone, Plus, Settings2, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -137,6 +138,21 @@ function themeColorUpdate(key: ThemeColorField, value: string): Partial<ThemeCon
   return { textColor: value };
 }
 
+function themeVideoSource(theme: ThemeConfig) {
+  return theme.videoUrl ?? theme.openingVideoUrl ?? theme.demoVideoUrl ?? null;
+}
+
+function themeInitials(name: string) {
+  const letters = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
+
+  return (letters || "EI").toUpperCase();
+}
+
 export default function AdminConsole() {
   const router = useRouter();
   const [themes, setThemes] = useState<ThemeConfig[]>([]);
@@ -159,6 +175,8 @@ export default function AdminConsole() {
   const [createThemeForm, setCreateThemeForm] = useState<ThemeModelForm>(() => defaultThemeForm());
   const [createThemeVideo, setCreateThemeVideo] = useState<File | null>(null);
   const [creatingTheme, setCreatingTheme] = useState(false);
+  const [createThemeOpen, setCreateThemeOpen] = useState(false);
+  const [expandedThemeSlug, setExpandedThemeSlug] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const active = events.filter((event) => event.isActive).length;
@@ -168,6 +186,8 @@ export default function AdminConsole() {
       { label: "Themes", value: themes.length, icon: Palette },
     ];
   }, [events, themes]);
+
+  const visibleThemeCount = useMemo(() => themes.filter((theme) => theme.isActive !== false).length, [themes]);
 
   async function loadAdminData() {
     const [themesResult, eventsResult] = await Promise.allSettled([
@@ -250,7 +270,7 @@ export default function AdminConsole() {
     });
   }
 
-  async function updateTheme(slug: string, data: Partial<ThemeConfig>) {
+  async function updateTheme(slug: string, data: Partial<ThemeConfig>, successMessage = "Theme sauvegarde.") {
     setSavingTheme(slug);
     try {
       const response = await fetch("/api/admin/themes", {
@@ -263,9 +283,11 @@ export default function AdminConsole() {
         toast.error(json.error ?? "Theme non sauvegarde.");
         return false;
       }
-      setThemes((prev) => prev.map((theme) => (theme.slug === slug ? json.data : theme)));
+      const updatedTheme = json.theme ?? json.data;
+      setThemes((prev) => prev.map((theme) => (theme.slug === slug ? { ...theme, ...updatedTheme } : theme)));
       notifyThemeCatalogChanged();
-      toast.success("Theme sauvegarde.");
+      router.refresh();
+      toast.success(successMessage);
       return true;
     } catch (error) {
       console.error("Theme save error:", error);
@@ -371,6 +393,7 @@ export default function AdminConsole() {
         body: JSON.stringify({
           ...createThemeForm,
           backdropUrl: createThemeForm.backdropUrl.trim() || null,
+          videoUrl: uploadedVideoUrl,
           openingVideoUrl: uploadedVideoUrl,
           demoVideoUrl: uploadedVideoUrl,
         }),
@@ -385,7 +408,10 @@ export default function AdminConsole() {
       setThemes((prev) => [json.data, ...prev]);
       setCreateThemeForm(defaultThemeForm());
       setCreateThemeVideo(null);
+      setCreateThemeOpen(false);
       notifyThemeCatalogChanged();
+      router.refresh();
+      await loadAdminData();
       toast.success("Modele ajoute.");
     } catch (error) {
       console.error("Theme create error:", error);
@@ -399,19 +425,33 @@ export default function AdminConsole() {
     const publicUrl = await uploadThemeVideoFile(theme.slug, file);
     if (!publicUrl) return;
 
+    setThemes((prev) =>
+      prev.map((item) =>
+        item.slug === theme.slug
+          ? { ...item, videoUrl: publicUrl, openingVideoUrl: publicUrl, demoVideoUrl: publicUrl }
+          : item,
+      ),
+    );
+
     const saved = await updateTheme(theme.slug, {
+      videoUrl: publicUrl,
       openingVideoUrl: publicUrl,
       demoVideoUrl: publicUrl,
-    });
-    if (saved) toast.success("Video televersee.");
+    }, "Video sauvegardee et synchronisee avec succes !");
+    if (saved) {
+      await loadAdminData();
+    }
   }
 
   async function deleteThemeVideo(theme: ThemeConfig) {
-    await updateTheme(theme.slug, {
+    const saved = await updateTheme(theme.slug, {
+      videoUrl: null,
       openingVideoUrl: null,
       demoVideoUrl: null,
-    });
-    toast.success("Video supprimee.");
+    }, "Video supprimee.");
+    if (saved) {
+      await loadAdminData();
+    }
   }
 
   async function deleteTheme(theme: ThemeConfig) {
@@ -584,337 +624,494 @@ export default function AdminConsole() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="themes">
-            <Card className="mb-6 overflow-hidden rounded-lg border-[#D7C4A3] bg-white shadow-sm">
-              <div
-                className="h-2"
-                style={{
-                  background: `linear-gradient(135deg, ${createThemeForm.bgPrimary}, ${createThemeForm.accentGold} 52%, ${createThemeForm.cardBg})`,
-                }}
-              />
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="size-5 text-[#B89248]" />
-                  Ajouter un modele
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={createTheme} className="grid gap-4 xl:grid-cols-4">
-                  <div className="space-y-2">
-                    <Label>Nom du modele</Label>
-                    <Input
-                      value={createThemeForm.name}
-                      onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, name: event.target.value }))}
-                      placeholder="Palais Royal"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Categorie</Label>
-                    <Select
-                      value={createThemeForm.category}
-                      onValueChange={(category) => setCreateThemeForm((prev) => ({ ...prev, category }))}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Essentielle">Essentielle</SelectItem>
-                        <SelectItem value="Prestige">Prestige</SelectItem>
-                        <SelectItem value="Privilege">Privilege</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Apparition au scroll</Label>
-                    <Select
-                      value={createThemeForm.scrollAnimation}
-                      onValueChange={(scrollAnimation) =>
-                        setCreateThemeForm((prev) => ({ ...prev, scrollAnimation: scrollAnimation as ScrollAnimationType }))
-                      }
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {SCROLL_ANIMATION_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Style d'ouverture</Label>
-                    <Select
-                      value={createThemeForm.animationType}
-                      onValueChange={(animationType) =>
-                        setCreateThemeForm((prev) => ({ ...prev, animationType: animationType as OpeningAnimationType }))
-                      }
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {OPENING_ANIMATION_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          <TabsContent value="themes" className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-lg border border-[#E5D9C7] bg-white/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Catalogue des modeles</p>
+                <h2 className="mt-1 font-display-bold text-2xl text-[#171312]">{themes.length} modeles configures</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {visibleThemeCount} visibles, {themes.length - visibleThemeCount} masques.
+                </p>
+              </div>
+              <Button type="button" className="bg-[#171312] text-white hover:bg-[#2A2320]" onClick={() => setCreateThemeOpen(true)}>
+                <Plus className="mr-2 size-4" />
+                Nouveau modele
+              </Button>
+            </div>
 
-                  {COLOR_FIELDS.map(({ key, label, input }) => (
-                    <div key={key} className="space-y-2">
-                      <Label>{label}</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type={input}
-                          value={createThemeForm[key]}
-                          onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, [key]: event.target.value }))}
-                          className={input === "color" ? "h-10 w-14 shrink-0 p-1" : ""}
-                          placeholder={key === "cardBg" ? "rgba(255,255,255,0.85)" : undefined}
-                          required
-                        />
-                        {input === "color" && (
-                          <span className="truncate rounded bg-[#F7F2EA] px-2 py-2 text-xs text-muted-foreground">
-                            {createThemeForm[key]}
-                          </span>
-                        )}
-                      </div>
+            <Dialog
+              open={createThemeOpen}
+              onOpenChange={(open) => {
+                setCreateThemeOpen(open);
+                if (!open && !creatingTheme) setCreateThemeVideo(null);
+              }}
+            >
+              <DialogContent className="max-h-[92dvh] overflow-y-auto border-[#D7C4A3] bg-[#FDFBF7] sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Plus className="size-5 text-[#B89248]" />
+                    Nouveau modele
+                  </DialogTitle>
+                  <DialogDescription>
+                    Ajoutez la video, le style d'ouverture et la palette sans encombrer le catalogue.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={createTheme} className="space-y-5">
+                  <div
+                    className="h-2 rounded-full"
+                    style={{
+                      background: `linear-gradient(135deg, ${createThemeForm.bgPrimary}, ${createThemeForm.accentGold} 52%, ${createThemeForm.cardBg})`,
+                    }}
+                  />
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Nom du modele</Label>
+                      <Input
+                        value={createThemeForm.name}
+                        onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, name: event.target.value }))}
+                        placeholder="Palais Royal"
+                        required
+                      />
                     </div>
-                  ))}
-
-                  <div className="space-y-2 xl:col-span-2">
-                    <Label>Image fixe de decor ouvert</Label>
-                    <Input
-                      value={createThemeForm.backdropUrl}
-                      onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, backdropUrl: event.target.value }))}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Police titre</Label>
-                    <Input
-                      value={createThemeForm.titleFont}
-                      onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, titleFont: event.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Video d'ouverture</Label>
-                    <Input
-                      type="file"
-                      accept={THEME_VIDEO_ACCEPT}
-                      disabled={creatingTheme || uploadingTheme === NEW_THEME_UPLOAD_KEY}
-                      onChange={(event) => setCreateThemeVideo(event.target.files?.[0] ?? null)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {uploadingTheme === NEW_THEME_UPLOAD_KEY
-                        ? `Televersement en cours... ${uploadProgress[NEW_THEME_UPLOAD_KEY] ?? 1}%`
-                        : createThemeVideo?.name ?? "MP4, MOV/QuickTime ou WEBM - 50 Mo max"}
-                    </p>
-                  </div>
-
-                  <div className="xl:col-span-4">
-                    <Button type="submit" disabled={creatingTheme || uploadingTheme === NEW_THEME_UPLOAD_KEY} className="bg-[#171312] text-white hover:bg-[#2A2320]">
-                      <Plus className="mr-2 size-4" />
-                      {creatingTheme ? "Creation..." : "Ajouter le modele"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {themes.map((theme) => (
-                <Card key={theme.slug} className="overflow-hidden rounded-lg border-[#E5D9C7] bg-white shadow-sm">
-                  <div className="h-2" style={{ background: theme.previewGradient }} />
-                  <CardHeader className="space-y-2 pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <Input
-                          aria-label={`Nom du modele ${theme.name}`}
-                          value={editingNames[theme.slug] ?? theme.name}
-                          onChange={(event) => setEditingNames((prev) => ({ ...prev, [theme.slug]: event.target.value }))}
-                          onBlur={() => void saveThemeName(theme)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
-                              event.currentTarget.blur();
-                            }
-                          }}
-                          className="h-auto border-transparent bg-transparent px-0 py-0 font-display-bold text-lg shadow-none focus-visible:border-[#D6C5A8] focus-visible:px-2 focus-visible:py-1"
-                        />
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Badge variant={theme.isActive === false ? "outline" : "default"}>
-                            {theme.isActive === false ? "Inactif" : "Actif"}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">{theme.category}</span>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        {savingTheme === theme.slug && <Badge variant="outline">Sauvegarde</Badge>}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-700 hover:bg-red-50 hover:text-red-800"
-                          onClick={() => void deleteTheme(theme)}
-                          disabled={savingTheme === theme.slug}
-                        >
-                          <Trash2 className="mr-2 size-4" />
-                          Supprimer
-                        </Button>
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Categorie</Label>
+                      <Select
+                        value={createThemeForm.category}
+                        onValueChange={(category) => setCreateThemeForm((prev) => ({ ...prev, category }))}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Essentielle">Essentielle</SelectItem>
+                          <SelectItem value="Prestige">Prestige</SelectItem>
+                          <SelectItem value="Privilege">Privilege</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Categorie</Label>
-                        <Select value={theme.category} onValueChange={(category) => void updateTheme(theme.slug, { category })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Essentielle">Essentielle</SelectItem>
-                            <SelectItem value="Prestige">Prestige</SelectItem>
-                            <SelectItem value="Privilege">Privilege</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Apparition au scroll</Label>
-                        <Select
-                          value={theme.scrollAnimation ?? "fade-up"}
-                          onValueChange={(scrollAnimation) => void updateTheme(theme.slug, { scrollAnimation: scrollAnimation as ScrollAnimationType })}
-                        >
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {SCROLL_ANIMATION_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Style d'ouverture</Label>
-                        <Select
-                          value={theme.animationType}
-                          onValueChange={(animationType) => void updateTheme(theme.slug, { animationType: animationType as OpeningAnimationType })}
-                        >
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {OPENING_ANIMATION_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg border border-[#E5D9C7] bg-[#FDFBF7] px-3 py-2">
-                        <Label htmlFor={`active-${theme.slug}`}>Visible catalogue</Label>
-                        <Switch
-                          id={`active-${theme.slug}`}
-                          checked={theme.isActive !== false}
-                          onCheckedChange={(isActive) => void updateTheme(theme.slug, { isActive })}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Apparition au scroll</Label>
+                      <Select
+                        value={createThemeForm.scrollAnimation}
+                        onValueChange={(scrollAnimation) =>
+                          setCreateThemeForm((prev) => ({ ...prev, scrollAnimation: scrollAnimation as ScrollAnimationType }))
+                        }
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SCROLL_ANIMATION_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label>Style d'ouverture</Label>
+                      <Select
+                        value={createThemeForm.animationType}
+                        onValueChange={(animationType) =>
+                          setCreateThemeForm((prev) => ({ ...prev, animationType: animationType as OpeningAnimationType }))
+                        }
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {OPENING_ANIMATION_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Police titre</Label>
+                      <Input
+                        value={createThemeForm.titleFont}
+                        onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, titleFont: event.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-[#E5D9C7] bg-white px-3 py-2">
+                      <Label htmlFor="new-theme-active">Visible catalogue</Label>
+                      <Switch
+                        id="new-theme-active"
+                        checked={createThemeForm.isActive}
+                        onCheckedChange={(isActive) => setCreateThemeForm((prev) => ({ ...prev, isActive }))}
+                      />
+                    </div>
+                  </div>
 
-                    <label
-                      className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#D6C5A8] bg-[#FDFBF7] p-4 text-center transition hover:border-[#B89248] hover:bg-[#FAF6EF]"
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const file = event.dataTransfer.files?.[0];
-                        if (file) void uploadThemeVideo(theme, file);
-                      }}
-                    >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#D6C5A8] bg-white p-4 text-center transition hover:border-[#B89248] hover:bg-[#FAF6EF]">
                       <Upload className="mb-3 size-7 text-[#B89248]" />
                       <span className="text-sm font-semibold">
-                        {uploadingTheme === theme.slug
-                          ? `Televersement en cours... ${uploadProgress[theme.slug] ?? 1}%`
-                          : "Uploader la video d'ouverture"}
+                        {uploadingTheme === NEW_THEME_UPLOAD_KEY
+                          ? `Televersement en cours... ${uploadProgress[NEW_THEME_UPLOAD_KEY] ?? 1}%`
+                          : "Video d'ouverture"}
                       </span>
                       <span className="mt-1 text-xs text-muted-foreground">
-                        {uploadingTheme === theme.slug ? "Veuillez patienter" : "MP4, MOV/QuickTime ou WEBM - 50 Mo max"}
+                        {createThemeVideo?.name ?? "MP4, MOV/QuickTime ou WEBM - 50 Mo max"}
                       </span>
+                      {uploadingTheme === NEW_THEME_UPLOAD_KEY && (
+                        <Progress value={uploadProgress[NEW_THEME_UPLOAD_KEY] ?? 1} className="mt-4 h-2" />
+                      )}
                       <Input
                         type="file"
                         accept={THEME_VIDEO_ACCEPT}
                         className="hidden"
-                        disabled={uploadingTheme === theme.slug}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) void uploadThemeVideo(theme, file);
-                          event.currentTarget.value = "";
-                        }}
+                        disabled={creatingTheme || uploadingTheme === NEW_THEME_UPLOAD_KEY}
+                        onChange={(event) => setCreateThemeVideo(event.target.files?.[0] ?? null)}
                       />
                     </label>
 
-                    {(theme.openingVideoUrl ?? theme.demoVideoUrl) && (
-                      <div className="space-y-3">
-                        <video src={theme.openingVideoUrl ?? theme.demoVideoUrl ?? undefined} className="aspect-video w-full rounded-lg bg-black object-cover" controls muted playsInline preload="metadata" />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                          onClick={() => void deleteThemeVideo(theme)}
-                          disabled={savingTheme === theme.slug}
-                        >
-                          <Trash2 className="mr-2 size-4" />
-                          Supprimer la video
-                        </Button>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <Label>Image fixe de decor ouvert</Label>
+                      <Input
+                        value={createThemeForm.backdropUrl}
+                        onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, backdropUrl: event.target.value }))}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
 
-                    <Collapsible>
-                      <CollapsibleTrigger asChild>
-                        <Button type="button" variant="outline" className="w-full justify-between">
-                          Personnaliser les couleurs
-                          <ChevronDown className="size-4" />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-3 space-y-3 rounded-lg border border-[#E5D9C7] bg-[#FDFBF7] p-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          {COLOR_FIELDS.map(({ key, label, input }) => (
-                            <div key={key} className="space-y-2">
-                              <Label>{label}</Label>
-                              <div className="flex items-center gap-2">
-                                {input === "color" ? (
-                                  <Input
-                                    type="color"
-                                    value={themeColorValue(theme, key)}
-                                    onChange={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
-                                    className="h-10 w-14 shrink-0 p-1"
-                                  />
+                  <div className="rounded-lg border border-[#E5D9C7] bg-white p-4">
+                    <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#171312]">
+                      <Palette className="size-4 text-[#B89248]" />
+                      Palette du modele
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {COLOR_FIELDS.map(({ key, label, input }) => (
+                        <div key={key} className="space-y-2">
+                          <Label>{label}</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type={input}
+                              value={createThemeForm[key]}
+                              onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, [key]: event.target.value }))}
+                              className={input === "color" ? "h-10 w-14 shrink-0 p-1" : ""}
+                              placeholder={key === "cardBg" ? "rgba(255,255,255,0.85)" : undefined}
+                              required
+                            />
+                            {input === "color" && (
+                              <span className="truncate rounded bg-[#F7F2EA] px-2 py-2 text-xs text-muted-foreground">
+                                {createThemeForm[key]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setCreateThemeOpen(false)} disabled={creatingTheme}>
+                      Annuler
+                    </Button>
+                    <Button type="submit" disabled={creatingTheme || uploadingTheme === NEW_THEME_UPLOAD_KEY} className="bg-[#171312] text-white hover:bg-[#2A2320]">
+                      <Plus className="mr-2 size-4" />
+                      {creatingTheme ? "Creation..." : "Ajouter le modele"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <div className="space-y-3">
+              {themes.map((theme) => {
+                const isExpanded = expandedThemeSlug === theme.slug;
+                const isVisible = theme.isActive !== false;
+                const videoSrc = themeVideoSource(theme);
+                const progress = uploadProgress[theme.slug] ?? 1;
+
+                return (
+                  <Collapsible
+                    key={theme.slug}
+                    open={isExpanded}
+                    onOpenChange={(open) => setExpandedThemeSlug(open ? theme.slug : null)}
+                  >
+                    <Card className="overflow-hidden rounded-lg border-[#E5D9C7] bg-white shadow-sm transition-shadow hover:shadow-md">
+                      <CardContent className="p-0">
+                        <div className="grid gap-4 p-4 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
+                          <button
+                            type="button"
+                            className="relative aspect-video w-full overflow-hidden rounded-lg border border-[#E5D9C7] bg-[#F7F2EA] text-left md:size-[88px] md:aspect-square"
+                            onClick={() => setExpandedThemeSlug(isExpanded ? null : theme.slug)}
+                            aria-label={`Configurer ${theme.name}`}
+                          >
+                            {videoSrc ? (
+                              <>
+                                <video src={videoSrc} className="size-full object-cover" muted playsInline preload="metadata" />
+                                <span className="absolute inset-0 grid place-items-center bg-black/10 text-white">
+                                  <Film className="size-5 drop-shadow" />
+                                </span>
+                              </>
+                            ) : (
+                              <span className="grid size-full place-items-center" style={{ background: theme.previewGradient }}>
+                                <span className="rounded-full border border-white/40 bg-black/20 px-3 py-2 font-serif text-sm text-white backdrop-blur">
+                                  {themeInitials(theme.name)}
+                                </span>
+                              </span>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="min-w-0 text-left"
+                            onClick={() => setExpandedThemeSlug(isExpanded ? null : theme.slug)}
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="truncate font-display-bold text-lg text-[#171312]">{theme.name}</h3>
+                              {savingTheme === theme.slug && <Badge variant="outline">Sauvegarde</Badge>}
+                              {uploadingTheme === theme.slug && <Badge variant="outline">{progress}%</Badge>}
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <Badge className={isVisible ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-stone-200 bg-stone-100 text-stone-500"}>
+                                {isVisible ? (
+                                  <Eye className="mr-1 size-3" />
                                 ) : (
+                                  <EyeOff className="mr-1 size-3" />
+                                )}
+                                {isVisible ? "Visible" : "Masque"}
+                              </Badge>
+                              <Badge variant="outline" className="border-[#E5D9C7] bg-[#FDFBF7] text-[#5C1D24]">
+                                {theme.category}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {theme.scrollAnimation ?? "fade-up"} · {videoSrc ? "video connectee" : "sans video"}
+                              </span>
+                            </div>
+                          </button>
+
+                          <div className="flex items-center gap-2 md:justify-end">
+                            <CollapsibleTrigger asChild>
+                              <Button type="button" variant="outline" size="sm" className="border-[#D6C5A8]">
+                                <Settings2 className="mr-2 size-4" />
+                                {isExpanded ? "Replier" : "Configurer"}
+                              </Button>
+                            </CollapsibleTrigger>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-700 hover:bg-red-50 hover:text-red-800"
+                              onClick={() => void deleteTheme(theme)}
+                              disabled={savingTheme === theme.slug}
+                              aria-label={`Supprimer ${theme.name}`}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <CollapsibleContent className="overflow-hidden border-t border-[#EFE4D2] bg-[#FDFBF7] transition-all duration-300 ease-in-out">
+                          <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+                            <div className="space-y-4">
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label>Nom du modele</Label>
                                   <Input
-                                    type="text"
-                                    defaultValue={themeColorValue(theme, key)}
-                                    onBlur={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
-                                    placeholder="rgba(255,255,255,0.85)"
+                                    aria-label={`Nom du modele ${theme.name}`}
+                                    value={editingNames[theme.slug] ?? theme.name}
+                                    onChange={(event) => setEditingNames((prev) => ({ ...prev, [theme.slug]: event.target.value }))}
+                                    onBlur={() => void saveThemeName(theme)}
+                                    onKeyDown={(event) => {
+                                      if (event.key === "Enter") {
+                                        event.preventDefault();
+                                        event.currentTarget.blur();
+                                      }
+                                    }}
                                   />
-                                )}
-                                {input === "color" && (
-                                  <span className="truncate rounded bg-white px-2 py-2 text-xs text-muted-foreground">
-                                    {themeColorValue(theme, key)}
-                                  </span>
-                                )}
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Categorie</Label>
+                                  <Select value={theme.category} onValueChange={(category) => void updateTheme(theme.slug, { category })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Essentielle">Essentielle</SelectItem>
+                                      <SelectItem value="Prestige">Prestige</SelectItem>
+                                      <SelectItem value="Privilege">Privilege</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Apparition au scroll</Label>
+                                  <Select
+                                    value={theme.scrollAnimation ?? "fade-up"}
+                                    onValueChange={(scrollAnimation) => void updateTheme(theme.slug, { scrollAnimation: scrollAnimation as ScrollAnimationType })}
+                                  >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      {SCROLL_ANIMATION_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Style d'ouverture</Label>
+                                  <Select
+                                    value={theme.animationType}
+                                    onValueChange={(animationType) => void updateTheme(theme.slug, { animationType: animationType as OpeningAnimationType })}
+                                  >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      {OPENING_ANIMATION_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Police titre</Label>
+                                  <Input
+                                    defaultValue={theme.titleFont}
+                                    onBlur={(event) => void updateTheme(theme.slug, { titleFont: event.target.value.trim() || theme.titleFont })}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between rounded-lg border border-[#E5D9C7] bg-white px-3 py-2">
+                                  <Label htmlFor={`active-${theme.slug}`}>Visible catalogue</Label>
+                                  <Switch
+                                    id={`active-${theme.slug}`}
+                                    checked={isVisible}
+                                    onCheckedChange={(isActive) => void updateTheme(theme.slug, { isActive, isVisible: isActive })}
+                                  />
+                                </div>
+                              </div>
+
+                              <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                  <Button type="button" variant="outline" className="w-full justify-between border-[#D6C5A8]">
+                                    <span className="inline-flex items-center gap-2">
+                                      <Palette className="size-4 text-[#B89248]" />
+                                      Personnaliser les couleurs
+                                    </span>
+                                    <ChevronDown className="size-4" />
+                                  </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="mt-3 space-y-3 rounded-lg border border-[#E5D9C7] bg-white p-3 transition-all duration-300 ease-in-out">
+                                  <div className="grid gap-3 sm:grid-cols-2">
+                                    {COLOR_FIELDS.map(({ key, label, input }) => (
+                                      <div key={key} className="space-y-2">
+                                        <Label>{label}</Label>
+                                        <div className="flex items-center gap-2">
+                                          {input === "color" ? (
+                                            <Input
+                                              type="color"
+                                              value={themeColorValue(theme, key)}
+                                              onChange={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
+                                              className="h-10 w-14 shrink-0 p-1"
+                                            />
+                                          ) : (
+                                            <Input
+                                              type="text"
+                                              defaultValue={themeColorValue(theme, key)}
+                                              onBlur={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
+                                              placeholder="rgba(255,255,255,0.85)"
+                                            />
+                                          )}
+                                          {input === "color" && (
+                                            <span className="truncate rounded bg-[#F7F2EA] px-2 py-2 text-xs text-muted-foreground">
+                                              {themeColorValue(theme, key)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            </div>
+
+                            <div className="space-y-4 rounded-lg border border-[#E5D9C7] bg-white p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-[#171312]">Media du modele</p>
+                                  <p className="text-xs text-muted-foreground">Video d'ouverture et decor fixe.</p>
+                                </div>
+                                {videoSrc && <Badge variant="outline" className="border-emerald-200 text-emerald-700">Synchronisee</Badge>}
+                              </div>
+
+                              <label
+                                className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#D6C5A8] bg-[#FDFBF7] p-4 text-center transition hover:border-[#B89248] hover:bg-[#FAF6EF]"
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  const file = event.dataTransfer.files?.[0];
+                                  if (file) void uploadThemeVideo(theme, file);
+                                }}
+                              >
+                                <Upload className="mb-3 size-7 text-[#B89248]" />
+                                <span className="text-sm font-semibold">
+                                  {uploadingTheme === theme.slug
+                                    ? `Televersement en cours... ${progress}%`
+                                    : "Uploader la video d'ouverture"}
+                                </span>
+                                <span className="mt-1 text-xs text-muted-foreground">
+                                  {uploadingTheme === theme.slug ? "Veuillez patienter" : "MP4, MOV/QuickTime ou WEBM - 50 Mo max"}
+                                </span>
+                                {uploadingTheme === theme.slug && <Progress value={progress} className="mt-4 h-2" />}
+                                <Input
+                                  type="file"
+                                  accept={THEME_VIDEO_ACCEPT}
+                                  className="hidden"
+                                  disabled={uploadingTheme === theme.slug}
+                                  onChange={(event) => {
+                                    const file = event.target.files?.[0];
+                                    if (file) void uploadThemeVideo(theme, file);
+                                    event.currentTarget.value = "";
+                                  }}
+                                />
+                              </label>
+
+                              {videoSrc && (
+                                <div className="space-y-3">
+                                  <video src={videoSrc} className="aspect-video w-full rounded-lg bg-black object-cover" controls muted playsInline preload="metadata" />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                                    onClick={() => void deleteThemeVideo(theme)}
+                                    disabled={savingTheme === theme.slug}
+                                  >
+                                    <Trash2 className="mr-2 size-4" />
+                                    Supprimer la video
+                                  </Button>
+                                </div>
+                              )}
+
+                              <div className="space-y-2">
+                                <Label>Image fixe de decor ouvert</Label>
+                                <Input
+                                  defaultValue={theme.backdropUrl ?? ""}
+                                  placeholder="https://..."
+                                  onBlur={(event) => void updateTheme(theme.slug, { backdropUrl: event.target.value.trim() || null })}
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-2 rounded-lg bg-[#F7F2EA] px-3 py-2 text-sm text-muted-foreground">
+                                <Check className="size-4 text-[#B89248]" />
+                                Palette synchronisee avec invitation et pass.
                               </div>
                             </div>
-                          ))}
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Image fixe de decor ouvert</Label>
-                          <Input
-                            defaultValue={theme.backdropUrl ?? ""}
-                            placeholder="https://..."
-                            onBlur={(event) => void updateTheme(theme.slug, { backdropUrl: event.target.value.trim() || null })}
-                          />
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
+                          </div>
+                        </CollapsibleContent>
+                      </CardContent>
+                    </Card>
+                  </Collapsible>
+                );
+              })}
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="size-4 text-[#B89248]" />
-                      Palette synchronisee avec invitation et pass.
-                    </div>
+              {themes.length === 0 && (
+                <Card className="rounded-lg border-dashed border-[#D6C5A8] bg-white/70">
+                  <CardContent className="flex min-h-40 flex-col items-center justify-center p-6 text-center">
+                    <Film className="mb-3 size-8 text-[#B89248]" />
+                    <p className="font-medium text-[#171312]">Aucun modele configure</p>
+                    <Button type="button" variant="outline" className="mt-4" onClick={() => setCreateThemeOpen(true)}>
+                      <Plus className="mr-2 size-4" />
+                      Creer le premier modele
+                    </Button>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           </TabsContent>
         </Tabs>

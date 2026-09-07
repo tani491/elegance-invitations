@@ -7,6 +7,7 @@ export function LiveMobilePreview({ event }: { event: PublicEventPayload }) {
   const names = `${event.brideName ?? "Mariee"} & ${event.groomName ?? "Marie"}`;
   const coverPhoto = event.officialPhotoUrls[0] ?? event.coverPhotoUrl;
   const theme = normalizeThemeConfig(event.theme);
+  const themeVideoUrl = theme.videoUrl ?? theme.openingVideoUrl ?? theme.demoVideoUrl;
 
   return (
     <div className="mx-auto w-full max-w-[320px] rounded-[2rem] bg-[#1A1818] p-3 shadow-2xl">
@@ -26,9 +27,9 @@ export function LiveMobilePreview({ event }: { event: PublicEventPayload }) {
               alt="Photo de couverture"
               className="h-1/2 w-full object-cover"
             />
-          ) : theme.demoVideoUrl ? (
+          ) : themeVideoUrl ? (
             <video
-              src={theme.demoVideoUrl}
+              src={themeVideoUrl}
               className="h-1/2 w-full object-cover"
               autoPlay
               muted

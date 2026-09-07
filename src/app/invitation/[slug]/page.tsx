@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { serializePublicEvent } from "@/lib/public-event";
+import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { InvitationExperience } from "@/components/invitation/InvitationExperience";
 
 type InvitationPageProps = {
@@ -20,17 +21,28 @@ const getInvitationEvent = cache(async (slug: string) => {
       },
     });
   } catch (error) {
-    console.error("Invitation theme relation failed, retrying without theme:", error);
+    console.error("Invitation theme relation failed, retrying with compatible theme columns:", error);
     try {
       return await db.event.findFirst({
         where: { slug, isActive: true },
         include: {
+          theme: { select: THEME_COMPAT_SELECT },
           photos: { orderBy: { uploadedAt: "desc" } },
         },
       });
-    } catch (retryError) {
-      console.error("Invitation event fallback failed:", retryError);
-      return null;
+    } catch (compatError) {
+      console.error("Invitation compatible theme relation failed, retrying without theme:", compatError);
+      try {
+        return await db.event.findFirst({
+          where: { slug, isActive: true },
+          include: {
+            photos: { orderBy: { uploadedAt: "desc" } },
+          },
+        });
+      } catch (retryError) {
+        console.error("Invitation event fallback failed:", retryError);
+        return null;
+      }
     }
   }
 });

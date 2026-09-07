@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializePublicEvent } from "@/lib/public-event";
+import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 
 export async function GET(
   _request: NextRequest,
@@ -15,14 +16,22 @@ export async function GET(
       include: { theme: true },
     });
   } catch (error) {
-    console.error("Public event theme relation failed, retrying without theme:", error);
+    console.error("Public event theme relation failed, retrying with compatible theme columns:", error);
     try {
       event = await db.event.findFirst({
         where: { slug, isActive: true },
+        include: { theme: { select: THEME_COMPAT_SELECT } },
       });
-    } catch (retryError) {
-      console.error("Public event fallback failed:", retryError);
-      return NextResponse.json({ success: false, error: "Invitation indisponible." }, { status: 500 });
+    } catch (compatError) {
+      console.error("Public event compatible theme relation failed, retrying without theme:", compatError);
+      try {
+        event = await db.event.findFirst({
+          where: { slug, isActive: true },
+        });
+      } catch (retryError) {
+        console.error("Public event fallback failed:", retryError);
+        return NextResponse.json({ success: false, error: "Invitation indisponible." }, { status: 500 });
+      }
     }
   }
 

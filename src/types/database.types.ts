@@ -29,6 +29,7 @@ export interface SessionPayload {
 }
 
 export interface ThemeConfig {
+  id?: string | null;
   slug: string;
   name: string;
   category: string;
@@ -44,10 +45,13 @@ export interface ThemeConfig {
   backdropUrl?: string | null;
   titleFont: string;
   animationType: OpeningAnimationType;
+  openingStyle?: OpeningAnimationType | null;
+  videoUrl?: string | null;
   openingVideoUrl?: string | null;
   previewGradient: string;
   demoVideoUrl?: string | null;
   isActive?: boolean;
+  isVisible?: boolean;
 }
 
 export interface ProgramStep {
