@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Film, KeyRound, Package, Palette, Phone, Plus, Settings2, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -477,12 +478,20 @@ export default function AdminConsole() {
             <p className="font-script text-3xl text-[#B89248]">Elegance</p>
             <h1 className="font-display-bold text-3xl tracking-luxury text-[#171312]">Super Admin</h1>
           </div>
-          <Button variant="outline" onClick={async () => {
-            await fetch("/api/auth/logout", { method: "POST" });
-            router.push("/admin/login");
-          }}>
-            Deconnexion
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="border-[#D6C5A8]">
+              <Link href="/admin/settings">
+                <Settings2 className="mr-2 size-4" />
+                Accueil
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/admin/login");
+            }}>
+              Deconnexion
+            </Button>
+          </div>
         </div>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-3">

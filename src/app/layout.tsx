@@ -7,7 +7,7 @@ import Providers from "@/components/Providers";
 import { FloatingWhatsAppButton } from "@/components/public/FloatingWhatsAppButton";
 
 export const metadata: Metadata = {
-  title: "Élégance — Invitations de Mariage et Événements sur Mesure",
+  title: "Élégance Invitations — Faire-part digitaux de prestige",
   description:
     "Créez des invitations numériques d'exception pour votre mariage ou événement. Design luxueux, personnalisation totale et expérience raffinée.",
   keywords: [
@@ -19,20 +19,20 @@ export const metadata: Metadata = {
     "design invitation",
     "invitation élégante",
   ],
-  authors: [{ name: "Élégance" }],
+  authors: [{ name: "Élégance Invitations" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "Élégance — Invitations de Mariage sur Mesure",
+    title: "Élégance Invitations — Invitations de Mariage sur Mesure",
     description:
       "Des invitations numériques d'exception pour les moments les plus importants de votre vie.",
-    siteName: "Élégance",
+    siteName: "Élégance Invitations",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Élégance — Invitations de Mariage sur Mesure",
+    title: "Élégance Invitations — Invitations de Mariage sur Mesure",
     description:
       "Des invitations numériques d'exception pour les moments les plus importants de votre vie.",
   },

@@ -115,6 +115,12 @@ export interface PublicGalleryPhoto {
   uploadedAt: string;
 }
 
+export interface HomepageSettings {
+  heroPhone1: string | null;
+  heroPhone2: string | null;
+  updatedAt?: string | null;
+}
+
 export interface PublicEventPayload {
   id: string;
   slug: string;

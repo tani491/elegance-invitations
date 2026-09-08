@@ -5,7 +5,8 @@ import Link from "next/link";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
   Palette, PenTool, Send, ChevronDown, CheckCircle2, QrCode,
-  Star, Quote, ChevronRight, X, Smartphone, Play,
+  Star, Quote, ChevronRight, X, Smartphone, Play, MessageCircle,
+  CalendarCheck, Camera, Gem, ShieldCheck,
 } from "lucide-react";
 import PublicNavbar from "@/components/public/PublicNavbar";
 import { Button } from "@/components/ui/button";
@@ -15,41 +16,18 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
 import { ELEGANCE_ORDER_WHATSAPP_URL } from "@/lib/whatsapp";
-import type { ThemeConfig } from "@/types/database.types";
+import type { HomepageSettings, ThemeConfig } from "@/types/database.types";
 
 /* -------------------------------------------------------------------------- */
 /*  Color constants                                                           */
 /* -------------------------------------------------------------------------- */
 
 const GOLD = "#D4AF37";
-const GOLD_LIGHT = "#E8D48B";
 const BURGUNDY = "#5C1D24";
 const EBONY = "#1A1818";
 const IVORY = "#FAF7F2";
 
 const WHATSAPP_URL = ELEGANCE_ORDER_WHATSAPP_URL;
-
-/* -------------------------------------------------------------------------- */
-/*  Sparkle data (deterministic — no Math.random)                              */
-/* -------------------------------------------------------------------------- */
-
-interface Sparkle {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  duration: number;
-  delay: number;
-}
-
-const SPARKLES: Sparkle[] = Array.from({ length: 18 }, (_, i) => ({
-  id: i,
-  x: ((i * 37 + 13) % 97) / 97 * 100,
-  y: ((i * 53 + 7) % 89) / 89 * 100,
-  size: (i % 5) * 0.8 + 2.5,
-  duration: (i % 4) * 0.8 + 3.5,
-  delay: (i % 6) * 0.7 + 0.5,
-}));
 
 /* -------------------------------------------------------------------------- */
 /*  Template data with categories                                              */
@@ -183,6 +161,183 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 /* -------------------------------------------------------------------------- */
 const QR_GRID = [1,1,0,1,1,0,1, 0,1,1,1,0,1,0, 1,0,1,0,1,1,1, 1,1,1,1,0,0,1, 0,1,0,1,1,1,0, 1,0,1,1,0,1,1, 1,1,0,0,1,0,1];
 
+const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
+  heroPhone1: null,
+  heroPhone2: null,
+  updatedAt: null,
+};
+
+const DEFAULT_HERO_PHONE_MEDIA = [
+  "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=760&q=82",
+  "https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?auto=format&fit=crop&w=760&q=82",
+] as const;
+
+const PRESTIGE_PLACES = [
+  "Terrou-Bi Dakar",
+  "King Fahd Palace",
+  "Radisson Blu",
+  "Pullman Dakar Teranga",
+  "Domaine de Nianing",
+  "Salons Hoche Paris",
+];
+
+const LUXURY_TESTIMONIALS = [
+  {
+    couple: "Aminata & Cheikh",
+    location: "Mariage aux Almadies",
+    formula: "Formule Prestige — Thème Palais Royal",
+    image: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=420&q=82",
+    text: "Nos invités venant de Paris, New York et Dakar ont tous été émerveillés par l'ouverture des portes. La gestion des RSVP par WhatsApp nous a fait gagner des semaines d'organisation !",
+  },
+  {
+    couple: "Sophie & Jean-Marc",
+    location: "Réception à Saly",
+    formula: "Formule Impériale",
+    image: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=420&q=82",
+    text: "Un faire-part digne d'une grande maison de couture. Le Pass VIP au scan a impressionné tous nos convives dès l'entrée de la salle.",
+  },
+  {
+    couple: "Mariama & Ibrahima",
+    location: "Célébration Dakar Plateau",
+    formula: "Formule Prestige — Thème Rose Bohème",
+    image: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=420&q=82",
+    text: "L'espace photographe intégré a permis à nos proches de télécharger les photos en haute définition dès le lendemain sans passer par un lien lourd. Service client exceptionnel sur WhatsApp.",
+  },
+];
+
+const FOOTER_COLLECTIONS = [
+  "Collection Palais Royal",
+  "Collection Rose Bohème",
+  "Collection Minimaliste Épurée",
+  "Modèles Religieux & Traditionnels",
+  "Galerie & Photographe",
+];
+
+const FOOTER_FEATURES = [
+  "Vidéos d'ouverture 4K",
+  "Gestion RSVP instantanée",
+  "QR Code Pass VIP nominatif",
+  "Intégration Google Agenda",
+  "Accès Photographe Privé",
+];
+
+const HERO_TRUST_FEATURES = [
+  { icon: Gem, label: "Direction artistique" },
+  { icon: ShieldCheck, label: "Pass VIP nominatif" },
+  { icon: Camera, label: "Galerie privée" },
+];
+
+function templateMediaSource(template?: Template | null) {
+  return template?.openingVideoUrl ?? template?.demoVideoUrl ?? null;
+}
+
+function isVideoMedia(src?: string | null) {
+  return Boolean(src && /\.(mp4|mov|webm)(\?|$)/i.test(src));
+}
+
+function HeroPhoneMedia({
+  src,
+  gradient,
+  variant,
+}: {
+  src?: string | null;
+  gradient?: string;
+  variant: "opening" | "program";
+}) {
+  if (src && isVideoMedia(src)) {
+    return (
+      <video
+        src={src}
+        className="absolute inset-0 h-full w-full object-cover"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+      />
+    );
+  }
+
+  if (src) {
+    return <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />;
+  }
+
+  return (
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center"
+      style={{ background: gradient ?? "linear-gradient(145deg,#19110f,#5C1D24 52%,#D4AF37)" }}
+    >
+      <span className="font-script text-5xl text-white/75">A & B</span>
+      <span className="mt-4 h-px w-16 bg-white/35" />
+      <span className="mt-4 text-[10px] uppercase tracking-[0.24em] text-white/70">
+        {variant === "opening" ? "Invitation privée" : "Programme royal"}
+      </span>
+    </div>
+  );
+}
+
+function HeroPhoneMockup({
+  src,
+  gradient,
+  className,
+  label,
+  variant,
+}: {
+  src?: string | null;
+  gradient?: string;
+  className?: string;
+  label: string;
+  variant: "opening" | "program";
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className={`group absolute transform-gpu transition-transform duration-700 ease-out ${className ?? ""}`}
+      style={{ transformStyle: "preserve-3d" }}
+    >
+      <div className="relative rounded-[2.35rem] border border-white/[0.12] bg-[#080807] p-2 shadow-[0_36px_100px_rgba(0,0,0,.58)]">
+        <div className="pointer-events-none absolute inset-x-10 -top-px h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+        <div className="mx-auto mb-2 h-5 w-24 rounded-full bg-white/10" />
+        <div className="relative aspect-[9/19.5] overflow-hidden rounded-[1.8rem] bg-[#0D0B0A]">
+          <HeroPhoneMedia src={src} gradient={gradient} variant={variant} />
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+          {variant === "opening" ? (
+            <div className="absolute inset-x-0 bottom-8 flex flex-col items-center">
+              <div className="grid size-16 place-items-center rounded-full border border-[#F6D778]/65 bg-[#5C1D24]/80 shadow-[0_0_32px_rgba(212,175,55,.35)] backdrop-blur">
+                <span className="font-script text-2xl text-[#F8D779]">EI</span>
+              </div>
+              <span className="mt-3 rounded-full border border-white/20 bg-black/25 px-4 py-2 text-[9px] uppercase tracking-[0.24em] text-white/[0.88] backdrop-blur">
+                Appuyez pour ouvrir
+              </span>
+            </div>
+          ) : (
+            <div className="absolute inset-x-4 bottom-5 rounded-2xl border border-[#F6D778]/35 bg-black/35 p-3 text-white shadow-2xl backdrop-blur-md">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[#F8D779]">
+                <CalendarCheck className="size-3.5" />
+                Programme
+              </div>
+              <div className="mt-3 space-y-2 text-[11px] text-white/[0.86]">
+                {["Cérémonie", "Dîner", "Soirée"].map((item, index) => (
+                  <div key={item} className="flex items-center justify-between">
+                    <span>{item}</span>
+                    <span className="font-semibold text-[#F8D779]">0{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mx-auto mt-2 h-1 w-20 rounded-full bg-white/20" />
+      </div>
+      <div className="pointer-events-none absolute -bottom-4 left-1/2 h-8 w-3/4 -translate-x-1/2 rounded-full bg-black/35 blur-xl" />
+      <p className="mt-4 text-center text-[10px] uppercase tracking-[0.22em] text-white/[0.52]">{label}</p>
+    </motion.div>
+  );
+}
+
 /* ========================================================================== */
 /*  Page                                                                       */
 /* ========================================================================== */
@@ -199,6 +354,7 @@ export default function HomePage() {
   /* Template filter state */
   const [activeFilter, setActiveFilter] = useState("all");
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
+  const [homepageSettings, setHomepageSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE_SETTINGS);
   /* Phone mockup preview state */
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
 
@@ -237,10 +393,34 @@ export default function HomePage() {
     });
   }, []);
 
+  useEffect(() => {
+    async function loadHomepageSettings() {
+      try {
+        const response = await fetch("/api/settings", { cache: "no-store" });
+        const json = await response.json();
+        if (response.ok && json.success) {
+          setHomepageSettings({ ...DEFAULT_HOMEPAGE_SETTINGS, ...json.data });
+        }
+      } catch (error) {
+        console.error("Homepage settings fetch failed:", error);
+      }
+    }
+
+    void loadHomepageSettings();
+  }, []);
+
   const filteredTemplates =
     activeFilter === "all"
       ? templates
       : templates.filter((tpl) => tpl.category === activeFilter);
+
+  const featuredTemplate = templates.find((tpl) => templateMediaSource(tpl)) ?? templates[0] ?? null;
+  const secondaryTemplate =
+    templates.find((tpl) => tpl.slug !== featuredTemplate?.slug && templateMediaSource(tpl)) ??
+    templates.find((tpl) => tpl.name !== featuredTemplate?.name) ??
+    featuredTemplate;
+  const heroPhone1Src = homepageSettings.heroPhone1 || templateMediaSource(featuredTemplate) || DEFAULT_HERO_PHONE_MEDIA[0];
+  const heroPhone2Src = homepageSettings.heroPhone2 || templateMediaSource(secondaryTemplate) || DEFAULT_HERO_PHONE_MEDIA[1];
 
   /* FAQ accordion state */
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -262,105 +442,116 @@ export default function HomePage() {
       <section
         id="hero"
         ref={heroRef}
-        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 pt-16"
+        className="relative min-h-[100svh] overflow-hidden bg-[#0D0B0A] px-5 pb-16 pt-24 text-[#FFFDF9] sm:px-8 sm:pt-28 lg:px-12"
       >
-        {/* Background sparkles */}
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          {SPARKLES.map((s) => (
-            <motion.div
-              key={s.id}
-              className="absolute rounded-full"
-              style={{
-                left: `${s.x}%`,
-                top: `${s.y}%`,
-                width: s.size,
-                height: s.size,
-                background: GOLD,
-              }}
-              animate={{
-                opacity: [0, 0.7, 0],
-                scale: [0.5, 1.2, 0.5],
-              }}
-              transition={{
-                duration: s.duration,
-                delay: s.delay,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Watermark script text */}
         <div
-          className="pointer-events-none absolute select-none font-script text-[12rem] font-normal leading-none opacity-[0.04] sm:text-[18rem] lg:text-[24rem]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#0D0B0A_0%,#1A1210_48%,#332014_100%)]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,.06)_1px,transparent_1px)] [background-size:64px_64px]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute left-1/2 top-24 -translate-x-1/2 select-none font-script text-[8rem] font-normal leading-none opacity-[0.07] sm:text-[14rem] lg:text-[20rem]"
           style={{ color: GOLD }}
           aria-hidden
         >
-          Élégance
+          Invitations
         </div>
 
-        {/* Main hero content */}
         <motion.div
-          className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center"
+          className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,1fr)] lg:gap-16"
           style={{ opacity: heroOpacity, scale: heroScale }}
         >
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display-bold text-4xl leading-tight tracking-luxury text-foreground sm:text-5xl md:text-6xl lg:text-7xl"
-          >
-            {t.hero.title1}
-            <br />
-            <span className="text-gold-gradient">{t.hero.titleHighlight}</span>
-          </motion.h1>
-
-          {/* Ornamental divider */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="divider-ornament my-6 sm:my-8"
-          />
-
-          <motion.p
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="font-body max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl"
-          >
-            {t.hero.subtitle}
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:gap-5"
-          >
-            <Button
-              size="lg"
-              className="btn-luxury rounded-full px-8 py-6 text-sm font-semibold tracking-elegant uppercase sm:px-10 sm:text-base"
-              style={{ backgroundColor: GOLD, color: EBONY, border: "none" }}
-              asChild
+          <div className="max-w-2xl text-center lg:text-left">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="inline-flex items-center rounded-full border border-[#D4AF37]/30 bg-white/[0.08] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3D88D] shadow-[0_14px_34px_rgba(0,0,0,.24)] backdrop-blur-md"
             >
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                {t.hero.cta1}
-              </a>
-            </Button>
+              ✨ La Référence des Faire-Part Digitaux de Prestige
+            </motion.div>
 
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full px-8 py-6 text-sm font-semibold tracking-elegant uppercase sm:px-10 sm:text-base"
-              style={{ borderColor: GOLD, color: BURGUNDY }}
-              onClick={scrollToModeles}
+            <motion.h1
+              initial={{ opacity: 0, y: 34 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-7 font-[var(--font-cormorant)] text-4xl font-semibold leading-[0.98] tracking-[0.02em] text-[#FFFDF9] drop-shadow-2xl sm:text-6xl lg:text-7xl"
             >
-              {t.hero.cta2}
-            </Button>
-          </motion.div>
+              Sublimez votre union avec une invitation d'exception.
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="mx-auto mt-6 max-w-xl font-body text-base leading-8 text-[#FFFDF9]/[0.78] sm:text-lg lg:mx-0"
+            >
+              Offrez à vos convives une expérience interactive immersive digne de la haute couture.
+              Musique, vidéo cinématographique, RSVP fluide et galerie privée.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.44, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
+            >
+              <Button
+                size="lg"
+                className="rounded-full bg-gradient-to-r from-[#D4AF37] to-[#AA7C11] px-8 py-6 text-sm font-semibold text-black shadow-2xl shadow-black/40 transition hover:brightness-110 sm:text-base"
+                asChild
+              >
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2 size-4" />
+                  Commander mon invitation sur WhatsApp
+                </a>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full border-white/25 bg-white/10 px-8 py-6 text-sm font-semibold text-[#FFFDF9] shadow-xl backdrop-blur-md transition hover:bg-white/[0.16] hover:text-white sm:text-base"
+                onClick={scrollToModeles}
+              >
+                Voir une démonstration live
+              </Button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.58, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8 grid gap-3 text-left sm:grid-cols-3"
+            >
+              {HERO_TRUST_FEATURES.map((item) => (
+                <div key={item.label} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 backdrop-blur">
+                  <item.icon className="size-4 text-[#F3D88D]" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/[0.72]">{item.label}</span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          <div className="relative mx-auto h-[450px] w-full max-w-[350px] overflow-visible sm:h-[540px] sm:max-w-[500px] lg:h-[620px] lg:max-w-[560px]" style={{ perspective: "1200px" }}>
+            <div className="pointer-events-none absolute inset-x-8 bottom-6 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
+            <HeroPhoneMockup
+              src={heroPhone1Src}
+              gradient={featuredTemplate?.gradient}
+              label="Ouverture cinématographique"
+              variant="opening"
+              className="left-[3%] top-8 z-20 w-[178px] -rotate-6 hover:rotate-0 sm:left-[13%] sm:w-[226px] lg:left-[12%] lg:w-[254px]"
+            />
+            <HeroPhoneMockup
+              src={heroPhone2Src}
+              gradient={secondaryTemplate?.gradient}
+              label="Expérience convive"
+              variant="program"
+              className="right-[1%] top-24 z-10 w-[154px] rotate-[8deg] scale-95 opacity-90 hover:rotate-3 sm:right-[8%] sm:w-[208px] lg:right-[7%] lg:w-[232px]"
+            />
+          </div>
         </motion.div>
 
         {/* Scroll indicator */}
@@ -377,6 +568,35 @@ export default function HomePage() {
             <ChevronDown className="size-7" style={{ color: GOLD, opacity: 0.6 }} />
           </motion.div>
         </motion.div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/*  PRESTIGE PLACES                                                    */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="relative overflow-hidden border-y border-[#D4AF37]/20 bg-[#0D0B0A] py-8 text-[#FFFDF9] sm:py-10">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">
+            CHOISI POUR DES RÉCEPTIONS D'EXCEPTION DANS LES PLUS BEAUX LIEUX
+          </p>
+          <div className="mt-7 overflow-hidden">
+            <motion.div
+              className="flex min-w-max items-center gap-4"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+            >
+              {[...PRESTIGE_PLACES, ...PRESTIGE_PLACES].map((place, index) => (
+                <div
+                  key={`${place}-${index}`}
+                  className="flex h-20 w-48 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-white/[0.04] px-4 text-center opacity-60 shadow-[0_16px_40px_rgba(0,0,0,.18)] backdrop-blur-sm transition-opacity duration-300 hover:opacity-100 sm:w-56"
+                >
+                  <span className="font-[var(--font-cormorant)] text-base leading-tight tracking-[0.12em] text-[#FFFDF9]">
+                    {place}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* ------------------------------------------------------------------ */}
@@ -914,41 +1134,57 @@ export default function HomePage() {
       {/* ------------------------------------------------------------------ */}
       {/*  TESTIMONIALS                                                       */}
       {/* ------------------------------------------------------------------ */}
-      <section id="temoignages" className="bg-champagne-shimmer py-20 sm:py-28 lg:py-32">
+      <section id="temoignages" className="relative overflow-hidden bg-[#0D0B0A] py-20 text-[#FFFDF9] sm:py-28 lg:py-32">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(90deg,rgba(212,175,55,.35)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,.16)_1px,transparent_1px)] [background-size:72px_72px]" />
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
           <div className="mb-14 flex flex-col items-center text-center sm:mb-18">
-            <SectionHeading>{t.testimonials.heading}</SectionHeading>
-            <SectionSubheading className="mt-4">{t.testimonials.subheading}</SectionSubheading>
+            <Badge className="mb-4 rounded-full border border-[#D4AF37]/35 bg-[#D4AF37]/10 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3D88D]">
+              PAROLES DE MARIÉS
+            </Badge>
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="font-[var(--font-cormorant)] text-4xl font-semibold leading-tight tracking-[0.02em] text-[#FFFDF9] sm:text-5xl lg:text-6xl"
+            >
+              L'émotion partagée par nos couples d'exception
+            </motion.h2>
+            <p className="mt-5 max-w-2xl font-body text-base leading-8 text-white/[0.62] sm:text-lg">
+              Des expériences conçues pour rester dans les mémoires, avant même l'arrivée des invités.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
-            {t.testimonials.items.map((item, i) => (
+            {LUXURY_TESTIMONIALS.map((item, i) => (
               <motion.div
-                key={item.name}
+                key={item.couple}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="card-luxury-elevated flex h-full flex-col p-6 sm:p-8">
-                  {/* Quote icon */}
-                  <Quote className="mb-4 size-8" style={{ color: `${GOLD}40` }} />
-                  <p className="flex-1 font-body text-sm leading-relaxed text-muted-foreground sm:text-base">
+                <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-[#D4AF37]/20 bg-[#161210]/60 p-5 shadow-xl shadow-black/25 backdrop-blur-md sm:p-6">
+                  <div className="relative mb-5 h-40 overflow-hidden rounded-t-[3rem] rounded-b-2xl border border-[#D4AF37]/20">
+                    <img src={item.image} alt={`Portrait de ${item.couple}`} className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#161210]/70 via-transparent to-transparent" />
+                  </div>
+                  <Quote className="mb-4 size-8 text-[#D4AF37]/45" />
+                  <p className="flex-1 font-body text-sm leading-7 text-white/[0.76] sm:text-base">
                     {item.text}
                   </p>
-                  {/* Stars */}
                   <div className="mt-5 flex gap-1">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star key={s} className="size-4" style={{ color: GOLD, fill: GOLD }} />
                     ))}
                   </div>
-                  <div className="border-double-luxury my-4 w-full" />
+                  <div className="my-5 h-px w-full bg-gradient-to-r from-transparent via-[#D4AF37]/35 to-transparent" />
                   <div>
-                    <p className="font-display-bold text-base tracking-luxury text-foreground">
-                      {item.name}
+                    <p className="font-[var(--font-cormorant)] text-xl font-semibold tracking-[0.04em] text-[#FFFDF9]">
+                      {item.couple}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{item.location}</p>
-                    <p className="mt-1 text-xs font-medium" style={{ color: GOLD }}>{item.role}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/[0.52]">{item.location}</p>
+                    <p className="mt-2 text-xs font-semibold text-[#D4AF37]">{item.formula}</p>
                   </div>
                 </div>
               </motion.div>
@@ -1023,61 +1259,26 @@ export default function HomePage() {
       {/* ------------------------------------------------------------------ */}
       {/*  FINAL CTA                                                         */}
       {/* ------------------------------------------------------------------ */}
-      <section className="relative overflow-hidden py-20 sm:py-28" style={{ backgroundColor: BURGUNDY }}>
-        {/* Decorative sparkles */}
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                left: `${20 + i * 15}%`,
-                top: `${30 + (i % 3) * 20}%`,
-                width: 3 + i,
-                height: 3 + i,
-                background: GOLD,
-              }}
-              animate={{ opacity: [0, 0.5, 0], scale: [0.5, 1, 0.5] }}
-              transition={{
-                duration: 3 + i * 0.5,
-                delay: i * 0.6,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 text-center">
+      <section className="relative overflow-hidden bg-[#130F0D] py-20 text-[#FFFDF9] sm:py-28">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(212,175,55,.12),transparent_38%,rgba(92,29,36,.28))]" />
+        <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display-bold text-3xl tracking-luxury sm:text-4xl lg:text-5xl"
-            style={{ color: IVORY }}
+            className="font-[var(--font-cormorant)] text-4xl font-semibold leading-tight tracking-[0.02em] sm:text-5xl lg:text-6xl"
           >
-            {t.hero.cta1}
+            Prêts à créer une invitation inoubliable ?
           </motion.h2>
-          <motion.div
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="my-6 flex w-32 items-center gap-2"
-          >
-            <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, transparent, ${GOLD})` }} />
-            <span className="font-script text-lg" style={{ color: GOLD }}>&</span>
-            <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${GOLD}, transparent)` }} />
-          </motion.div>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="font-body text-base text-[#FAF7F2BB] sm:text-lg"
+            className="mt-5 max-w-2xl font-body text-base leading-8 text-white/[0.72] sm:text-lg"
           >
-            {t.hero.subtitle}
+            Échangez directement avec notre direction artistique sur WhatsApp pour concevoir votre univers sur-mesure.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1088,12 +1289,12 @@ export default function HomePage() {
           >
             <Button
               size="lg"
-              className="btn-luxury rounded-full px-10 py-6 text-sm font-semibold tracking-elegant uppercase sm:text-base"
-              style={{ backgroundColor: GOLD, color: EBONY, border: "none" }}
+              className="rounded-full bg-gradient-to-r from-[#D4AF37] to-[#AA7C11] px-10 py-6 text-sm font-semibold uppercase tracking-[0.14em] text-black shadow-2xl shadow-black/35 transition hover:brightness-110 sm:text-base"
               asChild
             >
               <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                {t.hero.cta1}
+                <MessageCircle className="mr-2 size-4" />
+                Démarrer mon projet sur WhatsApp
               </a>
             </Button>
           </motion.div>
@@ -1103,33 +1304,75 @@ export default function HomePage() {
       {/* ------------------------------------------------------------------ */}
       {/*  FOOTER                                                            */}
       {/* ------------------------------------------------------------------ */}
-      <footer className="mt-auto" style={{ backgroundColor: EBONY, color: IVORY }}>
-        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
-          <div className="flex flex-col items-center gap-8 text-center">
-            <Link href="/" className="group">
-              <span
-                className="font-script text-3xl transition-opacity duration-300 group-hover:opacity-80 sm:text-4xl"
-                style={{ color: GOLD }}
-              >
-                Élégance
+      <footer className="mt-auto border-t border-[#D4AF37]/20 bg-[#0D0B0A] text-[#FFFDF9]">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 sm:py-16 md:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1.15fr] lg:px-12">
+          <div>
+            <Link href="/" className="inline-flex flex-col leading-none">
+              <span className="font-[var(--font-cormorant)] text-2xl font-light uppercase tracking-[0.3em] text-[#FFFDF9]">
+                ÉLÉGANCE
+              </span>
+              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.42em] text-[#D4AF37]">
+                INVITATIONS
               </span>
             </Link>
-
-            <nav className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
-              {[t.footer.terms, t.footer.privacy, t.footer.contact].map((label) => (
-                <span
-                  key={label}
-                  className="font-body text-sm cursor-pointer transition-colors duration-200 hover:opacity-70"
-                  style={{ color: `${IVORY}99` }}
-                >
-                  {label}
-                </span>
-              ))}
-            </nav>
-
-            <p className="font-body text-xs" style={{ color: `${IVORY}55` }}>
-              {t.footer.copyright}
+            <p className="mt-5 max-w-sm font-body text-sm leading-7 text-white/[0.62]">
+              Créateur d'invitations de mariage numériques sur-mesure pour réceptions d'exception au Sénégal et à l'international.
             </p>
+            <Badge className="mt-5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#F3D88D]">
+              Service Concierge disponible 7j/7
+            </Badge>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">Les Collections</h3>
+            <ul className="mt-5 space-y-3">
+              {FOOTER_COLLECTIONS.map((item) => (
+                <li key={item}>
+                  <button type="button" onClick={scrollToModeles} className="text-left text-sm text-white/[0.62] transition hover:text-white">
+                    {item}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">Fonctionnalités Clés</h3>
+            <ul className="mt-5 space-y-3 text-sm text-white/[0.62]">
+              {FOOTER_FEATURES.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">Conciergerie & Contact Direct</h3>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-[#20bd5a]"
+            >
+              <MessageCircle className="mr-2 size-4" />
+              +221 77 361 59 44
+            </a>
+            <a href="mailto:contact@elegance-invitations.com" className="mt-5 block text-sm text-white/70 transition hover:text-white">
+              contact@elegance-invitations.com
+            </a>
+            <p className="mt-3 text-sm leading-7 text-white/[0.52]">
+              Dakar, Sénégal — Accompagnement diaspora monde entier
+            </p>
+          </div>
+        </div>
+
+        <div className="border-t border-[#D4AF37]/[0.14]">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-6 text-xs text-white/48 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
+            <p>© 2026 Élégance Invitations. Tous droits réservés. L'art de célébrer.</p>
+            <nav className="flex flex-wrap gap-4">
+              <a href="#confidentialite" className="transition hover:text-white">Confidentialité</a>
+              <a href="#conditions" className="transition hover:text-white">Conditions Générales</a>
+              <Link href="/admin" className="transition hover:text-white">Espace Admin</Link>
+            </nav>
           </div>
         </div>
 

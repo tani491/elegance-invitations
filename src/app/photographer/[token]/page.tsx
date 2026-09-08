@@ -50,7 +50,7 @@ const ALBUMS = [
 
 type AlbumKey = (typeof ALBUMS)[number]["key"];
 
-const GALLERY_PHOTO_BUCKET = "gallery-photos";
+const GALLERY_PHOTO_BUCKET = "gallery-photos" as const;
 const MAX_PHOTO_SIZE = 15 * 1024 * 1024;
 const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif";
 const PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/avif"]);
@@ -304,7 +304,8 @@ export default function PhotographerPortal() {
 
       for (const [index, selectedFile] of selectedFiles.entries()) {
         const position = index + 1;
-        const filePath = `${event.id}/${Date.now()}_${position}_${sanitizeStorageFilename(selectedFile.file.name)}`;
+        const fileName = `${Date.now()}_${sanitizeStorageFilename(selectedFile.file.name)}`;
+        const filePath = `${event.id}/${fileName}`;
 
         setUploadStatus(`Upload photo ${position}/${selectedFiles.length}...`);
         setUploadProgress(Math.max(5, Math.round((index / selectedFiles.length) * 78)));

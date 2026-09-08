@@ -106,12 +106,18 @@ export default function PublicNavbar() {
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12">
         {/* Logo */}
-        <Link href="/" className="relative z-10 flex items-center gap-1.5">
+        <Link href="/" className="relative z-10 flex flex-col leading-none">
           <span
-            className="font-[var(--font-cormorant)] text-2xl font-semibold tracking-wide transition-colors duration-300 sm:text-[1.65rem]"
+            className="font-[var(--font-cormorant)] text-lg font-light uppercase tracking-[0.3em] transition-colors duration-300 sm:text-xl"
             style={{ color: isActive ? COLORS.burgundy : COLORS.ivory }}
           >
-            Élégance
+            ÉLÉGANCE
+          </span>
+          <span
+            className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.42em] transition-colors duration-300"
+            style={{ color: COLORS.gold }}
+          >
+            INVITATIONS
           </span>
         </Link>
 
@@ -226,10 +232,13 @@ export default function PublicNavbar() {
             >
               <SheetHeader className="pt-2">
                 <SheetTitle
-                  className="font-[var(--font-cormorant)] text-xl font-semibold tracking-wide"
+                  className="flex flex-col font-[var(--font-cormorant)] leading-none"
                   style={{ color: COLORS.burgundy }}
                 >
-                  Élégance
+                  <span className="text-lg font-light uppercase tracking-[0.3em]">ÉLÉGANCE</span>
+                  <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.42em]" style={{ color: COLORS.gold }}>
+                    INVITATIONS
+                  </span>
                 </SheetTitle>
               </SheetHeader>
 
