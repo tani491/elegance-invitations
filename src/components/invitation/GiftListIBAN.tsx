@@ -20,7 +20,12 @@ export function GiftListIBAN({ iban, wave }: { iban?: string | null; wave?: stri
         </span>
         <div>
           <p className="font-serif text-xs font-semibold uppercase tracking-[0.25em] text-[var(--invitation-gold)]">Cadeau</p>
-          <h2 className="mt-4 font-serif text-2xl italic tracking-wide text-[var(--invitation-sheet-text)]">Cadeau des mariés</h2>
+          <h2
+            className="mt-4 text-2xl italic tracking-wide text-[var(--invitation-sheet-text)]"
+            style={{ fontFamily: "var(--invitation-title-font)" }}
+          >
+            Cadeau des mariés
+          </h2>
         </div>
       </div>
       <div className="mx-auto grid max-w-xs gap-3">

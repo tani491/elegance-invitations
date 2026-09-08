@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -49,6 +50,12 @@ const ALBUMS = [
 
 type AlbumKey = (typeof ALBUMS)[number]["key"];
 
+const GALLERY_PHOTO_BUCKET = "gallery-photos";
+const MAX_PHOTO_SIZE = 15 * 1024 * 1024;
+const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif";
+const PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/avif"]);
+const PHOTO_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "heic", "heif", "avif"]);
+
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -61,6 +68,19 @@ interface SelectedFile {
 
 function generateId(): string {
   return crypto.randomUUID().slice(0, 8);
+}
+
+function sanitizeStorageFilename(filename: string) {
+  return filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+}
+
+function titleFromFilename(filename: string) {
+  return filename.replace(/\.[^.]+$/, "").trim() || "Photo";
+}
+
+function isSupportedPhoto(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return PHOTO_MIME_TYPES.has(file.type) || Boolean(extension && PHOTO_EXTENSIONS.has(extension));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -122,6 +142,8 @@ export default function PhotographerPortal() {
   const [galleryVisible, setGalleryVisible] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [existingPhotos, setExistingPhotos] = useState<AlbumPhoto[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
 
@@ -183,15 +205,37 @@ export default function PhotographerPortal() {
   const addFiles = useCallback((incoming: FileList | File[]) => {
     const newFiles: SelectedFile[] = [];
     const filesArray = Array.from(incoming);
+    let unsupportedCount = 0;
+    let oversizedCount = 0;
 
     for (const file of filesArray) {
-      if (!file.type.startsWith("image/")) continue;
-      if (file.size > 15 * 1024 * 1024) continue;
+      if (!isSupportedPhoto(file)) {
+        unsupportedCount += 1;
+        continue;
+      }
+      if (file.size > MAX_PHOTO_SIZE) {
+        oversizedCount += 1;
+        continue;
+      }
       const preview = URL.createObjectURL(file);
       newFiles.push({ file, id: generateId(), preview });
     }
 
-    setSelectedFiles((prev) => [...prev, ...newFiles]);
+    if (newFiles.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...newFiles]);
+    }
+
+    if (unsupportedCount > 0) {
+      toast.error("Format image non autorise.", {
+        description: "Utilisez JPG, PNG, WebP, HEIC ou AVIF.",
+      });
+    }
+
+    if (oversizedCount > 0) {
+      toast.error("Photo trop volumineuse.", {
+        description: "Chaque photo doit peser moins de 15 Mo.",
+      });
+    }
   }, []);
 
   const removeFile = useCallback((id: string) => {
@@ -237,19 +281,74 @@ export default function PhotographerPortal() {
   /* ---- Upload handler ---- */
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
+    if (!event) {
+      toast.error("Evenement indisponible.");
+      return;
+    }
+
     setUploading(true);
+    setUploadStatus("Preparation de l'upload...");
+    setUploadProgress(2);
 
     try {
-      const formData = new FormData();
-      formData.append("token", token);
-      formData.append("category", activeAlbum);
-      selectedFiles.forEach((selectedFile) => {
-        formData.append("files", selectedFile.file);
-      });
+      const supabase = createBrowserSupabaseClient();
+      const uploadedPhotos: Array<{
+        url: string;
+        thumbnailUrl: string;
+        title: string;
+        fileName: string;
+        storagePath: string;
+        contentType: string | null;
+        size: number;
+      }> = [];
+
+      for (const [index, selectedFile] of selectedFiles.entries()) {
+        const position = index + 1;
+        const filePath = `${event.id}/${Date.now()}_${position}_${sanitizeStorageFilename(selectedFile.file.name)}`;
+
+        setUploadStatus(`Upload photo ${position}/${selectedFiles.length}...`);
+        setUploadProgress(Math.max(5, Math.round((index / selectedFiles.length) * 78)));
+
+        const { error } = await supabase.storage
+          .from(GALLERY_PHOTO_BUCKET)
+          .upload(filePath, selectedFile.file, {
+            cacheControl: "3600",
+            upsert: true,
+            contentType: selectedFile.file.type || "application/octet-stream",
+          });
+
+        if (error) {
+          console.error("Erreur upload Supabase photographe:", error);
+          toast.error("Upload photo impossible.", {
+            description: error.message,
+          });
+          return;
+        }
+
+        const { data } = supabase.storage.from(GALLERY_PHOTO_BUCKET).getPublicUrl(filePath);
+        uploadedPhotos.push({
+          url: data.publicUrl,
+          thumbnailUrl: data.publicUrl,
+          title: titleFromFilename(selectedFile.file.name),
+          fileName: selectedFile.file.name,
+          storagePath: filePath,
+          contentType: selectedFile.file.type || null,
+          size: selectedFile.file.size,
+        });
+        setUploadProgress(Math.round((position / selectedFiles.length) * 82));
+      }
+
+      setUploadStatus("Synchronisation de la galerie...");
+      setUploadProgress(88);
 
       const res = await fetch("/api/photographer/upload", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          category: activeAlbum,
+          photos: uploadedPhotos,
+        }),
       });
 
       const data = await res.json();
@@ -266,6 +365,7 @@ export default function PhotographerPortal() {
             duration: 5000,
           },
         );
+        setUploadProgress(100);
         clearAllFiles();
         setExistingPhotos((prev) => [...data.data, ...prev]);
       } else {
@@ -273,13 +373,16 @@ export default function PhotographerPortal() {
           description: data.error || "Veuillez réessayer.",
         });
       }
-    } catch {
+    } catch (error) {
+      console.error("Erreur upload photographe:", error);
       toast.error("Erreur réseau", {
-        description: "Vérifiez votre connexion et réessayez.",
+        description: error instanceof Error ? error.message : "Vérifiez votre connexion et réessayez.",
       });
+    } finally {
+      setUploading(false);
+      setUploadStatus("");
+      setUploadProgress(0);
     }
-
-    setUploading(false);
   };
 
   async function deletePhoto(photoId: string) {
@@ -561,7 +664,7 @@ export default function PhotographerPortal() {
                   : "Glissez vos photos ici ou cliquez pour sélectionner"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                JPG, PNG, WebP, AVIF — jusqu&apos;à 15 Mo par fichier
+                JPG, PNG, WebP, HEIC — jusqu&apos;à 15 Mo par fichier
               </p>
             </div>
 
@@ -569,7 +672,7 @@ export default function PhotographerPortal() {
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*"
+              accept={PHOTO_ACCEPT}
               className="sr-only"
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
@@ -728,7 +831,7 @@ export default function PhotographerPortal() {
                     borderTopColor: "#FAF7F2",
                   }}
                 />
-                Envoi en cours…
+                {uploadStatus || "Envoi en cours..."}
               </>
             ) : (
               <>
@@ -738,6 +841,19 @@ export default function PhotographerPortal() {
               </>
             )}
           </Button>
+          {uploading && (
+            <div className="mt-4 w-full max-w-sm">
+              <div className="h-2 overflow-hidden rounded-full bg-[#D4AF37]/15">
+                <div
+                  className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
+                {uploadStatus || "Upload en cours..."} {uploadProgress > 0 ? `${uploadProgress}%` : ""}
+              </p>
+            </div>
+          )}
         </motion.section>
       </main>
 

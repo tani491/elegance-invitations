@@ -28,7 +28,12 @@ export function DressCodeSection({ event }: { event: PublicEventPayload }) {
           <Shirt className="size-5" />
         </span>
         <h2 className="mt-5 font-serif text-xs font-semibold uppercase tracking-[0.25em] text-[var(--invitation-gold)]">Dress code</h2>
-        <p className="mt-4 font-serif text-2xl italic tracking-wide text-[var(--invitation-sheet-text)]">Palette souhaitée</p>
+        <p
+          className="mt-4 text-2xl italic tracking-wide text-[var(--invitation-sheet-text)]"
+          style={{ fontFamily: "var(--invitation-title-font)" }}
+        >
+          Palette souhaitée
+        </p>
       </div>
       {event.dressCode && <p className="mx-auto mt-6 max-w-xs font-serif text-lg leading-[1.8] text-[var(--invitation-sheet-muted)]">{normalizeDressCodeCopy(event.dressCode)}</p>}
       <div className="mt-7 flex flex-wrap justify-center gap-3">

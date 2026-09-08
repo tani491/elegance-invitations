@@ -36,7 +36,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
     secondaryColor: "#FAF7F2",
     accentColor: "#C7A45A",
     goldColor: "#C7A45A",
-    titleFont: "Plus Jakarta Sans",
+    titleFont: "Montserrat",
     animationType: "botanical_envelope",
     previewGradient: "linear-gradient(135deg, #FAF7F2 0%, #EFE6D6 52%, #C7A45A 100%)",
   },
@@ -178,6 +178,27 @@ const SAFE_THEME_FALLBACK = {
   isVisible: true,
 } satisfies ThemeConfig;
 
+const DEFAULT_TITLE_FONT_FAMILY = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
+
+const TITLE_FONT_FAMILIES: Record<string, string> = {
+  "Cinzel": "Cinzel, Georgia, 'Times New Roman', serif",
+  "Cormorant Garamond": DEFAULT_TITLE_FONT_FAMILY,
+  "Playfair Display": "'Playfair Display', Georgia, 'Times New Roman', serif",
+  "Bodoni Moda": "'Bodoni Moda', 'Didot', Georgia, serif",
+  "Great Vibes": "'Great Vibes', 'Segoe Script', 'Snell Roundhand', cursive",
+  "Alex Brush": "'Alex Brush', 'Segoe Script', 'Snell Roundhand', cursive",
+  "Montserrat": "Montserrat, Arial, Helvetica, sans-serif",
+  "Prata": "Prata, Georgia, 'Times New Roman', serif",
+  "Plus Jakarta Sans": "Montserrat, Arial, Helvetica, sans-serif",
+};
+
+function normalizeTitleFontName(value: string | null | undefined) {
+  const font = value?.trim();
+  if (!font) return SAFE_THEME_FALLBACK.titleFont;
+  if (font === "Plus Jakarta Sans") return "Montserrat";
+  return TITLE_FONT_FAMILIES[font] ? font : SAFE_THEME_FALLBACK.titleFont;
+}
+
 type ThemeConfigInput = {
   [Key in keyof ThemeConfig]?: ThemeConfig[Key] | null;
 };
@@ -206,7 +227,7 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
     accentGold: theme?.accentGold || goldColor || "#D4AF37",
     textColor: theme?.textColor || primaryColor || "#1B0F12",
     scrollAnimation: theme?.scrollAnimation || "fade-up",
-    titleFont: theme?.titleFont || fallback.titleFont || SAFE_THEME_FALLBACK.titleFont,
+    titleFont: normalizeTitleFontName(theme?.titleFont ?? fallback.titleFont ?? SAFE_THEME_FALLBACK.titleFont),
     animationType,
     openingStyle: theme?.openingStyle || animationType,
     videoUrl,
@@ -249,6 +270,10 @@ function colorWithAlpha(value: string, alpha: number, fallback: string) {
   return isHexColor(value) ? rgbaFromHex(value, alpha) : fallback;
 }
 
+function titleFontFamily(value: string | null | undefined) {
+  return TITLE_FONT_FAMILIES[normalizeTitleFontName(value)] ?? DEFAULT_TITLE_FONT_FAMILY;
+}
+
 export function themeToCssVars(theme: ThemeConfigInput | null | undefined) {
   const safeTheme = normalizeThemeConfig(theme);
   const bgPrimary = safeTheme.bgPrimary || "#FAF6F0";
@@ -288,7 +313,7 @@ export function themeToCssVars(theme: ThemeConfigInput | null | undefined) {
     "--invitation-sheet-muted": mutedText,
     "--invitation-sheet-border": rgbaFromHex(accentGold, 0.34),
     "--invitation-button-bg": `linear-gradient(135deg, ${accentGold}, ${safeTheme.accentColor} 52%, ${bgPrimary})`,
-    "--invitation-title-font": safeTheme.titleFont,
+    "--invitation-title-font": titleFontFamily(safeTheme.titleFont),
     "--primary": bgPrimary,
     "--accent": safeTheme.accentColor,
     "--gold": accentGold,

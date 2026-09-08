@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
-import { SCROLL_ANIMATION_OPTIONS } from "@/types/database.types";
+import { SCROLL_ANIMATION_OPTIONS, TITLE_FONT_OPTIONS } from "@/types/database.types";
 import type { ScrollAnimationType, ThemeConfig } from "@/types/database.types";
 
 interface EventRow {
@@ -64,7 +64,6 @@ type ThemeModelForm = {
   textColor: string;
   scrollAnimation: ScrollAnimationType;
   titleFont: string;
-  backdropUrl: string;
   isActive: boolean;
 };
 
@@ -103,7 +102,6 @@ function defaultThemeForm(): ThemeModelForm {
     textColor: "#1B0F12",
     scrollAnimation: "fade-up",
     titleFont: "Cormorant Garamond",
-    backdropUrl: "",
     isActive: true,
   };
 }
@@ -376,7 +374,6 @@ export default function AdminConsole() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...createThemeForm,
-          backdropUrl: createThemeForm.backdropUrl.trim() || null,
           videoUrl: uploadedVideoUrl,
           openingVideoUrl: uploadedVideoUrl,
           demoVideoUrl: uploadedVideoUrl,
@@ -690,12 +687,18 @@ export default function AdminConsole() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Police titre</Label>
-                      <Input
+                      <Label>Police des titres</Label>
+                      <Select
                         value={createThemeForm.titleFont}
-                        onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, titleFont: event.target.value }))}
-                        required
-                      />
+                        onValueChange={(titleFont) => setCreateThemeForm((prev) => ({ ...prev, titleFont }))}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TITLE_FONT_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-[#E5D9C7] bg-white px-3 py-2">
                       <Label htmlFor="new-theme-active">Visible catalogue</Label>
@@ -707,7 +710,7 @@ export default function AdminConsole() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4">
                     <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#D6C5A8] bg-white p-4 text-center transition hover:border-[#B89248] hover:bg-[#FAF6EF]">
                       <Upload className="mb-3 size-7 text-[#B89248]" />
                       <span className="text-sm font-semibold">
@@ -729,15 +732,6 @@ export default function AdminConsole() {
                         onChange={(event) => setCreateThemeVideo(event.target.files?.[0] ?? null)}
                       />
                     </label>
-
-                    <div className="space-y-2">
-                      <Label>Image fixe de decor ouvert</Label>
-                      <Input
-                        value={createThemeForm.backdropUrl}
-                        onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, backdropUrl: event.target.value }))}
-                        placeholder="https://..."
-                      />
-                    </div>
                   </div>
 
                   <div className="rounded-lg border border-[#E5D9C7] bg-white p-4">
@@ -914,11 +908,18 @@ export default function AdminConsole() {
                                   </Select>
                                 </div>
                                 <div className="space-y-2">
-                                  <Label>Police titre</Label>
-                                  <Input
-                                    defaultValue={theme.titleFont}
-                                    onBlur={(event) => void updateTheme(theme.slug, { titleFont: event.target.value.trim() || theme.titleFont })}
-                                  />
+                                  <Label>Police des titres</Label>
+                                  <Select
+                                    value={theme.titleFont}
+                                    onValueChange={(titleFont) => void updateTheme(theme.slug, { titleFont })}
+                                  >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      {TITLE_FONT_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border border-[#E5D9C7] bg-white px-3 py-2">
                                   <Label htmlFor={`active-${theme.slug}`}>Visible catalogue</Label>
@@ -978,7 +979,7 @@ export default function AdminConsole() {
                               <div className="flex items-center justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold text-[#171312]">Media du modele</p>
-                                  <p className="text-xs text-muted-foreground">Video d'ouverture et decor fixe.</p>
+                                  <p className="text-xs text-muted-foreground">Video d'ouverture synchronisee avec Supabase.</p>
                                 </div>
                                 {videoSrc && <Badge variant="outline" className="border-emerald-200 text-emerald-700">Synchronisee</Badge>}
                               </div>
@@ -1031,15 +1032,6 @@ export default function AdminConsole() {
                                   </Button>
                                 </div>
                               )}
-
-                              <div className="space-y-2">
-                                <Label>Image fixe de decor ouvert</Label>
-                                <Input
-                                  defaultValue={theme.backdropUrl ?? ""}
-                                  placeholder="https://..."
-                                  onBlur={(event) => void updateTheme(theme.slug, { backdropUrl: event.target.value.trim() || null })}
-                                />
-                              </div>
 
                               <div className="flex items-center gap-2 rounded-lg bg-[#F7F2EA] px-3 py-2 text-sm text-muted-foreground">
                                 <Check className="size-4 text-[#B89248]" />

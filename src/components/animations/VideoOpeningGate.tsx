@@ -152,7 +152,7 @@ export function VideoOpeningGate({
             }}
           />
         )}
-        <div className="absolute inset-0 bg-black/35 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-black/25 backdrop-blur-[0.5px]" />
       </div>
 
       <main
@@ -225,7 +225,7 @@ export function VideoOpeningGate({
                 className="absolute inset-0 h-full w-full select-none object-cover"
               />
             )}
-            <div className="absolute inset-0 bg-black/25 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 bg-black/25 backdrop-blur-[0.5px]" />
             <motion.div
               aria-hidden="true"
               className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-screen"
@@ -237,7 +237,7 @@ export function VideoOpeningGate({
               animate={isPlaying ? { opacity: [0, 0.95, 0], scale: [0.45, 2.4, 3.3] } : { opacity: 0, scale: 0.45 }}
               transition={{ duration: 1.45, ease: "easeOut" }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/30" />
 
             <motion.button
               type="button"

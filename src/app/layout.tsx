@@ -38,6 +38,9 @@ export const metadata: Metadata = {
   },
 };
 
+const prestigeFontsHref =
+  "https://fonts.googleapis.com/css2?family=Alex+Brush&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Prata&display=swap";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -53,6 +56,9 @@ export default function RootLayout({
           "--font-great-vibes": "'Segoe Script', 'Snell Roundhand', 'Brush Script MT', Georgia, serif",
         } as CSSProperties}
       >
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href={prestigeFontsHref} rel="stylesheet" />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

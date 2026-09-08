@@ -66,7 +66,12 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="text-center">
       <p className="font-serif text-xs font-semibold uppercase tracking-[0.3em] text-[var(--invitation-gold)]">{eyebrow}</p>
-      <h2 className="mt-4 font-serif text-3xl font-light italic leading-tight text-[var(--invitation-sheet-text)]">{title}</h2>
+      <h2
+        className="mt-4 text-3xl font-light italic leading-tight text-[var(--invitation-sheet-text)]"
+        style={{ fontFamily: "var(--invitation-title-font)" }}
+      >
+        {title}
+      </h2>
     </div>
   );
 }
@@ -495,7 +500,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
 
         <div className="relative z-10">
           <section id="hero" className="relative flex min-h-[100dvh] snap-start items-end overflow-hidden px-5 pb-10 pt-20 text-center">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/20" />
 
             <motion.div
               className="relative z-10 mx-auto w-full"
@@ -504,11 +509,11 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               transition={{ duration: 1, ease: "easeOut" }}
             >
               <Sparkles className="mx-auto mb-6 size-7 text-[var(--invitation-gold)] drop-shadow-md" />
-              <p className="font-serif text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--invitation-gold)] drop-shadow-md">
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] sm:text-base">
                 Avec la bénédiction de nos familles
               </p>
               <h1
-                style={{ fontFamily: "var(--font-great-vibes)" }}
+                style={{ fontFamily: "var(--invitation-title-font)" }}
                 className="mt-6 text-6xl font-light italic leading-[0.95] tracking-wide text-[#FFFDF9] drop-shadow-[0_3px_18px_rgba(0,0,0,0.58)]"
               >
                 {names}

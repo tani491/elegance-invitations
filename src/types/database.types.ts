@@ -43,6 +43,19 @@ export const SCROLL_ANIMATION_OPTIONS: { value: ScrollAnimationType; label: stri
   { value: "shimmer-rise", label: "shimmer-rise : Montee avec reflet soyeux" },
 ];
 
+export const TITLE_FONT_OPTIONS = [
+  { value: "Cinzel", label: "Cinzel : Majestueux, romain imperial" },
+  { value: "Cormorant Garamond", label: "Cormorant Garamond : Elegance classique haute joaillerie" },
+  { value: "Playfair Display", label: "Playfair Display : Editorial chic et chaleureux" },
+  { value: "Bodoni Moda", label: "Bodoni Moda : Haute couture / Vogue style" },
+  { value: "Great Vibes", label: "Great Vibes : Calligraphie fluide romantique" },
+  { value: "Alex Brush", label: "Alex Brush : Script raffine delicat" },
+  { value: "Montserrat", label: "Montserrat : Moderne epure geometrique" },
+  { value: "Prata", label: "Prata : Elegance intemporelle douce" },
+] as const;
+
+export type TitleFont = (typeof TITLE_FONT_OPTIONS)[number]["value"];
+
 export type RsvpStatus = "pending" | "confirmed" | "declined";
 
 export interface SessionPayload {

@@ -1,71 +1,42 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@/lib/db";
-import { isSupabaseStorageConfigured, SUPABASE_STORAGE_BUCKETS, uploadToSupabaseStorage } from "@/lib/supabase-storage";
 
 export const runtime = "nodejs";
 
-const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const uploadedPhotoSchema = z.object({
+  url: z.string().min(1),
+  thumbnailUrl: z.string().min(1).nullable().optional(),
+  title: z.string().min(1).max(180).nullable().optional(),
+  fileName: z.string().min(1).max(240).nullable().optional(),
+  width: z.number().int().positive().nullable().optional(),
+  height: z.number().int().positive().nullable().optional(),
+});
 
-function extensionFor(file: File) {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && /^[a-z0-9]+$/.test(fromName)) return fromName;
-  if (file.type === "image/jpeg") return "jpg";
-  if (file.type === "image/png") return "png";
-  if (file.type === "image/webp") return "webp";
-  if (file.type === "image/avif") return "avif";
-  return "bin";
-}
+const uploadSyncSchema = z.object({
+  token: z.string().min(12),
+  category: z.string().min(2).default("ceremonie"),
+  photos: z.array(uploadedPhotoSchema).min(1).max(100),
+});
 
-async function storeGalleryPhoto({
-  eventId,
-  file,
-}: {
-  eventId: string;
-  file: File;
-}) {
-  const filename = `${Date.now()}-${randomUUID()}.${extensionFor(file)}`;
-
-  if (isSupabaseStorageConfigured()) {
-    const objectPath = `${eventId}/${filename}`;
-    const uploaded = await uploadToSupabaseStorage({
-      bucket: SUPABASE_STORAGE_BUCKETS.galleryPhotos,
-      objectPath,
-      file,
-    });
-    return uploaded.url;
-  }
-
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "gallery");
-  await mkdir(uploadDir, { recursive: true });
-  const diskPath = path.join(uploadDir, filename);
-  await writeFile(diskPath, Buffer.from(await file.arrayBuffer()));
-  return `/uploads/gallery/${filename}`;
+function titleFromPhoto(photo: z.infer<typeof uploadedPhotoSchema>) {
+  const rawTitle = photo.title ?? photo.fileName ?? "Photo";
+  return rawTitle.replace(/\.[^.]+$/, "").trim().slice(0, 180) || "Photo";
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const token = String(formData.get("token") ?? "");
-    const category = String(formData.get("category") ?? "ceremonie");
-    const files = formData.getAll("files").filter((file): file is File => file instanceof File);
+    const parsed = uploadSyncSchema.safeParse(await request.json().catch(() => ({})));
 
-    if (!token || files.length === 0) {
-      return NextResponse.json({ success: false, error: "Token ou fichiers manquants." }, { status: 400 });
-    }
-
-    if (files.some((file) => !IMAGE_TYPES.has(file.type))) {
-      return NextResponse.json({ success: false, error: "Seules les images JPG, PNG, WebP et AVIF sont autorisees." }, { status: 400 });
-    }
-
-    if (files.some((file) => file.size > 15 * 1024 * 1024)) {
-      return NextResponse.json({ success: false, error: "Chaque photo doit peser moins de 15 Mo." }, { status: 413 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: "Donnees d'upload invalides.", details: parsed.error.flatten() },
+        { status: 400 },
+      );
     }
 
     const event = await db.event.findUnique({
-      where: { photographerToken: token },
+      where: { photographerToken: parsed.data.token },
       select: { id: true, isActive: true },
     });
 
@@ -73,24 +44,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Token invalide." }, { status: 403 });
     }
 
-    const photos = await Promise.all(
-      files.map(async (file) => {
-        const url = await storeGalleryPhoto({ eventId: event.id, file });
-        return db.eventPhoto.create({
+    const photos = await db.$transaction(
+      parsed.data.photos.map((photo) =>
+        db.eventPhoto.create({
           data: {
             eventId: event.id,
-            category,
-            title: file.name.replace(/\.[^.]+$/, ""),
-            originalUrl: url,
-            thumbnailUrl: url,
+            category: parsed.data.category,
+            title: titleFromPhoto(photo),
+            originalUrl: photo.url,
+            thumbnailUrl: photo.thumbnailUrl ?? photo.url,
+            width: photo.width ?? null,
+            height: photo.height ?? null,
           },
-        });
-      }),
+        }),
+      ),
     );
 
     return NextResponse.json({ success: true, count: photos.length, data: photos });
   } catch (error) {
-    console.error("Photographer upload error:", error);
-    return NextResponse.json({ success: false, error: "Erreur serveur." }, { status: 500 });
+    console.error("Photographer upload sync error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Synchronisation galerie impossible.",
+      },
+      { status: 500 },
+    );
   }
 }

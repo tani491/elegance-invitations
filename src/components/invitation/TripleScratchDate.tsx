@@ -33,7 +33,12 @@ END:VCALENDAR`)}`;
     <div className="text-center">
       <div className="text-center">
         <p className="font-serif text-xs font-semibold uppercase tracking-[0.25em] text-[var(--invitation-gold)]">La date</p>
-        <h2 className="mt-3 font-serif text-2xl italic tracking-wider text-[var(--invitation-sheet-text)] md:text-3xl">Grattez pour révéler</h2>
+        <h2
+          className="mt-3 text-2xl italic tracking-wider text-[var(--invitation-sheet-text)] md:text-3xl"
+          style={{ fontFamily: "var(--invitation-title-font)" }}
+        >
+          Grattez pour révéler
+        </h2>
       </div>
       <div className="mx-auto mt-5 h-px max-w-xs bg-gradient-to-r from-transparent via-[var(--invitation-gold)]/45 to-transparent" />
       <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5">
@@ -48,7 +53,10 @@ END:VCALENDAR`)}`;
           >
             <div className="px-3 text-center">
               <span className="block font-serif text-[9px] uppercase tracking-[0.18em] text-[var(--invitation-sheet-muted)]">{item.label}</span>
-              <strong className="mt-2 block break-words font-serif text-lg capitalize leading-tight text-[var(--invitation-sheet-text)] sm:text-2xl md:text-3xl">
+              <strong
+                className="mt-2 block break-words text-lg capitalize leading-tight text-[var(--invitation-sheet-text)] sm:text-2xl md:text-3xl"
+                style={{ fontFamily: "var(--invitation-title-font)" }}
+              >
                 {item.value}
               </strong>
             </div>
