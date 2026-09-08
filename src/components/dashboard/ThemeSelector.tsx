@@ -16,7 +16,10 @@ export function ThemeSelector({
   onSelect: (slug: string) => void;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div
+      className="no-scrollbar flex snap-x gap-4 overflow-x-auto px-1 py-3 [-webkit-overflow-scrolling:touch]"
+      aria-label="Catalogue de modeles"
+    >
       {themes.map((theme) => {
         const access = withThemeAccess(theme, planType);
         return (

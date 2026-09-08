@@ -165,7 +165,7 @@ const SAFE_THEME_FALLBACK = {
   bgPrimary: "#FAF6F0",
   cardBg: "rgba(255, 255, 255, 0.85)",
   accentGold: "#D4AF37",
-  textColor: "#2D2013",
+  textColor: "#1B0F12",
   scrollAnimation: "fade-up",
   titleFont: "Cormorant Garamond",
   animationType: "golden_palace_doors",
@@ -204,7 +204,7 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
     bgPrimary: theme?.bgPrimary || primaryColor || "#FAF6F0",
     cardBg: theme?.cardBg || secondaryColor || "rgba(255, 255, 255, 0.85)",
     accentGold: theme?.accentGold || goldColor || "#D4AF37",
-    textColor: theme?.textColor || primaryColor || "#2D2013",
+    textColor: theme?.textColor || primaryColor || "#1B0F12",
     scrollAnimation: theme?.scrollAnimation || "fade-up",
     titleFont: theme?.titleFont || fallback.titleFont || SAFE_THEME_FALLBACK.titleFont,
     animationType,
@@ -254,7 +254,7 @@ export function themeToCssVars(theme: ThemeConfigInput | null | undefined) {
   const bgPrimary = safeTheme.bgPrimary || "#FAF6F0";
   const cardBg = safeTheme.cardBg || "rgba(255, 255, 255, 0.85)";
   const accentGold = safeTheme.accentGold || "#D4AF37";
-  const textColor = safeTheme.textColor || "#2D2013";
+  const textColor = safeTheme.textColor || "#1B0F12";
   const primaryRgb = hexToRgb(bgPrimary);
   const accentRgb = hexToRgb(safeTheme.accentColor);
   const goldRgb = hexToRgb(accentGold);

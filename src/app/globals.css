@@ -415,6 +415,15 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #E8D48B30; }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #E8D48B50; }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================================
    BUTTON OVERRIDES
    ============================================================ */

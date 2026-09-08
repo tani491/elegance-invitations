@@ -30,6 +30,7 @@ import { StepExtras } from "./StepExtras";
 import { StepGuests } from "./StepGuests";
 import { StepSections } from "./StepSections";
 import { StepTemplate } from "./StepTemplate";
+import { ELEGANCE_WHATSAPP_NUMBER } from "@/lib/whatsapp";
 
 const STORAGE_KEY = "elegance-order-builder";
 const steps: { id: BuilderStep; label: string }[] = [
@@ -126,7 +127,7 @@ export function OrderBuilder() {
     if (!validateContact()) return;
 
     const summary = orderSummaryLines();
-    const whatsappNumber = process.env.NEXT_PUBLIC_ELEGANCE_WHATSAPP ?? "221770000000";
+    const whatsappNumber = ELEGANCE_WHATSAPP_NUMBER;
     const totalFcfa = pricing.total * FCFA_PER_EUR;
     const text = encodeURIComponent(
       [

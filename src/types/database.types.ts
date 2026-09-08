@@ -15,7 +15,33 @@ export type OpeningAnimationType =
   | "golden_palace_doors"
   | "ceremonial_walk";
 
-export type ScrollAnimationType = "fade-up" | "scale-in" | "slide-stagger";
+export const SCROLL_ANIMATION_VALUES = [
+  "fade-up",
+  "scale-in",
+  "slide-stagger",
+  "curtain-reveal",
+  "blur-in",
+  "rotate-soft",
+  "pop-soft",
+  "glow-spread",
+  "flip-x",
+  "shimmer-rise",
+] as const;
+
+export type ScrollAnimationType = (typeof SCROLL_ANIMATION_VALUES)[number];
+
+export const SCROLL_ANIMATION_OPTIONS: { value: ScrollAnimationType; label: string }[] = [
+  { value: "fade-up", label: "fade-up : Fondu montant doux classique" },
+  { value: "scale-in", label: "scale-in : Zoom progressif subtil" },
+  { value: "slide-stagger", label: "slide-stagger : Glissement alterne gauche / droite" },
+  { value: "curtain-reveal", label: "curtain-reveal : Devoilement rideau vertical" },
+  { value: "blur-in", label: "blur-in : Revelation avec flou satine" },
+  { value: "rotate-soft", label: "rotate-soft : Inclinaison 3D douce" },
+  { value: "pop-soft", label: "pop-soft : Apparition aerienne amortie" },
+  { value: "glow-spread", label: "glow-spread : Halo dore diffus" },
+  { value: "flip-x", label: "flip-x : Feuillet pivotant" },
+  { value: "shimmer-rise", label: "shimmer-rise : Montee avec reflet soyeux" },
+];
 
 export type RsvpStatus = "pending" | "confirmed" | "declined";
 

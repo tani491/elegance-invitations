@@ -18,7 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
-import type { OpeningAnimationType, ScrollAnimationType, ThemeConfig } from "@/types/database.types";
+import { SCROLL_ANIMATION_OPTIONS } from "@/types/database.types";
+import type { ScrollAnimationType, ThemeConfig } from "@/types/database.types";
 
 interface EventRow {
   id: string;
@@ -63,7 +64,6 @@ type ThemeModelForm = {
   textColor: string;
   scrollAnimation: ScrollAnimationType;
   titleFont: string;
-  animationType: OpeningAnimationType;
   backdropUrl: string;
   isActive: boolean;
 };
@@ -75,21 +75,6 @@ const COLOR_FIELDS: { key: ThemeColorField; label: string; input: "color" | "tex
   { key: "cardBg", label: "Cartes / feuillets", input: "text" },
   { key: "accentGold", label: "Accent & or", input: "color" },
   { key: "textColor", label: "Textes", input: "color" },
-] as const;
-
-const SCROLL_ANIMATION_OPTIONS: { value: ScrollAnimationType; label: string }[] = [
-  { value: "fade-up", label: "Fade-up" },
-  { value: "scale-in", label: "Scale-in" },
-  { value: "slide-stagger", label: "Slide stagger" },
-] as const;
-
-const OPENING_ANIMATION_OPTIONS: { value: OpeningAnimationType; label: string }[] = [
-  { value: "golden_palace_doors", label: "Portes royales" },
-  { value: "wax_seal_burst", label: "Sceau de cire" },
-  { value: "botanical_envelope", label: "Enveloppe botanique" },
-  { value: "velvet_curtains", label: "Rideaux de velours" },
-  { value: "silk_ribbon_untie", label: "Ruban de soie" },
-  { value: "ceremonial_walk", label: "Defile scenique" },
 ] as const;
 
 const THEME_VIDEO_BUCKET = "theme-videos";
@@ -118,7 +103,6 @@ function defaultThemeForm(): ThemeModelForm {
     textColor: "#1B0F12",
     scrollAnimation: "fade-up",
     titleFont: "Cormorant Garamond",
-    animationType: "golden_palace_doors",
     backdropUrl: "",
     isActive: true,
   };
@@ -653,7 +637,7 @@ export default function AdminConsole() {
                     Nouveau modele
                   </DialogTitle>
                   <DialogDescription>
-                    Ajoutez la video, le style d'ouverture et la palette sans encombrer le catalogue.
+                    Ajoutez la video, l'apparition au scroll et la palette sans encombrer le catalogue.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -700,22 +684,6 @@ export default function AdminConsole() {
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {SCROLL_ANIMATION_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Style d'ouverture</Label>
-                      <Select
-                        value={createThemeForm.animationType}
-                        onValueChange={(animationType) =>
-                          setCreateThemeForm((prev) => ({ ...prev, animationType: animationType as OpeningAnimationType }))
-                        }
-                      >
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {OPENING_ANIMATION_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                           ))}
                         </SelectContent>
@@ -940,20 +908,6 @@ export default function AdminConsole() {
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                       {SCROLL_ANIMATION_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Style d'ouverture</Label>
-                                  <Select
-                                    value={theme.animationType}
-                                    onValueChange={(animationType) => void updateTheme(theme.slug, { animationType: animationType as OpeningAnimationType })}
-                                  >
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                      {OPENING_ANIMATION_OPTIONS.map((option) => (
                                         <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                       ))}
                                     </SelectContent>

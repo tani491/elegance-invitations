@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { DEFAULT_THEMES, getDefaultTheme, normalizeThemeConfig } from "@/lib/theme-presets";
 import type { Prisma } from "@prisma/client";
+import { SCROLL_ANIMATION_VALUES } from "@/types/database.types";
 import type { OpeningAnimationType, ScrollAnimationType, ThemeConfig } from "@/types/database.types";
 
 const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
@@ -12,7 +13,7 @@ const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "ceremonial_walk",
 ];
 
-const SCROLL_ANIMATION_TYPES: ScrollAnimationType[] = ["fade-up", "scale-in", "slide-stagger"];
+const SCROLL_ANIMATION_TYPES: readonly ScrollAnimationType[] = SCROLL_ANIMATION_VALUES;
 
 export const THEME_COMPAT_SELECT = {
   id: true,

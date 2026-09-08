@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { calculateBuilderPricing, type BuilderConfig } from "@/types/builder.types";
+import { ELEGANCE_WHATSAPP_NUMBER } from "@/lib/whatsapp";
 
 interface CheckoutRequest {
   config?: BuilderConfig;
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
   );
 
   return NextResponse.json({
-    redirectUrl: `https://wa.me/?text=${text}`,
+    redirectUrl: `https://wa.me/${ELEGANCE_WHATSAPP_NUMBER}?text=${text}`,
     total: pricing.total,
     mode: "whatsapp-fallback",
   });

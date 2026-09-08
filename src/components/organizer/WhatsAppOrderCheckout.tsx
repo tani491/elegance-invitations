@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAppStore, PRICING_PLANS, type PlanKey } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Check, MessageCircle, Sparkles, Crown, Gem } from 'lucide-react';
+import { ELEGANCE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 /* ============================================================
    WhatsApp Order Checkout — Plan selection + WhatsApp redirect
@@ -23,7 +24,6 @@ export default function WhatsAppOrderCheckout() {
   const plan = PRICING_PLANS.find((p) => p.key === selectedPlan)!;
 
   const buildWhatsAppURL = () => {
-    const phone = '221770000000';
     const recap = [
       `*Nouvelle Commande Élégance*`,
       ``,
@@ -40,7 +40,7 @@ export default function WhatsAppOrderCheckout() {
     ].join('\n');
 
     const encoded = encodeURIComponent(recap);
-    return `https://wa.me/${phone}?text=${encoded}`;
+    return `https://wa.me/${ELEGANCE_WHATSAPP_NUMBER}?text=${encoded}`;
   };
 
   return (

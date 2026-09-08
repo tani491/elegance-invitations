@@ -58,7 +58,7 @@ model Theme {
   bgPrimary       String?  @default("#FAF6F0")
   cardBg          String?  @default("rgba(255, 255, 255, 0.85)")
   accentGold      String?  @default("#D4AF37")
-  textColor       String?  @default("#2D2013")
+  textColor       String?  @default("#1B0F12")
   scrollAnimation String?  @default("fade-up")
   backdropUrl     String?
   titleFont       String   @default("Cormorant Garamond")

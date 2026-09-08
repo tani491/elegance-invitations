@@ -4,13 +4,13 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ensureDefaultThemes, serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { requireApiRole } from "@/lib/server-auth";
-import { AUTH_ROLES } from "@/types/database.types";
+import { AUTH_ROLES, SCROLL_ANIMATION_VALUES } from "@/types/database.types";
 import { DEFAULT_THEMES } from "@/lib/theme-presets";
 import { slugify, uniqueSlug } from "@/lib/slug";
 
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const cssColorSchema = z.string().min(3).max(90).regex(/^(#[0-9a-fA-F]{6}|rgba?\([^)]+\)|hsla?\([^)]+\))$/);
-const scrollAnimationSchema = z.enum(["fade-up", "scale-in", "slide-stagger"]);
+const scrollAnimationSchema = z.enum(SCROLL_ANIMATION_VALUES);
 const nullableUrlSchema = z.preprocess(
   (value) => (value === "" ? null : value),
   z.string().min(1).nullable().optional(),
@@ -56,7 +56,7 @@ const themeCreateSchema = themePayloadSchema.extend({
   bgPrimary: hexColorSchema.default("#5C1D24"),
   cardBg: cssColorSchema.default("#FAF7F2"),
   accentGold: hexColorSchema.default("#D4AF37"),
-  textColor: hexColorSchema.default("#5C1D24"),
+  textColor: hexColorSchema.default("#1B0F12"),
   scrollAnimation: scrollAnimationSchema.default("fade-up"),
   titleFont: z.string().min(2).default("Cormorant Garamond"),
   animationType: openingAnimationSchema.default("golden_palace_doors"),

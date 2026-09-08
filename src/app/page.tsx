@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
+import { ELEGANCE_ORDER_WHATSAPP_URL } from "@/lib/whatsapp";
 import type { ThemeConfig } from "@/types/database.types";
 
 /* -------------------------------------------------------------------------- */
@@ -26,9 +27,7 @@ const BURGUNDY = "#5C1D24";
 const EBONY = "#1A1818";
 const IVORY = "#FAF7F2";
 
-const WHATSAPP_BASE = "https://wa.me/221770000000?text=";
-const WHATSAPP_MSG = encodeURIComponent("Bonjour, je souhaite commander une invitation Élégance.");
-const WHATSAPP_URL = `${WHATSAPP_BASE}${WHATSAPP_MSG}`;
+const WHATSAPP_URL = ELEGANCE_ORDER_WHATSAPP_URL;
 
 /* -------------------------------------------------------------------------- */
 /*  Sparkle data (deterministic — no Math.random)                              */

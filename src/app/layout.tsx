@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "@/components/Providers";
+import { FloatingWhatsAppButton } from "@/components/public/FloatingWhatsAppButton";
 
 export const metadata: Metadata = {
   title: "Élégance — Invitations de Mariage et Événements sur Mesure",
@@ -60,6 +61,7 @@ export default function RootLayout({
         >
           <Providers>
             {children}
+            <FloatingWhatsAppButton />
             <Toaster />
           </Providers>
         </ThemeProvider>

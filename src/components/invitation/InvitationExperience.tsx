@@ -72,27 +72,70 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
 }
 
 function scrollMotion(animation: ScrollAnimationType, index: number) {
-  if (animation === "scale-in") {
-    return {
-      initial: { opacity: 0, y: 18, scale: 0.96 },
-      whileInView: { opacity: 1, y: 0, scale: 1 },
-      transition: { duration: 0.72, ease: SCROLL_EASE },
-    };
-  }
+  const staggerDelay = Math.min(index * 0.035, 0.18);
 
-  if (animation === "slide-stagger") {
-    return {
-      initial: { opacity: 0, x: index % 2 === 0 ? -36 : 36, y: 16 },
-      whileInView: { opacity: 1, x: 0, y: 0 },
-      transition: { duration: 0.74, ease: SCROLL_EASE, delay: Math.min(index * 0.035, 0.18) },
-    };
+  switch (animation) {
+    case "scale-in":
+      return {
+        initial: { opacity: 0, y: 18, scale: 0.96 },
+        whileInView: { opacity: 1, y: 0, scale: 1 },
+        transition: { duration: 0.72, ease: SCROLL_EASE },
+      };
+    case "slide-stagger":
+      return {
+        initial: { opacity: 0, x: index % 2 === 0 ? -36 : 36, y: 16 },
+        whileInView: { opacity: 1, x: 0, y: 0 },
+        transition: { duration: 0.74, ease: SCROLL_EASE, delay: staggerDelay },
+      };
+    case "curtain-reveal":
+      return {
+        initial: { opacity: 0, y: 18, clipPath: "inset(0 0 100% 0)" },
+        whileInView: { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" },
+        transition: { duration: 0.82, ease: SCROLL_EASE },
+      };
+    case "blur-in":
+      return {
+        initial: { opacity: 0, y: 20, filter: "blur(10px)" },
+        whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+        transition: { duration: 0.78, ease: SCROLL_EASE },
+      };
+    case "rotate-soft":
+      return {
+        initial: { opacity: 0, y: 24, rotateX: -2, transformPerspective: 1200 },
+        whileInView: { opacity: 1, y: 0, rotateX: 0, transformPerspective: 1200 },
+        transition: { duration: 0.78, ease: SCROLL_EASE },
+      };
+    case "pop-soft":
+      return {
+        initial: { opacity: 0, y: 22, scale: 0.92 },
+        whileInView: { opacity: 1, y: 0, scale: 1 },
+        transition: { type: "spring" as const, stiffness: 170, damping: 22, mass: 0.9 },
+      };
+    case "glow-spread":
+      return {
+        initial: { opacity: 0, y: 22, boxShadow: "0 0 0 rgba(212,175,55,0)" },
+        whileInView: { opacity: 1, y: 0, boxShadow: "0 22px 70px rgba(212,175,55,0.2)" },
+        transition: { duration: 0.8, ease: SCROLL_EASE },
+      };
+    case "flip-x":
+      return {
+        initial: { opacity: 0, y: 18, rotateX: -14, transformPerspective: 1200 },
+        whileInView: { opacity: 1, y: 0, rotateX: 0, transformPerspective: 1200 },
+        transition: { duration: 0.84, ease: SCROLL_EASE },
+      };
+    case "shimmer-rise":
+      return {
+        initial: { opacity: 0, y: 34, filter: "brightness(0.96)" },
+        whileInView: { opacity: 1, y: 0, filter: "brightness(1)" },
+        transition: { duration: 0.76, ease: SCROLL_EASE },
+      };
+    default:
+      return {
+        initial: { opacity: 0, y: 28 },
+        whileInView: { opacity: 1, y: 0 },
+        transition: { duration: 0.7, ease: SCROLL_EASE },
+      };
   }
-
-  return {
-    initial: { opacity: 0, y: 28 },
-    whileInView: { opacity: 1, y: 0 },
-    transition: { duration: 0.7, ease: SCROLL_EASE },
-  };
 }
 
 function StorySection({
@@ -126,6 +169,16 @@ function StorySection({
       >
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--invitation-gold-line)] to-transparent" />
         <div className="pointer-events-none absolute -top-16 left-1/2 h-32 w-48 -translate-x-1/2 rounded-full border border-[color:var(--invitation-sheet-border)] opacity-45" />
+        {safeAnimation === "shimmer-rise" && (
+          <motion.span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent mix-blend-screen"
+            initial={{ opacity: 0, x: "-120%", skewX: -12 }}
+            whileInView={{ opacity: [0, 1, 0], x: "320%", skewX: -12 }}
+            viewport={{ once: true, amount: 0.45 }}
+            transition={{ duration: 1.05, ease: SCROLL_EASE, delay: 0.22 }}
+          />
+        )}
         {children}
       </div>
     </motion.section>

@@ -2,7 +2,7 @@ alter table if exists public."Theme"
   add column if not exists "bgPrimary" text default '#FAF6F0',
   add column if not exists "cardBg" text default 'rgba(255, 255, 255, 0.85)',
   add column if not exists "accentGold" text default '#D4AF37',
-  add column if not exists "textColor" text default '#2D2013',
+  add column if not exists "textColor" text default '#1B0F12',
   add column if not exists "scrollAnimation" text default 'fade-up',
   add column if not exists "backdropUrl" text;
 
@@ -10,7 +10,7 @@ alter table if exists public.themes
   add column if not exists bg_primary text default '#FAF6F0',
   add column if not exists card_bg text default 'rgba(255, 255, 255, 0.85)',
   add column if not exists accent_gold text default '#D4AF37',
-  add column if not exists text_color text default '#2D2013',
+  add column if not exists text_color text default '#1B0F12',
   add column if not exists scroll_animation text default 'fade-up',
   add column if not exists backdrop_url text;
 
@@ -32,10 +32,10 @@ do $$
 begin
   if to_regclass('public."Theme"') is not null then
     update public."Theme"
-    set "bgPrimary" = coalesce("primaryColor", "bgPrimary"),
-        "cardBg" = coalesce("secondaryColor", "cardBg"),
-        "accentGold" = coalesce("goldColor", "accentGold"),
-        "textColor" = coalesce("primaryColor", "textColor"),
+    set "bgPrimary" = coalesce("bgPrimary", "primaryColor", '#FAF6F0'),
+        "cardBg" = coalesce("cardBg", "secondaryColor", 'rgba(255, 255, 255, 0.85)'),
+        "accentGold" = coalesce("accentGold", "goldColor", '#D4AF37'),
+        "textColor" = coalesce("textColor", "primaryColor", '#1B0F12'),
         "scrollAnimation" = coalesce("scrollAnimation", 'fade-up');
   end if;
 end $$;
@@ -44,10 +44,10 @@ do $$
 begin
   if to_regclass('public.themes') is not null then
     update public.themes
-    set bg_primary = coalesce(primary_color, bg_primary),
-        card_bg = coalesce(secondary_color, card_bg),
-        accent_gold = coalesce(gold_color, accent_gold),
-        text_color = coalesce(primary_color, text_color),
+    set bg_primary = coalesce(bg_primary, primary_color, '#FAF6F0'),
+        card_bg = coalesce(card_bg, secondary_color, 'rgba(255, 255, 255, 0.85)'),
+        accent_gold = coalesce(accent_gold, gold_color, '#D4AF37'),
+        text_color = coalesce(text_color, primary_color, '#1B0F12'),
         scroll_animation = coalesce(scroll_animation, 'fade-up');
   end if;
 end $$;
@@ -55,12 +55,34 @@ end $$;
 alter table if exists public."Theme"
   drop constraint if exists theme_scroll_animation_check,
   add constraint theme_scroll_animation_check
-  check ("scrollAnimation" in ('fade-up', 'scale-in', 'slide-stagger'));
+  check ("scrollAnimation" in (
+    'fade-up',
+    'scale-in',
+    'slide-stagger',
+    'curtain-reveal',
+    'blur-in',
+    'rotate-soft',
+    'pop-soft',
+    'glow-spread',
+    'flip-x',
+    'shimmer-rise'
+  ));
 
 alter table if exists public.themes
   drop constraint if exists themes_scroll_animation_check,
   add constraint themes_scroll_animation_check
-  check (scroll_animation in ('fade-up', 'scale-in', 'slide-stagger'));
+  check (scroll_animation in (
+    'fade-up',
+    'scale-in',
+    'slide-stagger',
+    'curtain-reveal',
+    'blur-in',
+    'rotate-soft',
+    'pop-soft',
+    'glow-spread',
+    'flip-x',
+    'shimmer-rise'
+  ));
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
