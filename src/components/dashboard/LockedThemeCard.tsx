@@ -33,14 +33,14 @@ export function LockedThemeCard({
       onClick={locked ? undefined : onSelect}
       aria-pressed={active}
       className={cn(
-        "relative w-[172px] shrink-0 snap-start overflow-hidden rounded-lg border bg-white p-2.5 text-left shadow-sm transition",
-        active ? "border-[#D4AF37] ring-2 ring-amber-500 shadow-md" : "border-[#D4AF37]/20 hover:border-[#D4AF37]/60",
+        "relative w-[140px] flex-shrink-0 snap-center overflow-hidden rounded-2xl border p-2.5 text-left transition-all duration-200 sm:w-[160px]",
+        active ? "border-amber-500 bg-amber-50/40 shadow-sm ring-2 ring-amber-400/40" : "border-neutral-200 bg-white hover:border-amber-200",
         locked && "cursor-not-allowed grayscale opacity-60",
       )}
     >
-      <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-md bg-stone-950" style={{ background: safeTheme.previewGradient }}>
+      <div className="relative h-24 w-full overflow-hidden rounded-xl bg-neutral-100 sm:h-28" style={{ background: safeTheme.previewGradient }}>
         {videoSrc ? (
-          <video src={videoSrc} className="size-full object-cover" autoPlay muted playsInline loop preload="metadata" />
+          <video src={videoSrc} className="h-full w-full object-cover pointer-events-none" autoPlay muted playsInline loop preload="metadata" />
         ) : (
           <div className="flex size-full items-center justify-center">
             <span className="grid size-11 place-items-center rounded-full border border-white/35 bg-black/15 font-serif text-sm text-white backdrop-blur">
@@ -50,11 +50,11 @@ export function LockedThemeCard({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
       </div>
-      <p className="truncate font-display-bold text-sm text-[#1A1818]">{safeTheme.name}</p>
-      <p className="truncate text-xs text-muted-foreground">{safeTheme.category}</p>
+      <p className="mt-2 truncate text-center text-xs font-medium text-[#1A1818] sm:text-sm">{safeTheme.name}</p>
+      <p className="truncate text-center text-[11px] text-muted-foreground">{safeTheme.category}</p>
       {active && !locked && (
-        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[#D4AF37] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#1A1818]">
-          <Check className="size-4" />
+        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[#D4AF37] px-1.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[#1A1818] shadow-sm">
+          <Check className="size-3" />
           Selectionne
         </span>
       )}

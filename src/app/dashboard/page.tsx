@@ -233,8 +233,8 @@ export default function DashboardPage() {
   const publicInvitationUrl = `${origin}/invitation/${event.slug}`;
 
   return (
-    <main className="min-h-screen bg-[#FAF7F2] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen overflow-x-hidden bg-[#FAF7F2] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl overflow-x-hidden">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="font-script text-3xl text-[#D4AF37]">{event.brideName ?? "Votre"} & {event.groomName ?? "Mariage"}</p>
@@ -294,10 +294,10 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="design">
-            <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-              <Card className="card-luxury">
+            <div className="grid min-w-0 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_360px]">
+              <Card className="card-luxury min-w-0 overflow-hidden">
                 <CardHeader><CardTitle>Editeur de Design & Theme</CardTitle></CardHeader>
-                <CardContent className="space-y-5">
+                <CardContent className="min-w-0 space-y-5 overflow-hidden p-4 sm:p-6">
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#D4AF37]/20 bg-white/70 p-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Votre formule</p>

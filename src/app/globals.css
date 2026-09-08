@@ -198,6 +198,8 @@
   }
 
   html {
+    max-width: 100%;
+    overflow-x: hidden;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -205,6 +207,8 @@
 
   body {
     @apply bg-background text-foreground;
+    max-width: 100%;
+    overflow-x: hidden;
     font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
     letter-spacing: 0.01em;
     line-height: 1.6;
