@@ -50,7 +50,6 @@ const ALBUMS = [
 
 type AlbumKey = (typeof ALBUMS)[number]["key"];
 
-const GALLERY_PHOTO_BUCKET = "gallery-photos" as const;
 const MAX_PHOTO_SIZE = 15 * 1024 * 1024;
 const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif";
 const PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/avif"]);
@@ -302,21 +301,20 @@ export default function PhotographerPortal() {
         size: number;
       }> = [];
 
-      for (const [index, selectedFile] of selectedFiles.entries()) {
-        const position = index + 1;
-        const fileName = `${Date.now()}_${sanitizeStorageFilename(selectedFile.file.name)}`;
+      const totalPhotos = selectedFiles.length;
+      let uploadedCount = 0;
+
+      for (const selectedFile of selectedFiles) {
+        const position = uploadedCount + 1;
+        const fileName = `${Date.now()}_${position}_${sanitizeStorageFilename(selectedFile.file.name)}`;
         const filePath = `${event.id}/${fileName}`;
 
-        setUploadStatus(`Upload photo ${position}/${selectedFiles.length}...`);
-        setUploadProgress(Math.max(5, Math.round((index / selectedFiles.length) * 78)));
+        setUploadStatus(`Upload photo ${position} sur ${totalPhotos}...`);
+        setUploadProgress(Math.max(5, Math.round((uploadedCount / totalPhotos) * 78)));
 
-        const { error } = await supabase.storage
-          .from(GALLERY_PHOTO_BUCKET)
-          .upload(filePath, selectedFile.file, {
-            cacheControl: "3600",
-            upsert: true,
-            contentType: selectedFile.file.type || "application/octet-stream",
-          });
+        const { data, error } = await supabase.storage
+          .from("gallery-photos")
+          .upload(filePath, selectedFile.file);
 
         if (error) {
           console.error("Erreur upload Supabase photographe:", error);
@@ -326,17 +324,19 @@ export default function PhotographerPortal() {
           return;
         }
 
-        const { data } = supabase.storage.from(GALLERY_PHOTO_BUCKET).getPublicUrl(filePath);
+        const storagePath = data?.path ?? filePath;
+        const { data: publicUrlData } = supabase.storage.from("gallery-photos").getPublicUrl(storagePath);
         uploadedPhotos.push({
-          url: data.publicUrl,
-          thumbnailUrl: data.publicUrl,
+          url: publicUrlData.publicUrl,
+          thumbnailUrl: publicUrlData.publicUrl,
           title: titleFromFilename(selectedFile.file.name),
           fileName: selectedFile.file.name,
-          storagePath: filePath,
+          storagePath,
           contentType: selectedFile.file.type || null,
           size: selectedFile.file.size,
         });
-        setUploadProgress(Math.round((position / selectedFiles.length) * 82));
+        uploadedCount += 1;
+        setUploadProgress(Math.round((uploadedCount / totalPhotos) * 82));
       }
 
       setUploadStatus("Synchronisation de la galerie...");
