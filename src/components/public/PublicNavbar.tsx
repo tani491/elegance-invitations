@@ -26,9 +26,10 @@ import { LOCALE_LABELS, type Locale } from "@/i18n/translations";
 /* -------------------------------------------------------------------------- */
 const COLORS = {
   ivory: "#FAF7F2",
-  gold: "#D4AF37",
-  burgundy: "#5C1D24",
-  ebony: "#1A1818",
+  ivoryMuted: "#D8D2C7",
+  gold: "#C5A059",
+  goldLight: "#E6CA65",
+  ebony: "#0D0B0A",
 } as const;
 
 const SCROLL_THRESHOLD = 24;
@@ -100,8 +101,9 @@ export default function PublicNavbar() {
         isActive ? "border-b" : "border-b border-transparent"
       )}
       style={{
-        backgroundColor: isActive ? COLORS.ivory : "transparent",
-        borderColor: isActive ? COLORS.gold : "transparent",
+        backgroundColor: isActive ? `${COLORS.ebony}E8` : `${COLORS.ebony}80`,
+        borderColor: isActive ? `${COLORS.gold}40` : "transparent",
+        backdropFilter: isActive ? "blur(18px)" : "blur(8px)",
       }}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12">
@@ -109,7 +111,7 @@ export default function PublicNavbar() {
         <Link href="/" className="relative z-10 flex flex-col leading-none">
           <span
             className="font-[var(--font-cormorant)] text-lg font-light uppercase tracking-[0.3em] transition-colors duration-300 sm:text-xl"
-            style={{ color: isActive ? COLORS.burgundy : COLORS.ivory }}
+            style={{ color: COLORS.ivory }}
           >
             ÉLÉGANCE
           </span>
@@ -129,10 +131,10 @@ export default function PublicNavbar() {
                 type="button"
                 onClick={() => onLinkClick(link.href)}
                 className="relative rounded-md px-3.5 py-2 text-sm font-medium tracking-wide transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{ color: isActive ? COLORS.ebony : COLORS.ivory }}
+                style={{ color: COLORS.ivoryMuted }}
               >
                 {link.label}
-                <span className="absolute bottom-1.5 left-3.5 right-3.5 h-px origin-left scale-x-0 bg-[#D4AF37] transition-transform duration-300 group-hover:scale-x-100" />
+                <span className="absolute bottom-1.5 left-3.5 right-3.5 h-px origin-left scale-x-0 bg-[#C5A059] transition-transform duration-300 group-hover:scale-x-100" />
               </button>
             </li>
           ))}
@@ -147,8 +149,8 @@ export default function PublicNavbar() {
                 type="button"
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2"
                 style={{
-                  color: isActive ? COLORS.ebony : COLORS.ivory,
-                  backgroundColor: isActive ? `${COLORS.gold}12` : "transparent",
+                  color: COLORS.ivory,
+                  backgroundColor: `${COLORS.gold}12`,
                 }}
               >
                 <Globe className="size-3.5" />
@@ -156,7 +158,7 @@ export default function PublicNavbar() {
                 <ChevronDown className="size-3 opacity-60" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-40 border-[#C5A059]/20 bg-[#0D0B0A] text-[#FAF7F2]">
               {PUBLIC_LOCALES.map((l) => (
                 <DropdownMenuItem
                   key={l}
@@ -165,7 +167,7 @@ export default function PublicNavbar() {
                     "cursor-pointer text-sm",
                     locale === l && "font-semibold"
                   )}
-                  style={locale === l ? { color: COLORS.gold } : undefined}
+                  style={{ color: locale === l ? COLORS.goldLight : COLORS.ivoryMuted }}
                 >
                   {LOCALE_LABELS[l]}
                 </DropdownMenuItem>
@@ -180,8 +182,8 @@ export default function PublicNavbar() {
                 type="button"
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2"
                 style={{
-                  color: isActive ? COLORS.ebony : COLORS.ivory,
-                  backgroundColor: isActive ? `${COLORS.gold}12` : "transparent",
+                  color: COLORS.ivory,
+                  backgroundColor: `${COLORS.gold}12`,
                 }}
               >
                 <Banknote className="size-3.5" />
@@ -189,7 +191,7 @@ export default function PublicNavbar() {
                 <ChevronDown className="size-3 opacity-60" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-44 border-[#C5A059]/20 bg-[#0D0B0A] text-[#FAF7F2]">
               {(Object.keys(CURRENCIES) as CurrencyCode[]).map((c) => (
                 <DropdownMenuItem
                   key={c}
@@ -198,7 +200,7 @@ export default function PublicNavbar() {
                     "cursor-pointer text-sm",
                     currency === c && "font-semibold"
                   )}
-                  style={currency === c ? { color: COLORS.gold } : undefined}
+                  style={{ color: currency === c ? COLORS.goldLight : COLORS.ivoryMuted }}
                 >
                   {c === "FCFA" ? "FCFA" : `${CURRENCIES[c].symbol} ${c}`}
                 </DropdownMenuItem>
@@ -215,7 +217,7 @@ export default function PublicNavbar() {
               <button
                 type="button"
                 className="flex size-9 items-center justify-center rounded-md transition-colors duration-300"
-                style={{ color: isActive ? COLORS.burgundy : COLORS.ivory }}
+                style={{ color: isActive ? COLORS.gold : COLORS.ivory }}
                 aria-label="Ouvrir le menu"
               >
                 <Menu className="size-5" />
@@ -226,14 +228,14 @@ export default function PublicNavbar() {
               side="right"
               className="w-full border-l sm:max-w-sm"
               style={{
-                backgroundColor: COLORS.ivory,
-                borderColor: COLORS.gold,
+                backgroundColor: COLORS.ebony,
+                borderColor: `${COLORS.gold}40`,
               }}
             >
               <SheetHeader className="pt-2">
                 <SheetTitle
                   className="flex flex-col font-[var(--font-cormorant)] leading-none"
-                  style={{ color: COLORS.burgundy }}
+                  style={{ color: COLORS.ivory }}
                 >
                   <span className="text-lg font-light uppercase tracking-[0.3em]">ÉLÉGANCE</span>
                   <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.42em]" style={{ color: COLORS.gold }}>
@@ -247,7 +249,7 @@ export default function PublicNavbar() {
                 <div className="mb-4 flex gap-2">
                   {/* Language */}
                   <div className="flex-1 rounded-lg border p-2" style={{ borderColor: `${COLORS.gold}40` }}>
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: `${COLORS.ebony}60` }}>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: COLORS.ivoryMuted }}>
                       Langue
                     </p>
                     <div className="flex flex-wrap gap-1">
@@ -258,8 +260,8 @@ export default function PublicNavbar() {
                           onClick={() => setLocale(l)}
                           className="rounded-md px-2 py-1 text-xs font-medium transition-colors duration-200"
                           style={{
-                            backgroundColor: locale === l ? `${COLORS.gold}25` : "transparent",
-                            color: locale === l ? COLORS.burgundy : COLORS.ebony,
+                            backgroundColor: locale === l ? COLORS.gold : "transparent",
+                            color: locale === l ? COLORS.ebony : COLORS.ivory,
                           }}
                         >
                           {l.toUpperCase()}
@@ -270,7 +272,7 @@ export default function PublicNavbar() {
 
                   {/* Currency */}
                   <div className="flex-1 rounded-lg border p-2" style={{ borderColor: `${COLORS.gold}40` }}>
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: `${COLORS.ebony}60` }}>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: COLORS.ivoryMuted }}>
                       Devise
                     </p>
                     <div className="flex flex-wrap gap-1">
@@ -281,8 +283,8 @@ export default function PublicNavbar() {
                           onClick={() => setCurrency(c)}
                           className="rounded-md px-2 py-1 text-xs font-medium transition-colors duration-200"
                           style={{
-                            backgroundColor: currency === c ? `${COLORS.gold}25` : "transparent",
-                            color: currency === c ? COLORS.burgundy : COLORS.ebony,
+                            backgroundColor: currency === c ? COLORS.gold : "transparent",
+                            color: currency === c ? COLORS.ebony : COLORS.ivory,
                           }}
                         >
                           {c}
@@ -298,8 +300,8 @@ export default function PublicNavbar() {
                     key={link.href}
                     type="button"
                     onClick={() => onLinkClick(link.href)}
-                    className="w-full rounded-lg px-4 py-3 text-left text-[0.935rem] font-medium tracking-wide transition-colors duration-200 hover:bg-[#D4AF37]/10 focus-visible:outline-none focus-visible:ring-2"
-                    style={{ color: COLORS.ebony }}
+                    className="w-full rounded-lg px-4 py-3 text-left text-[0.935rem] font-medium tracking-wide transition-colors duration-200 hover:bg-[#C5A059]/10 focus-visible:outline-none focus-visible:ring-2"
+                    style={{ color: COLORS.ivory }}
                   >
                     {link.label}
                   </button>
