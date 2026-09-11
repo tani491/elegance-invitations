@@ -123,10 +123,8 @@ export default function AdminTestimonialsPage() {
 
     setPendingId(testimonial.id);
     try {
-      const response = await fetch("/api/admin/testimonials", {
+      const response = await fetch(`/api/admin/testimonials/${testimonial.id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: testimonial.id }),
       });
       const json = await response.json();
       if (!response.ok || !json.success) {
@@ -218,7 +216,7 @@ export default function AdminTestimonialsPage() {
 
               {!loading && testimonials.length === 0 && (
                 <p className="rounded-lg border border-dashed border-[#D6C5A8] bg-[#FDFBF7] p-8 text-center text-sm text-muted-foreground">
-                  Aucun temoignage admin pour le moment. La landing conserve ses avis initiaux en secours.
+                  Aucun temoignage admin pour le moment. La section publique restera masquee jusqu'au premier avis visible.
                 </p>
               )}
 
@@ -230,7 +228,7 @@ export default function AdminTestimonialsPage() {
                         <h2 className="font-display-bold text-xl text-[#171312]">{testimonial.coupleNames}</h2>
                         <Badge className={testimonial.isVisible ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-stone-200 bg-stone-100 text-stone-500"}>
                           {testimonial.isVisible ? <Eye className="mr-1 size-3" /> : <EyeOff className="mr-1 size-3" />}
-                          {testimonial.isVisible ? "Actif" : "Masque"}
+                          {testimonial.isVisible ? "Visible" : "Masqué"}
                         </Badge>
                       </div>
                       <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">{testimonial.location}</p>
@@ -243,7 +241,7 @@ export default function AdminTestimonialsPage() {
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3 md:justify-end">
+                    <div className="flex shrink-0 flex-wrap items-center gap-3 md:justify-end">
                       <div className="flex items-center gap-2 rounded-full border border-[#E5D9C7] bg-white px-3 py-2">
                         <Switch
                           checked={testimonial.isVisible}
@@ -251,18 +249,19 @@ export default function AdminTestimonialsPage() {
                           onCheckedChange={(isVisible) => void toggleVisibility(testimonial, isVisible)}
                           aria-label={`Basculer ${testimonial.coupleNames}`}
                         />
-                        <span className="text-xs font-medium text-muted-foreground">{testimonial.isVisible ? "Actif" : "Masque"}</span>
+                        <span className="text-xs font-medium text-muted-foreground">{testimonial.isVisible ? "Visible" : "Masqué"}</span>
                       </div>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-700 hover:bg-red-50 hover:text-red-800"
+                        variant="outline"
+                        size="sm"
+                        className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                         disabled={pendingId === testimonial.id}
                         onClick={() => void deleteTestimonial(testimonial)}
                         aria-label={`Supprimer ${testimonial.coupleNames}`}
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="mr-2 size-4" />
+                        Supprimer
                       </Button>
                     </div>
                   </div>

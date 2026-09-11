@@ -37,10 +37,6 @@ const updateTestimonialSchema = z.object({
   isVisible: z.boolean().optional(),
 });
 
-const deleteTestimonialSchema = z.object({
-  id: z.string().min(1),
-});
-
 async function requireAdmin(request: NextRequest) {
   return requireApiRole(request, [AUTH_ROLES.SUPER_ADMIN]);
 }
@@ -91,18 +87,4 @@ export async function PATCH(request: NextRequest) {
   });
 
   return NextResponse.json({ success: true, data: testimonial });
-}
-
-export async function DELETE(request: NextRequest) {
-  const { session, response } = await requireAdmin(request);
-  if (!session) return response;
-
-  const parsed = deleteTestimonialSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ success: false, error: "Suppression invalide." }, { status: 400 });
-  }
-
-  await db.testimonial.delete({ where: { id: parsed.data.id } });
-
-  return NextResponse.json({ success: true });
 }

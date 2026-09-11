@@ -198,26 +198,7 @@ const fr: Translations = {
   testimonials: {
     heading: "Ce que Disent nos Couples",
     subheading: "Des milliers de mariages réussis grâce à Élégance.",
-    items: [
-      {
-        name: "Aminata & Karim",
-        location: "Dakar, Sénégal",
-        text: "Nos invités ont été émerveillés par l'animation d'ouverture ! Le suivi RSVP nous a évité des dizaines d'appels. Un gain de temps énorme.",
-        role: "Mariage Prestige – 250 invités",
-      },
-      {
-        name: "Fatou & Omar",
-        location: "Abidjan, Côte d'Ivoire",
-        text: "Le scanner QR le jour J a été un vrai plus. Pas de file d'attente, tout était fluide du premier accueil jusqu'au dernier invité.",
-        role: "Mariage Privilège – 400 invités",
-      },
-      {
-        name: "Safiya & Youssef",
-        location: "Casablanca, Maroc",
-        text: "Le modèle Porte Orientale correspondait parfaitement à notre thème. L'outil est simple, même mes parents ont pu l'utiliser !",
-        role: "Mariage Essentielle – 150 invités",
-      },
-    ],
+    items: [],
   },
   faq: {
     heading: "Questions Fréquentes",
@@ -371,26 +352,7 @@ const en: Translations = {
   testimonials: {
     heading: "What Our Couples Say",
     subheading: "Thousands of successful weddings thanks to Élégance.",
-    items: [
-      {
-        name: "Aminata & Karim",
-        location: "Dakar, Senegal",
-        text: "Our guests were amazed by the opening animation! The RSVP tracking saved us dozens of calls. A huge time-saver.",
-        role: "Prestige Wedding – 250 guests",
-      },
-      {
-        name: "Fatou & Omar",
-        location: "Abidjan, Ivory Coast",
-        text: "The QR scanner on the big day was a real plus. No queues, everything was smooth from the entrance to the final guest.",
-        role: "Privilege Wedding – 400 guests",
-      },
-      {
-        name: "Safiya & Youssef",
-        location: "Casablanca, Morocco",
-        text: "The Oriental Door template matched our theme perfectly. The tool is simple, even my parents could use it!",
-        role: "Essential Wedding – 150 guests",
-      },
-    ],
+    items: [],
   },
   faq: {
     heading: "Frequently Asked Questions",
@@ -544,26 +506,7 @@ const es: Translations = {
   testimonials: {
     heading: "Lo que Dicen Nuestras Parejas",
     subheading: "Miles de bodas exitosas gracias a Élégance.",
-    items: [
-      {
-        name: "Aminata & Karim",
-        location: "Dakar, Senegal",
-        text: "Nuestros invitados quedaron maravillados con la animación de apertura. El seguimiento RSVP nos ahorró decenas de llamadas.",
-        role: "Boda Prestigio – 250 invitados",
-      },
-      {
-        name: "Fatou & Omar",
-        location: "Abidjan, Costa de Marfil",
-        text: "El escáner QR el día de la boda fue un verdadero plus. Sin colas, todo fue fluido desde la entrada hasta el último invitado.",
-        role: "Boda Privilegio – 400 invitados",
-      },
-      {
-        name: "Safiya & Youssef",
-        location: "Casablanca, Marruecos",
-        text: "El modelo Puerta Oriental combinó perfectamente con nuestro tema. La herramienta es sencilla, hasta mis padres pudieron usarla.",
-        role: "Boda Esencial – 150 invitados",
-      },
-    ],
+    items: [],
   },
   faq: {
     heading: "Preguntas Frecuentes",
@@ -717,26 +660,7 @@ const ar: Translations = {
   testimonials: {
     heading: "ماذا يقول أزواجنا",
     subheading: "آلاف الأزواج الناجحة بفضل Élégance.",
-    items: [
-      {
-        name: "أميناتا وكريم",
-        location: "داكار، السنغال",
-        text: "تأثر ضيوفنا بإنفتاح الأنيميشن! متابعة RSVP وفرت علينا عشرات المكالمات.",
-        role: "زفاف بريستيج – 250 ضيف",
-      },
-      {
-        name: "فاتو وعمر",
-        location: "أبيدجان، ساحل العاج",
-        text: "ماسح QR في يوم الحدث كان إضافة حقيقية. بدون طوابير، كل شيء كان سلسًا.",
-        role: "زفاف امتياز – 400 ضيف",
-      },
-      {
-        name: "صافية ويوسف",
-        location: "الدار البيضاء، المغرب",
-        text: "قالب الباب الشرقي طابق موضوعنا بشكل مثالي. الأداة بسيطة، حتى والديّ استطاعوا استخدامها!",
-        role: "زفاف أساسية – 150 ضيف",
-      },
-    ],
+    items: [],
   },
   faq: {
     heading: "الأسئلة الشائعة",

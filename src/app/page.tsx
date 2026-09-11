@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
-  Palette, PenTool, Send, ChevronDown, CheckCircle2, QrCode,
+  ChevronDown, CheckCircle2, QrCode,
   Star, Quote, ChevronRight, X, Smartphone, Play, MessageCircle,
 } from "lucide-react";
 import PublicNavbar from "@/components/public/PublicNavbar";
@@ -162,16 +162,6 @@ function SectionSubheading({ children, className = "" }: { children: React.React
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Icon map for How It Works                                                  */
-/* -------------------------------------------------------------------------- */
-
-const ICON_MAP: Record<string, React.ReactNode> = {
-  palette: <Palette className="size-6" style={{ color: GOLD }} />,
-  "pen-tool": <PenTool className="size-6" style={{ color: GOLD }} />,
-  send: <Send className="size-6" style={{ color: GOLD }} />,
-};
-
-/* -------------------------------------------------------------------------- */
 /*  QR pattern (deterministic)                                                */
 /* -------------------------------------------------------------------------- */
 const QR_GRID = [1,1,0,1,1,0,1, 0,1,1,1,0,1,0, 1,0,1,0,1,1,1, 1,1,1,1,0,0,1, 0,1,0,1,1,1,0, 1,0,1,1,0,1,1, 1,1,0,0,1,0,1];
@@ -196,33 +186,6 @@ const PRESTIGE_PLACES = [
   "Salons Hoche Paris",
   "Pullman Dakar Teranga",
   "Domaine de Nianing",
-];
-
-const LUXURY_TESTIMONIALS: LandingTestimonial[] = [
-  {
-    coupleNames: "Aminata & Cheikh",
-    location: "Mariage aux Almadies",
-    formula: "Formule Prestige — Thème Palais Royal",
-    photoUrl: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=420&q=82",
-    rating: 5,
-    review: "Nos invités venant de Paris, New York et Dakar ont tous été émerveillés par l'ouverture des portes. La gestion des RSVP par WhatsApp nous a fait gagner des semaines d'organisation !",
-  },
-  {
-    coupleNames: "Sophie & Jean-Marc",
-    location: "Réception à Saly",
-    formula: "Formule Impériale",
-    photoUrl: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=420&q=82",
-    rating: 5,
-    review: "Un faire-part digne d'une grande maison de couture. Le Pass VIP au scan a impressionné tous nos convives dès l'entrée de la salle.",
-  },
-  {
-    coupleNames: "Mariama & Ibrahima",
-    location: "Célébration Dakar Plateau",
-    formula: "Formule Prestige — Thème Rose Bohème",
-    photoUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=420&q=82",
-    rating: 5,
-    review: "L'expérience était fluide du premier aperçu jusqu'au scan des invités. Tout le monde a retrouvé facilement les informations essentielles, avec un service client exceptionnel sur WhatsApp.",
-  },
 ];
 
 const FOOTER_COLLECTIONS = [
@@ -351,7 +314,7 @@ export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
   const [homepageSettings, setHomepageSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE_SETTINGS);
-  const [landingTestimonials, setLandingTestimonials] = useState<LandingTestimonial[]>(LUXURY_TESTIMONIALS);
+  const [landingTestimonials, setLandingTestimonials] = useState<LandingTestimonial[]>([]);
   /* Phone mockup preview state */
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
 
@@ -413,15 +376,10 @@ export default function HomePage() {
         const json = await response.json();
         const testimonials = Array.isArray(json.data) ? (json.data as LandingTestimonial[]) : [];
 
-        if (response.ok && json.success && testimonials.length > 0) {
-          setLandingTestimonials(testimonials);
-          return;
-        }
-
-        setLandingTestimonials(LUXURY_TESTIMONIALS);
+        setLandingTestimonials(response.ok && json.success ? testimonials : []);
       } catch (error) {
         console.error("Testimonials fetch failed:", error);
-        setLandingTestimonials(LUXURY_TESTIMONIALS);
+        setLandingTestimonials([]);
       }
     }
 
@@ -601,14 +559,7 @@ export default function HomePage() {
             <SectionSubheading className="mt-4">{t.howItWorks.subheading}</SectionSubheading>
           </div>
 
-          <div className="relative grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-6 lg:gap-10">
-            {/* Connecting line */}
-              <div
-                className="pointer-events-none absolute top-16 right-[16.67%] left-[16.67%] hidden h-px md:block"
-                style={{ background: `linear-gradient(90deg, transparent, ${GOLD}80, transparent)` }}
-                aria-hidden
-              />
-
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-6 lg:gap-10">
             {t.howItWorks.steps.map((step, i) => (
               <motion.div
                 key={step.num}
@@ -624,13 +575,7 @@ export default function HomePage() {
                 >
                   {step.num}
                 </span>
-                <div
-                  className="mb-5 flex size-14 items-center justify-center rounded-full border border-[#C5A059]/20"
-                  style={{ backgroundColor: `${GOLD}15` }}
-                >
-                  {ICON_MAP[step.icon]}
-                </div>
-                <h3 className="font-display text-xl tracking-luxury text-[#FAF7F2] sm:text-2xl">
+                <h3 className="font-[var(--font-cormorant)] text-xl font-semibold uppercase tracking-[0.18em] text-[#FAF7F2] sm:text-2xl">
                   {step.title}
                 </h3>
                 <p className="mt-3 font-body text-sm leading-relaxed text-[#D8D2C7] sm:text-base">
@@ -1125,6 +1070,7 @@ export default function HomePage() {
       {/* ------------------------------------------------------------------ */}
       {/*  TESTIMONIALS                                                       */}
       {/* ------------------------------------------------------------------ */}
+      {landingTestimonials.length > 0 && (
       <section id="temoignages" className="relative overflow-hidden bg-[#0D0B0A] py-20 text-[#FAF7F2] sm:py-28 lg:py-32">
         <div className="pointer-events-none absolute inset-0 opacity-[0.1] [background-image:linear-gradient(90deg,rgba(197,160,89,.28)_1px,transparent_1px),linear-gradient(0deg,rgba(250,247,242,.12)_1px,transparent_1px)] [background-size:72px_72px]" />
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
@@ -1193,6 +1139,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/*  FAQ SECTION                                                        */}
