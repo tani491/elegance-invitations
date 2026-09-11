@@ -50,7 +50,6 @@ async function loadClientEvent(eventId: string) {
       include: {
         theme: true,
         guests: { orderBy: { createdAt: "asc" } },
-        photos: { orderBy: { uploadedAt: "desc" } },
       },
     });
   } catch (error) {
@@ -61,7 +60,6 @@ async function loadClientEvent(eventId: string) {
         include: {
           theme: { select: THEME_COMPAT_SELECT },
           guests: { orderBy: { createdAt: "asc" } },
-          photos: { orderBy: { uploadedAt: "desc" } },
         },
       });
     } catch (compatError) {
@@ -70,7 +68,6 @@ async function loadClientEvent(eventId: string) {
         where: { id: eventId },
         include: {
           guests: { orderBy: { createdAt: "asc" } },
-          photos: { orderBy: { uploadedAt: "desc" } },
         },
       });
     }
@@ -97,8 +94,6 @@ export async function GET(request: NextRequest) {
       data: {
         event: serializePublicEvent(event),
         guests: event.guests,
-        photos: event.photos,
-        photographerLink: event.photographerToken ? `/photographer/${event.photographerToken}` : null,
       },
     });
   } catch (error) {
@@ -169,7 +164,6 @@ export async function PATCH(request: NextRequest) {
       include: {
         theme: true,
         guests: { orderBy: { createdAt: "asc" } },
-        photos: { orderBy: { uploadedAt: "desc" } },
       },
     });
   } catch (error) {
@@ -181,7 +175,6 @@ export async function PATCH(request: NextRequest) {
         include: {
           theme: { select: THEME_COMPAT_SELECT },
           guests: { orderBy: { createdAt: "asc" } },
-          photos: { orderBy: { uploadedAt: "desc" } },
         },
       });
     } catch (compatError) {
@@ -192,7 +185,6 @@ export async function PATCH(request: NextRequest) {
           data: updateData,
           include: {
             guests: { orderBy: { createdAt: "asc" } },
-            photos: { orderBy: { uploadedAt: "desc" } },
           },
         });
       } catch (retryError) {
@@ -207,8 +199,6 @@ export async function PATCH(request: NextRequest) {
     data: {
       event: serializePublicEvent(updated),
       guests: updated.guests,
-      photos: updated.photos,
-      photographerLink: updated.photographerToken ? `/photographer/${updated.photographerToken}` : null,
     },
   });
 }

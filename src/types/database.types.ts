@@ -1,7 +1,6 @@
 export const AUTH_ROLES = {
   SUPER_ADMIN: "SUPER_ADMIN",
   CLIENT: "CLIENT",
-  PHOTOGRAPHER: "PHOTOGRAPHER",
 } as const;
 
 export type AuthRole = (typeof AUTH_ROLES)[keyof typeof AUTH_ROLES];
@@ -106,15 +105,6 @@ export interface DressCodeColor {
   color: string;
 }
 
-export interface PublicGalleryPhoto {
-  id: string;
-  category: string;
-  title: string | null;
-  originalUrl: string | null;
-  thumbnailUrl: string | null;
-  uploadedAt: string;
-}
-
 export interface HomepageSettings {
   heroPhone1: string | null;
   heroPhone2: string | null;
@@ -147,6 +137,5 @@ export interface PublicEventPayload {
   invitationQuote: string | null;
   giftIban: string | null;
   giftWave: string | null;
-  galleryPhotos: PublicGalleryPhoto[];
   theme: ThemeConfig;
 }

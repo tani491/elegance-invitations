@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Copy, ExternalLink, FileText, LogOut, MessageCircle, Plus, Save, ScanLine, Send, Users } from "lucide-react";
+import { Copy, ExternalLink, FileText, LogOut, MessageCircle, Plus, Save, ScanLine, Send, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +36,6 @@ export default function DashboardPage() {
   const [event, setEvent] = useState<PublicEventPayload | null>(null);
   const [themes, setThemes] = useState<ThemeConfig[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
-  const [photographerLink, setPhotographerLink] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -62,7 +61,6 @@ export default function DashboardPage() {
     if (eventResult.status === "fulfilled" && eventResult.value.success) {
       setEvent(eventResult.value.data.event);
       setGuests(eventResult.value.data.guests ?? []);
-      setPhotographerLink(eventResult.value.data.photographerLink ?? null);
     } else {
       console.error("Dashboard event load failed:", eventResult);
     }
@@ -99,7 +97,6 @@ export default function DashboardPage() {
       }
       setEvent(json.data.event);
       setGuests(json.data.guests);
-      setPhotographerLink(json.data.photographerLink);
       toast.success("Modifications sauvegardees.");
     } finally {
       setSaving(false);
@@ -210,20 +207,6 @@ export default function DashboardPage() {
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
   }
 
-  async function copyPhotographerLink() {
-    if (!photographerLink) return;
-    await navigator.clipboard.writeText(`${origin}${photographerLink}`);
-    toast.success("Lien photographe copie.");
-  }
-
-  function sharePhotographerLink() {
-    if (!event || !photographerLink) return;
-    const text = encodeURIComponent(
-      `Bonjour, voici votre acces photographe officiel pour le mariage de ${event.brideName ?? ""} & ${event.groomName ?? ""} : ${origin}${photographerLink}`,
-    );
-    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
-  }
-
   if (!event) {
     return <main className="flex min-h-screen items-center justify-center bg-[#FAF7F2]">Chargement...</main>;
   }
@@ -290,7 +273,6 @@ export default function DashboardPage() {
             <TabsTrigger value="infos"><Save className="mr-2 size-4" />Infos</TabsTrigger>
             <TabsTrigger value="guests"><Users className="mr-2 size-4" />Invites</TabsTrigger>
             <TabsTrigger value="scanner"><ScanLine className="mr-2 size-4" />Scanner</TabsTrigger>
-            <TabsTrigger value="photo"><Camera className="mr-2 size-4" />Photographe</TabsTrigger>
           </TabsList>
 
           <TabsContent value="design">
@@ -414,26 +396,6 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="photo">
-            <Card className="card-luxury">
-              <CardHeader><CardTitle>Acces Photographe</CardTitle></CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Page securisee pour livrer les cliches haute resolution, sans acces a la liste des invites ni aux donnees privees.
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Input readOnly value={photographerLink ? `${origin}${photographerLink}` : "Non configure"} />
-                  <Button variant="outline" onClick={() => void copyPhotographerLink()}>
-                    Copier
-                  </Button>
-                  <Button disabled={!photographerLink} onClick={sharePhotographerLink} className="bg-[#1f7a4c] text-white hover:bg-[#17643d]">
-                    <MessageCircle className="mr-2 size-4" />
-                    WhatsApp
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </main>

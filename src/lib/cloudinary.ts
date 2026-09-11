@@ -94,7 +94,7 @@ export function buildUrl(
 }
 
 /**
- * Generate a lightweight thumbnail URL for gallery grid display.
+ * Generate a lightweight thumbnail URL for image grid display.
  * Uses WebP format, 400px width, and smart crop.
  */
 export function buildThumbnailUrl(publicId: string, width = 400): string {

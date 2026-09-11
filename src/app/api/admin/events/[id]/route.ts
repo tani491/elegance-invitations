@@ -28,7 +28,7 @@ export async function PATCH(
     data: parsed.data,
     include: {
       client: { select: { id: true, email: true, displayName: true, isActive: true } },
-      _count: { select: { guests: true, photos: true } },
+      _count: { select: { guests: true } },
     },
   });
 

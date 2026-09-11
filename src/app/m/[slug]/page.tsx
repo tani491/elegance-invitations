@@ -13,7 +13,6 @@ import {
   Sunrise,
   MapPin,
   CheckCircle,
-  Lock,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -569,40 +568,7 @@ export default function GuestInvitationPage() {
       </section>
 
       {/* ============================================================
-          7. GALERIE LINK
-          ============================================================ */}
-      <section className="bg-[#FAF7F2] px-4 py-16 md:py-20">
-        <div className="mx-auto max-w-md">
-          <AnimatedSection>
-            <Card className="card-luxury border border-[#D4AF37]/20 bg-white p-6">
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F0EBE3]">
-                  <Lock className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <h3 className="font-display-bold mt-4 text-xl text-[#1A1818]">
-                  La galerie photo
-                </h3>
-                <p className="font-body mt-2 text-sm text-muted-foreground">
-                  La galerie photo sera disponible après l&apos;événement.
-                </p>
-                <Button
-                  disabled
-                  className="mt-6 w-full bg-muted font-body text-muted-foreground"
-                >
-                  <Lock className="mr-2 h-4 w-4" />
-                  Accéder à la galerie
-                </Button>
-                <p className="font-body mt-3 text-xs text-muted-foreground/70">
-                  Protégée par un code secret des mariés
-                </p>
-              </div>
-            </Card>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ============================================================
-          8. FOOTER SPACER
+          7. FOOTER SPACER
           ============================================================ */}
       <div className="h-20" />
 

@@ -53,6 +53,16 @@ interface Template {
   demoVideoUrl?: string | null;
 }
 
+type LandingTestimonial = {
+  id?: string;
+  coupleNames: string;
+  location: string;
+  review: string;
+  rating: number;
+  formula: string | null;
+  photoUrl: string | null;
+};
+
 const TEMPLATES: Template[] = [
   {
     name: "Enveloppe de Cire",
@@ -178,35 +188,40 @@ const DEFAULT_HERO_PHONE_MEDIA = [
 ] as const;
 
 const PRESTIGE_PLACES = [
-  "Terrou-Bi Dakar",
+  "Salle de réception",
+  "Salle de mariage",
   "King Fahd Palace",
+  "Terrou-Bi Dakar",
   "Radisson Blu",
+  "Salons Hoche Paris",
   "Pullman Dakar Teranga",
   "Domaine de Nianing",
-  "Salons Hoche Paris",
 ];
 
-const LUXURY_TESTIMONIALS = [
+const LUXURY_TESTIMONIALS: LandingTestimonial[] = [
   {
-    couple: "Aminata & Cheikh",
+    coupleNames: "Aminata & Cheikh",
     location: "Mariage aux Almadies",
     formula: "Formule Prestige — Thème Palais Royal",
-    image: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=420&q=82",
-    text: "Nos invités venant de Paris, New York et Dakar ont tous été émerveillés par l'ouverture des portes. La gestion des RSVP par WhatsApp nous a fait gagner des semaines d'organisation !",
+    photoUrl: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=420&q=82",
+    rating: 5,
+    review: "Nos invités venant de Paris, New York et Dakar ont tous été émerveillés par l'ouverture des portes. La gestion des RSVP par WhatsApp nous a fait gagner des semaines d'organisation !",
   },
   {
-    couple: "Sophie & Jean-Marc",
+    coupleNames: "Sophie & Jean-Marc",
     location: "Réception à Saly",
     formula: "Formule Impériale",
-    image: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=420&q=82",
-    text: "Un faire-part digne d'une grande maison de couture. Le Pass VIP au scan a impressionné tous nos convives dès l'entrée de la salle.",
+    photoUrl: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=420&q=82",
+    rating: 5,
+    review: "Un faire-part digne d'une grande maison de couture. Le Pass VIP au scan a impressionné tous nos convives dès l'entrée de la salle.",
   },
   {
-    couple: "Mariama & Ibrahima",
+    coupleNames: "Mariama & Ibrahima",
     location: "Célébration Dakar Plateau",
     formula: "Formule Prestige — Thème Rose Bohème",
-    image: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=420&q=82",
-    text: "L'espace photographe intégré a permis à nos proches de télécharger les photos en haute définition dès le lendemain sans passer par un lien lourd. Service client exceptionnel sur WhatsApp.",
+    photoUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=420&q=82",
+    rating: 5,
+    review: "L'expérience était fluide du premier aperçu jusqu'au scan des invités. Tout le monde a retrouvé facilement les informations essentielles, avec un service client exceptionnel sur WhatsApp.",
   },
 ];
 
@@ -215,7 +230,7 @@ const FOOTER_COLLECTIONS = [
   "Collection Rose Bohème",
   "Collection Minimaliste Épurée",
   "Modèles Religieux & Traditionnels",
-  "Galerie & Photographe",
+  "Accompagnement Signature",
 ];
 
 const FOOTER_FEATURES = [
@@ -223,8 +238,25 @@ const FOOTER_FEATURES = [
   "Gestion RSVP instantanée",
   "QR Code Pass VIP nominatif",
   "Intégration Google Agenda",
-  "Accès Photographe Privé",
+  "Conciergerie privée",
 ];
+
+function clampTestimonialRating(rating: number) {
+  if (!Number.isFinite(rating)) return 5;
+  return Math.min(5, Math.max(1, Math.round(rating)));
+}
+
+function testimonialInitials(coupleNames: string) {
+  const initials = coupleNames
+    .split(/\s*(?:&|et)\s*/i)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.trim()[0])
+    .filter(Boolean)
+    .join("");
+
+  return (initials || "EI").toUpperCase();
+}
 
 function templateMediaSource(template?: Template | null) {
   return template?.openingVideoUrl ?? template?.demoVideoUrl ?? null;
@@ -319,6 +351,7 @@ export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
   const [homepageSettings, setHomepageSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE_SETTINGS);
+  const [landingTestimonials, setLandingTestimonials] = useState<LandingTestimonial[]>(LUXURY_TESTIMONIALS);
   /* Phone mockup preview state */
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
 
@@ -371,6 +404,28 @@ export default function HomePage() {
     }
 
     void loadHomepageSettings();
+  }, []);
+
+  useEffect(() => {
+    async function loadTestimonials() {
+      try {
+        const response = await fetch("/api/testimonials", { cache: "no-store" });
+        const json = await response.json();
+        const testimonials = Array.isArray(json.data) ? (json.data as LandingTestimonial[]) : [];
+
+        if (response.ok && json.success && testimonials.length > 0) {
+          setLandingTestimonials(testimonials);
+          return;
+        }
+
+        setLandingTestimonials(LUXURY_TESTIMONIALS);
+      } catch (error) {
+        console.error("Testimonials fetch failed:", error);
+        setLandingTestimonials(LUXURY_TESTIMONIALS);
+      }
+    }
+
+    void loadTestimonials();
   }, []);
 
   const filteredTemplates =
@@ -445,7 +500,7 @@ export default function HomePage() {
               className="mx-auto mt-6 max-w-xl font-body text-base leading-8 text-[#D8D2C7] sm:text-lg lg:mx-0"
             >
               Offrez à vos convives une expérience interactive immersive digne de la haute couture.
-              Musique, vidéo cinématographique, RSVP fluide et galerie privée.
+              Musique, vidéo cinématographique, RSVP fluide et Pass VIP nominatif.
             </motion.p>
 
             <motion.div
@@ -1092,9 +1147,9 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
-            {LUXURY_TESTIMONIALS.map((item, i) => (
+            {landingTestimonials.map((item, i) => (
               <motion.div
-                key={item.couple}
+                key={item.id ?? `${item.coupleNames}-${i}`}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
@@ -1102,25 +1157,35 @@ export default function HomePage() {
               >
                 <div className={`${DEEP_SURFACE} flex h-full flex-col overflow-hidden rounded-lg p-5 shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:p-6`}>
                   <div className="relative mb-5 h-40 overflow-hidden rounded-lg border border-[#C5A059]/20">
-                    <img src={item.image} alt={`Portrait de ${item.couple}`} className="h-full w-full object-cover" />
+                    {item.photoUrl ? (
+                      <img src={item.photoUrl} alt={`Portrait de ${item.coupleNames}`} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-[#0F0E0C] text-5xl font-semibold text-[#C5A059]/80">
+                        {testimonialInitials(item.coupleNames)}
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0D0B0A]/70 via-transparent to-transparent" />
                   </div>
                   <Quote className="mb-4 size-8 text-[#C5A059]/45" />
                   <p className="flex-1 font-body text-sm leading-7 text-[#D8D2C7] sm:text-base">
-                    {item.text}
+                    {item.review}
                   </p>
                   <div className="mt-5 flex gap-1">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="size-4" style={{ color: GOLD, fill: GOLD }} />
+                      <Star
+                        key={s}
+                        className="size-4"
+                        style={{ color: GOLD, fill: s <= clampTestimonialRating(item.rating) ? GOLD : "transparent" }}
+                      />
                     ))}
                   </div>
                   <div className="my-5 h-px w-full bg-gradient-to-r from-transparent via-[#C5A059]/35 to-transparent" />
                   <div>
                     <p className="font-[var(--font-cormorant)] text-xl font-semibold tracking-[0.04em] text-[#FAF7F2]">
-                      {item.couple}
+                      {item.coupleNames}
                     </p>
                     <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#D8D2C7]/70">{item.location}</p>
-                    <p className="mt-2 text-xs font-semibold text-[#C5A059]">{item.formula}</p>
+                    {item.formula && <p className="mt-2 text-xs font-semibold text-[#C5A059]">{item.formula}</p>}
                   </div>
                 </div>
               </motion.div>

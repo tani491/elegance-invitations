@@ -17,7 +17,6 @@ const getInvitationEvent = cache(async (slug: string) => {
       where: { slug, isActive: true },
       include: {
         theme: true,
-        photos: { orderBy: { uploadedAt: "desc" } },
       },
     });
   } catch (error) {
@@ -27,7 +26,6 @@ const getInvitationEvent = cache(async (slug: string) => {
         where: { slug, isActive: true },
         include: {
           theme: { select: THEME_COMPAT_SELECT },
-          photos: { orderBy: { uploadedAt: "desc" } },
         },
       });
     } catch (compatError) {
@@ -35,9 +33,6 @@ const getInvitationEvent = cache(async (slug: string) => {
       try {
         return await db.event.findFirst({
           where: { slug, isActive: true },
-          include: {
-            photos: { orderBy: { uploadedAt: "desc" } },
-          },
         });
       } catch (retryError) {
         console.error("Invitation event fallback failed:", retryError);

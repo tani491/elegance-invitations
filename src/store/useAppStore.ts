@@ -11,8 +11,6 @@ export type AppView =
   | 'invitation'
   | 'editor'
   | 'organizer'
-  | 'photographer'
-  | 'gallery'
   | 'admin'
   | 'pricing';
 
@@ -40,19 +38,6 @@ export interface Guest {
   checkedInAt: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface EventPhoto {
-  id: string;
-  eventId: string;
-  cloudinaryPublicId: string;
-  category: string;
-  title: string;
-  originalUrl: string;
-  thumbnailUrl: string;
-  width: number;
-  height: number;
-  uploadedAt: string;
 }
 
 export interface EventData {
@@ -87,7 +72,6 @@ export interface EventData {
   isActive: boolean;
   isPaid: boolean;
   guests: Guest[];
-  photos: EventPhoto[];
 }
 
 export type PlanKey = 'essentielle' | 'prestige' | 'privilege';
@@ -250,56 +234,6 @@ const MOCK_EVENT: EventData = {
       updatedAt: '2026-09-02T08:30:00.000Z',
     },
   ],
-  photos: [
-    {
-      id: 'p1',
-      eventId: 'evt_demo_001',
-      cloudinaryPublicId: 'demo/couple_01',
-      category: 'couple',
-      title: 'Le couple sous le baobab',
-      originalUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=90',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=60',
-      width: 1200,
-      height: 800,
-      uploadedAt: '2026-12-21T10:00:00.000Z',
-    },
-    {
-      id: 'p2',
-      eventId: 'evt_demo_001',
-      cloudinaryPublicId: 'demo/ceremonie_01',
-      category: 'ceremonie',
-      title: 'Échange des consentements',
-      originalUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=1200&q=90',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&q=60',
-      width: 1200,
-      height: 800,
-      uploadedAt: '2026-12-21T10:05:00.000Z',
-    },
-    {
-      id: 'p3',
-      eventId: 'evt_demo_001',
-      cloudinaryPublicId: 'demo/reception_01',
-      category: 'reception',
-      title: 'Premier danse',
-      originalUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&q=90',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400&q=60',
-      width: 1200,
-      height: 800,
-      uploadedAt: '2026-12-21T10:10:00.000Z',
-    },
-    {
-      id: 'p4',
-      eventId: 'evt_demo_001',
-      cloudinaryPublicId: 'demo/soiree_01',
-      category: 'soiree',
-      title: 'Fête sous les étoiles',
-      originalUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=90',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&q=60',
-      width: 1200,
-      height: 800,
-      uploadedAt: '2026-12-21T10:15:00.000Z',
-    },
-  ],
 };
 
 /* --- Pricing plans --- */
@@ -314,7 +248,6 @@ export const PRICING_PLANS: PricingPlan[] = [
       'QR Code RSVP',
       'Pass d\'accès PDF nominatif',
       'Jusqu\'à 50 invités',
-      'Galerie photo (20 photos)',
       'Support WhatsApp',
     ],
     highlighted: false,
@@ -329,7 +262,6 @@ export const PRICING_PLANS: PricingPlan[] = [
       'Animations premium (enveloppe / rideau)',
       'Musique personnalisée',
       'Jusqu\'à 200 invités',
-      'Galerie photo (100 photos)',
       'Scanner QR check-in Jour J',
       'Frise chronologique',
       'Support prioritaire',
@@ -343,9 +275,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     priceLabel: '15 000 F CFA',
     features: [
       'Tout du forfait Prestige',
-      'Espace photographe dédié',
-      'Upload photo illimité',
-      'Galerie HD avec code d\'accès',
       'Jusqu\'à 500 invités',
       'Domaine personnalisé',
       'Assistance dédiée 24/7',
@@ -389,12 +318,6 @@ interface AppState {
   /* Audio playing */
   isAudioPlaying: boolean;
   setIsAudioPlaying: (playing: boolean) => void;
-
-  /* Gallery access code input */
-  galleryAccessCode: string;
-  setGalleryAccessCode: (code: string) => void;
-  galleryUnlocked: boolean;
-  setGalleryUnlocked: (unlocked: boolean) => void;
 
   /* Toast helper */
  toastMessage: string | null;
@@ -443,12 +366,6 @@ export const useAppStore = create<AppState>((set) => ({
   /* Audio */
   isAudioPlaying: false,
   setIsAudioPlaying: (playing) => set({ isAudioPlaying: playing }),
-
-  /* Gallery */
-  galleryAccessCode: '',
-  setGalleryAccessCode: (code) => set({ galleryAccessCode: code }),
-  galleryUnlocked: false,
-  setGalleryUnlocked: (unlocked) => set({ galleryUnlocked: unlocked }),
 
   /* Toast */
   toastMessage: null,

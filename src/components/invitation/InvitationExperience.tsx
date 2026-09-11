@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, CheckCircle, Download, Flower2, MapPin, MessageCircle, Phone, Send, Sparkles } from "lucide-react";
+import { ArrowDown, CheckCircle, Flower2, MapPin, MessageCircle, Phone, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { VideoOpeningGate } from "@/components/animations/VideoOpeningGate";
 import { DressCodeSection } from "@/components/invitation/DressCodeSection";
@@ -393,58 +393,6 @@ function WhatsAppCelebrationCTA({
   );
 }
 
-function MemoryGallery({
-  event,
-  index,
-  animation,
-}: {
-  event: PublicEventPayload;
-  index: number;
-  animation?: ScrollAnimationType | null;
-}) {
-  const photos = event.galleryPhotos;
-  if (photos.length === 0) return null;
-
-  return (
-    <StorySection animation={animation || "fade-up"} index={index}>
-      <SectionTitle eyebrow="Galerie" title="Éclats de mémoire" />
-      <div className="mt-10 grid grid-cols-2 gap-2.5">
-        {photos.map((photo, index) => (
-          <motion.figure
-            key={photo.id}
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: Math.min(index * 0.04, 0.2) }}
-            className="group relative aspect-[4/5] overflow-hidden rounded-[22px] bg-[color:var(--invitation-chip)] p-[2px]"
-          >
-            <img
-              src={photo.thumbnailUrl ?? photo.originalUrl ?? ""}
-              alt={photo.title ?? "Photo souvenir"}
-              className="size-full rounded-[20px] object-cover transition duration-500 group-hover:scale-105"
-            />
-            <figcaption className="absolute inset-x-[2px] bottom-[2px] flex items-center justify-between gap-2 rounded-b-[20px] bg-gradient-to-t from-black/70 to-transparent p-2 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className="truncate text-[11px]">{photo.title ?? "Photo HD"}</span>
-              {photo.originalUrl && (
-                <a
-                  href={photo.originalUrl}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Télécharger la photo HD"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--invitation-panel)] backdrop-blur-md"
-                >
-                  <Download className="size-4" />
-                </a>
-              )}
-            </figcaption>
-          </motion.figure>
-        ))}
-      </div>
-    </StorySection>
-  );
-}
-
 export function InvitationExperience({ event, guestToken }: { event: PublicEventPayload; guestToken?: string }) {
   const [countdown, setCountdown] = useState(() => countdownParts(event.eventDate));
   const [isOpened, setIsOpened] = useState(false);
@@ -589,13 +537,6 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
               <StorySection animation={theme.scrollAnimation} index={4}>
                 <TimelineSection event={event} />
               </StorySection>
-            </>
-          )}
-
-          {event.galleryPhotos.length > 0 && (
-            <>
-              <RoyalDivider className="my-2" />
-              <MemoryGallery event={event} index={5} animation={theme.scrollAnimation} />
             </>
           )}
 

@@ -13,7 +13,7 @@ export async function GET(
   try {
     guest = await db.eventGuest.findUnique({
       where: { qrToken: guestToken },
-      include: { event: { include: { theme: true, photos: { orderBy: { uploadedAt: "desc" } } } } },
+      include: { event: { include: { theme: true } } },
     });
   } catch (error) {
     console.error("Public guest theme relation failed, retrying with compatible theme columns:", error);
@@ -24,7 +24,6 @@ export async function GET(
           event: {
             include: {
               theme: { select: THEME_COMPAT_SELECT },
-              photos: { orderBy: { uploadedAt: "desc" } },
             },
           },
         },
@@ -34,7 +33,7 @@ export async function GET(
       try {
         guest = await db.eventGuest.findUnique({
           where: { qrToken: guestToken },
-          include: { event: { include: { photos: { orderBy: { uploadedAt: "desc" } } } } },
+          include: { event: true },
         });
       } catch (retryError) {
         console.error("Public guest fallback failed:", retryError);

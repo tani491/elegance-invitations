@@ -121,7 +121,6 @@ model Event {
   program                Json?
   coupleStory            String?
   planType               String       @default("essentielle")
-  photographerToken      String?      @unique
   isActive               Boolean      @default(true)
   isPaid                 Boolean      @default(false)
   createdAt              DateTime     @default(now())
@@ -130,7 +129,6 @@ model Event {
   theme                  Theme?       @relation(fields: [themeId], references: [id], onDelete: SetNull)
   client                 AuthUser?
   guests                 EventGuest[]
-  photos                 EventPhoto[]
 
   @@index([themeId])
   @@index([slug])
@@ -169,25 +167,6 @@ model EventGuest {
   @@schema("public")
 }
 
-model EventPhoto {
-  id                 String   @id @default(cuid())
-  eventId            String
-  cloudinaryPublicId String?
-  category           String   @default("ceremonie")
-  title              String?
-  originalUrl        String?
-  thumbnailUrl       String?
-  width              Int?
-  height             Int?
-  uploadedAt         DateTime @default(now())
-
-  event              Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@index([eventId])
-  @@index([category])
-  @@schema("public")
-}
-
 model SiteSettings {
   id         String   @id @default("homepage")
   heroPhone1 String?
@@ -195,5 +174,20 @@ model SiteSettings {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@schema("public")
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  coupleNames String
+  location    String
+  review      String
+  rating      Int      @default(5)
+  formula     String?
+  photoUrl    String?
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([isVisible])
   @@schema("public")
 }

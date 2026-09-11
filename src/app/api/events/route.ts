@@ -14,18 +14,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
-          select: { guests: true, photos: true },
-        },
-        photos: {
-          select: {
-            id: true,
-            category: true,
-            title: true,
-            originalUrl: true,
-            thumbnailUrl: true,
-            width: true,
-            height: true,
-          },
+          select: { guests: true },
         },
       },
     })

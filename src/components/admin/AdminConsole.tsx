@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Film, KeyRound, Package, Palette, Phone, Plus, Settings2, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Film, KeyRound, MessageSquareQuote, Package, Palette, Phone, Plus, Settings2, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ interface EventRow {
   isActive: boolean;
   isPaid: boolean;
   createdAt: string;
-  _count?: { guests: number; photos: number };
+  _count?: { guests: number };
 }
 
 interface ClientAccessPayload {
@@ -483,6 +483,12 @@ export default function AdminConsole() {
               <Link href="/admin/settings">
                 <Settings2 className="mr-2 size-4" />
                 Accueil
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="border-[#D6C5A8]">
+              <Link href="/admin/testimonials">
+                <MessageSquareQuote className="mr-2 size-4" />
+                Temoignages
               </Link>
             </Button>
             <Button variant="outline" onClick={async () => {

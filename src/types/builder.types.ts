@@ -20,7 +20,6 @@ export type BuilderSectionId =
   | "gift-iban"
   | "love-story"
   | "menu"
-  | "photo-gallery"
   | "faq"
   | "childhood-photos";
 
@@ -164,7 +163,6 @@ export const BUILDER_SECTIONS: BuilderSection[] = [
   { id: "gift-iban", label: "Liste cadeaux / IBAN", description: "Bloc bancaire avec copie.", price: 15, included: false },
   { id: "love-story", label: "Histoire d'amour", description: "Section narrative elegante.", price: 15, included: false },
   { id: "menu", label: "Menu", description: "Repas et choix invite.", price: 15, included: false },
-  { id: "photo-gallery", label: "Galerie photos", description: "Galerie responsive haute definition.", price: 15, included: false },
   { id: "faq", label: "FAQ", description: "Questions pratiques.", price: 15, included: false },
   { id: "childhood-photos", label: "Photos d'enfance", description: "Section souvenir avant/apres.", price: 15, included: false },
 ];
@@ -189,10 +187,10 @@ export const BUILDER_BUNDLES: BuilderBundle[] = [
   {
     id: "story-bundle",
     label: "Story Bundle",
-    description: "Histoire, galerie et photos d'enfance.",
+    description: "Histoire et photos d'enfance.",
     price: 35,
     includedExtras: [],
-    includedSections: ["love-story", "photo-gallery", "childhood-photos"],
+    includedSections: ["love-story", "childhood-photos"],
   },
 ];
 

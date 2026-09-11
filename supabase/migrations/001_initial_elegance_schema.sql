@@ -1,4 +1,4 @@
-create type public.user_role as enum ('admin', 'client', 'photographer');
+create type public.user_role as enum ('admin', 'client');
 create type public.plan_tier as enum ('essentielle', 'prestige', 'privilege');
 create type public.rsvp_status as enum ('pending', 'confirmed', 'declined');
 
@@ -48,7 +48,6 @@ create table public.weddings (
   gift_iban text,
   gift_wave text,
   plan_tier public.plan_tier not null default 'essentielle',
-  photographer_token text unique,
   is_active boolean not null default true,
   is_paid boolean not null default false,
   created_at timestamptz not null default now(),

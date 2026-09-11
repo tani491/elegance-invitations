@@ -7,7 +7,6 @@ import {
   generateProvisionalPassword,
   hashPassword,
   normalizeEmail,
-  randomToken,
 } from "@/lib/server-auth";
 import { uniqueSlug } from "@/lib/slug";
 import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme } from "@/lib/theme-presets";
@@ -86,7 +85,6 @@ export async function POST(request: NextRequest) {
   const passwordHash = await hashPassword(password);
   const { brideName, groomName } = splitCoupleName(parsed.data.coupleName);
   const eventSlug = uniqueSlug(parsed.data.coupleName);
-  const photographerToken = randomToken("photographer");
 
   const event = await db.event.create({
     data: {
@@ -106,7 +104,6 @@ export async function POST(request: NextRequest) {
       brideName,
       groomName,
       planType: parsed.data.planType,
-      photographerToken,
       isActive: true,
       isPaid: true,
       dressCodeColors: DEFAULT_DRESS_CODE_COLORS as unknown as Prisma.InputJsonValue,

@@ -96,7 +96,7 @@ const fr: Translations = {
     title1: "Des Invitations Numériques",
     titleHighlight: "d'Exception",
     subtitle:
-      "Transformez chaque mariage en une expérience inoubliable avec des invitations sur mesure, un suivi RSVP intelligent et une galerie souvenir privée.",
+      "Transformez chaque mariage en une expérience inoubliable avec des invitations sur mesure, un suivi RSVP intelligent et un Pass VIP nominatif.",
     cta1: "Créer mon Invitation",
     cta2: "Découvrir nos Modèles",
   },
@@ -106,7 +106,7 @@ const fr: Translations = {
     steps: [
       { num: "01", icon: "palette", title: "Choisissez votre Modèle", desc: "Parmi notre collection exclusive de templates luxueux." },
       { num: "02", icon: "pen-tool", title: "Personnalisez Chaque Détail", desc: "Textes, photos, musique, programme — tout est modifiable." },
-      { num: "03", icon: "send", title: "Invitez & Suivez en Temps Réel", desc: "Vos invités reçoivent un lien, confirment par QR code, et accèdent à la galerie." },
+      { num: "03", icon: "send", title: "Invitez & Suivez en Temps Réel", desc: "Vos invités reçoivent un lien, confirment par QR code et présentent leur Pass VIP." },
     ],
   },
   templates: {
@@ -133,7 +133,7 @@ const fr: Translations = {
       { label: "Délai de production", paper: "2 – 4 semaines", digital: "Quelques heures" },
       { label: "Suivi RSVP", paper: "Manuel (appels, SMS)", digital: "Automatique en temps réel" },
       { label: "Mise à jour dernière minute", paper: "Impossible", digital: "Instantanée" },
-      { label: "Galerie photo partagée", paper: "Non", digital: "Oui, protégée par QR" },
+      { label: "Pass VIP digital", paper: "Non", digital: "Oui, nominatif et scannable" },
       { label: "Check-in Jour J", paper: "Liste papier", digital: "Scan QR instantané" },
       { label: "Impact écologique", paper: "Élevé (papier, transport)", digital: "Quasi nul" },
       { label: "Personnalisation", paper: "Limitée", digital: "Totale (texte, musique, couleurs)" },
@@ -175,7 +175,6 @@ const fr: Translations = {
           "Suivi RSVP",
           "Pass PDF nominatif",
           "QR Code de sécurité",
-          "Galerie photo protégée",
           "Lecteur musique",
           "Éditeur en ligne avancé",
         ],
@@ -188,11 +187,9 @@ const fr: Translations = {
           "Suivi RSVP",
           "Pass PDF nominatif",
           "QR Code de sécurité",
-          "Galerie photo protégée",
           "Lecteur musique",
           "Éditeur en ligne avancé",
           "Scanner QR Jour J",
-          "Accès photographe dédié",
           "Support prioritaire",
         ],
       },
@@ -211,7 +208,7 @@ const fr: Translations = {
       {
         name: "Fatou & Omar",
         location: "Abidjan, Côte d'Ivoire",
-        text: "Le scanner QR le jour J a été un vrai plus. Pas de file d'attente, tout était fluide. La galerie photo est magnifique.",
+        text: "Le scanner QR le jour J a été un vrai plus. Pas de file d'attente, tout était fluide du premier accueil jusqu'au dernier invité.",
         role: "Mariage Privilège – 400 invités",
       },
       {
@@ -253,7 +250,7 @@ const fr: Translations = {
     privacy: "Politique de confidentialité",
     contact: "Contact",
     copyright: "© 2026 Élégance. Tous droits réservés.",
-    staffAccess: "Accès Staff / Photographe / Admin",
+    staffAccess: "Accès Staff / Admin",
   },
 };
 
@@ -272,7 +269,7 @@ const en: Translations = {
     title1: "Exquisite Digital",
     titleHighlight: "Wedding Invitations",
     subtitle:
-      "Transform every wedding into an unforgettable experience with bespoke invitations, intelligent RSVP tracking, and a private souvenir gallery.",
+      "Transform every wedding into an unforgettable experience with bespoke invitations, intelligent RSVP tracking, and a named VIP pass.",
     cta1: "Create My Invitation",
     cta2: "Discover Our Templates",
   },
@@ -282,7 +279,7 @@ const en: Translations = {
     steps: [
       { num: "01", icon: "palette", title: "Choose Your Template", desc: "From our exclusive collection of luxury designs." },
       { num: "02", icon: "pen-tool", title: "Customise Every Detail", desc: "Texts, photos, music, schedule — everything is editable." },
-      { num: "03", icon: "send", title: "Invite & Track in Real Time", desc: "Your guests receive a link, confirm with a QR code, and access the gallery." },
+      { num: "03", icon: "send", title: "Invite & Track in Real Time", desc: "Your guests receive a link, confirm with a QR code, and present their VIP pass." },
     ],
   },
   templates: {
@@ -309,7 +306,7 @@ const en: Translations = {
       { label: "Production time", paper: "2 – 4 weeks", digital: "A few hours" },
       { label: "RSVP tracking", paper: "Manual (calls, SMS)", digital: "Automatic real-time" },
       { label: "Last-minute updates", paper: "Impossible", digital: "Instant" },
-      { label: "Shared photo gallery", paper: "No", digital: "Yes, QR-protected" },
+      { label: "Digital VIP pass", paper: "No", digital: "Yes, named and scannable" },
       { label: "Day-of check-in", paper: "Paper list", digital: "Instant QR scan" },
       { label: "Environmental impact", paper: "High (paper, transport)", digital: "Virtually zero" },
       { label: "Customisation", paper: "Limited", digital: "Full (text, music, colours)" },
@@ -351,7 +348,6 @@ const en: Translations = {
           "RSVP tracking",
           "Named PDF pass",
           "Security QR code",
-          "Protected photo gallery",
           "Music player",
           "Advanced online editor",
         ],
@@ -364,11 +360,9 @@ const en: Translations = {
           "RSVP tracking",
           "Named PDF pass",
           "Security QR code",
-          "Protected photo gallery",
           "Music player",
           "Advanced online editor",
           "Day-of QR scanner",
-          "Dedicated photographer access",
           "Priority support",
         ],
       },
@@ -387,7 +381,7 @@ const en: Translations = {
       {
         name: "Fatou & Omar",
         location: "Abidjan, Ivory Coast",
-        text: "The QR scanner on the big day was a real plus. No queues, everything was smooth. The photo gallery is beautiful.",
+        text: "The QR scanner on the big day was a real plus. No queues, everything was smooth from the entrance to the final guest.",
         role: "Privilege Wedding – 400 guests",
       },
       {
@@ -429,7 +423,7 @@ const en: Translations = {
     privacy: "Privacy Policy",
     contact: "Contact",
     copyright: "© 2026 Élégance. All rights reserved.",
-    staffAccess: "Staff / Photographer / Admin Access",
+    staffAccess: "Staff / Admin Access",
   },
 };
 
@@ -448,7 +442,7 @@ const es: Translations = {
     title1: "Invitaciones Digitales de",
     titleHighlight: "Excepción",
     subtitle:
-      "Transforma cada boda en una experiencia inolvidable con invitaciones a medida, seguimiento RSVP inteligente y una galería privada de recuerdos.",
+      "Transforma cada boda en una experiencia inolvidable con invitaciones a medida, seguimiento RSVP inteligente y un pase VIP nominativo.",
     cta1: "Crear mi Invitación",
     cta2: "Descubrir Modelos",
   },
@@ -458,7 +452,7 @@ const es: Translations = {
     steps: [
       { num: "01", icon: "palette", title: "Elige tu Modelo", desc: "De nuestra colección exclusiva de plantillas de lujo." },
       { num: "02", icon: "pen-tool", title: "Personaliza Cada Detalle", desc: "Textos, fotos, música, programa — todo es modificable." },
-      { num: "03", icon: "send", title: "Invita y Sigue en Tiempo Real", desc: "Tus invitados reciben un enlace, confirman con código QR y acceden a la galería." },
+      { num: "03", icon: "send", title: "Invita y Sigue en Tiempo Real", desc: "Tus invitados reciben un enlace, confirman con código QR y presentan su pase VIP." },
     ],
   },
   templates: {
@@ -485,7 +479,7 @@ const es: Translations = {
       { label: "Tiempo de producción", paper: "2 – 4 semanas", digital: "Unas horas" },
       { label: "Seguimiento RSVP", paper: "Manual (llamadas, SMS)", digital: "Automático en tiempo real" },
       { label: "Cambios de última hora", paper: "Imposible", digital: "Instantáneo" },
-      { label: "Galería de fotos compartida", paper: "No", digital: "Sí, protegida con QR" },
+      { label: "Pase VIP digital", paper: "No", digital: "Sí, nominativo y escaneable" },
       { label: "Check-in el día de la boda", paper: "Lista en papel", digital: "Escaneo QR instantáneo" },
       { label: "Impacto ecológico", paper: "Alto (papel, transporte)", digital: "Prácticamente nulo" },
       { label: "Personalización", paper: "Limitada", digital: "Total (texto, música, colores)" },
@@ -527,7 +521,6 @@ const es: Translations = {
           "Seguimiento RSVP",
           "Pase PDF nominativo",
           "Código QR de seguridad",
-          "Galería de fotos protegida",
           "Reproductor de música",
           "Editor avanzado online",
         ],
@@ -540,11 +533,9 @@ const es: Translations = {
           "Seguimiento RSVP",
           "Pase PDF nominativo",
           "Código QR de seguridad",
-          "Galería de fotos protegida",
           "Reproductor de música",
           "Editor avanzado online",
           "Escáner QR día de la boda",
-          "Acceso fotógrafo dedicado",
           "Soporte prioritario",
         ],
       },
@@ -563,7 +554,7 @@ const es: Translations = {
       {
         name: "Fatou & Omar",
         location: "Abidjan, Costa de Marfil",
-        text: "El escáner QR el día de la boda fue un verdadero plus. Sin colas, todo fluido. La galería de fotos es preciosa.",
+        text: "El escáner QR el día de la boda fue un verdadero plus. Sin colas, todo fue fluido desde la entrada hasta el último invitado.",
         role: "Boda Privilegio – 400 invitados",
       },
       {
@@ -605,7 +596,7 @@ const es: Translations = {
     privacy: "Política de privacidad",
     contact: "Contacto",
     copyright: "© 2026 Élégance. Todos los derechos reservados.",
-    staffAccess: "Acceso Staff / Fotógrafo / Admin",
+    staffAccess: "Acceso Staff / Admin",
   },
 };
 
@@ -624,7 +615,7 @@ const ar: Translations = {
     title1: "دعوات رقمية",
     titleHighlight: "استثنائية",
     subtitle:
-      "حوّلوا كل زفاف إلى تجربة لا تُنسى بدعوات مخصصة وتتبع ذكي للردود ومعرض صور خاص.",
+      "حوّلوا كل زفاف إلى تجربة لا تُنسى بدعوات مخصصة وتتبع ذكي للردود وبطاقة VIP شخصية.",
     cta1: "أنشئ دعوتي",
     cta2: "اكتشف القوالب",
   },
@@ -634,7 +625,7 @@ const ar: Translations = {
     steps: [
       { num: "01", icon: "palette", title: "اختاروا القالب", desc: "من مجموعتنا الحصرية من القوالب الفاخرة." },
       { num: "02", icon: "pen-tool", title: "خصصوا كل تفصيل", desc: "نصوص، صور، موسيقى، برنامج — كل شيء قابل للتعديل." },
-      { num: "03", icon: "send", title: "ادعوا وتابعوا في الوقت الفعلي", desc: "يتلقى ضيوفكم رابطًا، يؤكدون برمز QR ويطلعون على المعرض." },
+      { num: "03", icon: "send", title: "ادعوا وتابعوا في الوقت الفعلي", desc: "يتلقى ضيوفكم رابطًا، يؤكدون برمز QR ويقدمون بطاقة VIP." },
     ],
   },
   templates: {
@@ -661,7 +652,7 @@ const ar: Translations = {
       { label: "مدة الإنتاج", paper: "2 – 4 أسابيع", digital: "بضع ساعات" },
       { label: "متابعة الردود", paper: "يدوية (مكالمات، رسائل)", digital: "تلقائية في الوقت الفعلي" },
       { label: "تعديلات اللحظة الأخيرة", paper: "مستحيل", digital: "فورية" },
-      { label: "معرض صور مشترك", paper: "لا", digital: "نعم، محمي بـ QR" },
+      { label: "بطاقة VIP رقمية", paper: "لا", digital: "نعم، شخصية وقابلة للمسح" },
       { label: "تسجيل الدخول يوم الحدث", paper: "قائمة ورقية", digital: "مسح QR فوري" },
       { label: "الأثر البيئي", paper: "مرتفع (ورق، نقل)", digital: "شبه معدوم" },
       { label: "التخصيص", paper: "محدود", digital: "كامل (نص، موسيقى، ألوان)" },
@@ -703,7 +694,6 @@ const ar: Translations = {
           "متابعة RSVP",
           "تاج ملف PDF بالاسم",
           "رمز QR للأمان",
-          "معرض صور محمي",
           "مشغل موسيقى",
           "محرر انترنتي متقدم",
         ],
@@ -716,11 +706,9 @@ const ar: Translations = {
           "متابعة RSVP",
           "تاج ملف PDF بالاسم",
           "رمز QR للأمان",
-          "معرض صور محمي",
           "مشغل موسيقى",
           "محرر انترنتي متقدم",
           "ماسح QR يوم الحدث",
-          "دخول مصور مخصص",
           "دعم أولوي",
         ],
       },
@@ -781,7 +769,7 @@ const ar: Translations = {
     privacy: "سياسة الخصوصية",
     contact: "اتصل بنا",
     copyright: "© 2026 Élégance. جميع الحقوق محفوظة.",
-    staffAccess: "دخول الموظفين / المصور / المسؤول",
+    staffAccess: "دخول الموظفين / المسؤول",
   },
 };
 

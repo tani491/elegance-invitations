@@ -4,7 +4,6 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 export const SUPABASE_STORAGE_BUCKETS = {
   weddingPhotos: "wedding-photos",
   themeVideos: "theme-videos",
-  galleryPhotos: "gallery-photos",
 } as const;
 
 export function isSupabaseStorageConfigured() {

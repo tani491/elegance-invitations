@@ -96,7 +96,7 @@ export async function POST(_request: NextRequest) {
     // Delete all existing data in reverse dependency order
     await db.authSession.deleteMany()
     await db.authUser.deleteMany()
-    await db.eventPhoto.deleteMany()
+    await db.testimonial.deleteMany()
     await db.eventGuest.deleteMany()
     await db.event.deleteMany()
 
@@ -139,7 +139,6 @@ export async function POST(_request: NextRequest) {
         officialPhotoUrls: [],
         musicUrl: null,
         planType: 'privilege',
-        photographerToken: 'photog-mariage-2026',
         isActive: true,
         isPaid: true,
       },

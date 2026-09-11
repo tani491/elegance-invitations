@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const events = await db.event.findMany({
       include: {
         client: { select: { id: true, email: true, displayName: true, isActive: true } },
-        _count: { select: { guests: true, photos: true } },
+        _count: { select: { guests: true } },
       },
       orderBy: { createdAt: "desc" },
     });
