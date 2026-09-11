@@ -178,18 +178,18 @@ const SAFE_THEME_FALLBACK = {
   isVisible: true,
 } satisfies ThemeConfig;
 
-const DEFAULT_TITLE_FONT_FAMILY = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
+const DEFAULT_TITLE_FONT_FAMILY = "var(--font-cormorant), Georgia, 'Times New Roman', serif";
 
 const TITLE_FONT_FAMILIES: Record<string, string> = {
-  "Cinzel": "Cinzel, Georgia, 'Times New Roman', serif",
+  "Cinzel": "var(--font-cinzel), Georgia, 'Times New Roman', serif",
   "Cormorant Garamond": DEFAULT_TITLE_FONT_FAMILY,
-  "Playfair Display": "'Playfair Display', Georgia, 'Times New Roman', serif",
-  "Bodoni Moda": "'Bodoni Moda', 'Didot', Georgia, serif",
-  "Great Vibes": "'Great Vibes', 'Segoe Script', 'Snell Roundhand', cursive",
-  "Alex Brush": "'Alex Brush', 'Segoe Script', 'Snell Roundhand', cursive",
-  "Montserrat": "Montserrat, Arial, Helvetica, sans-serif",
-  "Prata": "Prata, Georgia, 'Times New Roman', serif",
-  "Plus Jakarta Sans": "Montserrat, Arial, Helvetica, sans-serif",
+  "Playfair Display": "var(--font-playfair), Georgia, 'Times New Roman', serif",
+  "Bodoni Moda": "var(--font-bodoni), 'Didot', Georgia, serif",
+  "Great Vibes": "var(--font-great-vibes), 'Segoe Script', 'Snell Roundhand', cursive",
+  "Alex Brush": "var(--font-alex-brush), 'Segoe Script', 'Snell Roundhand', cursive",
+  "Montserrat": "var(--font-jakarta), Arial, Helvetica, sans-serif",
+  "Prata": "var(--font-prata), Georgia, 'Times New Roman', serif",
+  "Plus Jakarta Sans": "var(--font-jakarta), Arial, Helvetica, sans-serif",
 };
 
 function normalizeTitleFontName(value: string | null | undefined) {

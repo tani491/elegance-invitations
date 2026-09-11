@@ -133,7 +133,7 @@ export function VideoOpeningGate({
             src={videoSrc}
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             onEnded={handleBackgroundVideoEnded}
             className="h-full w-full select-none object-cover"
           />
@@ -217,7 +217,7 @@ export function VideoOpeningGate({
                 src={videoSrc}
                 playsInline
                 muted
-                preload="auto"
+                preload="metadata"
                 onLoadedMetadata={() => {
                   if (startedRef.current && videoRef.current) scheduleVideoSafety(videoRef.current);
                 }}

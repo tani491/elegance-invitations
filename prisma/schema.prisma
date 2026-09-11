@@ -164,6 +164,7 @@ model EventGuest {
   @@index([eventId])
   @@index([qrToken])
   @@index([accessCode])
+  @@unique([eventId, phone])
   @@schema("public")
 }
 

@@ -1,10 +1,77 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
+import {
+  Alex_Brush,
+  Bodoni_Moda,
+  Cinzel,
+  Cormorant_Garamond,
+  Great_Vibes,
+  Montserrat,
+  Playfair_Display,
+  Prata,
+} from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "@/components/Providers";
 import { FloatingWhatsAppButton } from "@/components/public/FloatingWhatsAppButton";
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
+
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-great-vibes",
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
+
+const bodoni = Bodoni_Moda({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-bodoni",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const prata = Prata({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-prata",
+  display: "swap",
+});
+
+const alexBrush = Alex_Brush({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-alex-brush",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Élégance Invitations — Faire-part digitaux de prestige",
@@ -38,8 +105,16 @@ export const metadata: Metadata = {
   },
 };
 
-const prestigeFontsHref =
-  "https://fonts.googleapis.com/css2?family=Alex+Brush&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Great+Vibes&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Prata&display=swap";
+const fontVariables = [
+  cormorant.variable,
+  montserrat.variable,
+  greatVibes.variable,
+  cinzel.variable,
+  bodoni.variable,
+  playfair.variable,
+  prata.variable,
+  alexBrush.variable,
+].join(" ");
 
 export default function RootLayout({
   children,
@@ -47,18 +122,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" className={fontVariables} suppressHydrationWarning>
       <body
         className="antialiased bg-background text-foreground"
-        style={{
-          "--font-cormorant": "Georgia, 'Times New Roman', serif",
-          "--font-jakarta": "Arial, Helvetica, sans-serif",
-          "--font-great-vibes": "'Segoe Script', 'Snell Roundhand', 'Brush Script MT', Georgia, serif",
-        } as CSSProperties}
       >
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href={prestigeFontsHref} rel="stylesheet" />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

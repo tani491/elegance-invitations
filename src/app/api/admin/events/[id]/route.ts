@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { revalidateInvitation } from "@/lib/cached-invitation";
 import { requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
@@ -31,6 +32,8 @@ export async function PATCH(
       _count: { select: { guests: true } },
     },
   });
+
+  revalidateInvitation(updated.slug);
 
   return NextResponse.json({ success: true, data: updated });
 }

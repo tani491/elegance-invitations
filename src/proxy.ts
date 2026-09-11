@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth-token";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { AUTH_ROLES, type AuthRole } from "@/types/database.types";
 
 const ADMIN_ROUTES = ["/admin"];
@@ -11,6 +12,7 @@ const SHARED_UPLOAD_API_ROUTES = ["/api/uploads"];
 const SHARED_CHECKIN_ROLES: AuthRole[] = [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT];
 const PUBLIC_ROUTES = ["/", "/login", "/admin/login", "/builder", "/favicon.ico", "/logo.svg"];
 const PUBLIC_PREFIXES = ["/_next", "/invitation", "/carte", "/api/auth"];
+const PUBLIC_INVITATION_API_ROUTES = ["/api/public/events"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -31,12 +33,47 @@ function redirectToLogin(request: NextRequest, loginPath: "/login" | "/admin/log
   return NextResponse.redirect(url);
 }
 
+function tooManyRequests(retryAfterSeconds: number) {
+  return NextResponse.json(
+    { success: false, error: "Trop de requetes. Veuillez patienter quelques instants." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(retryAfterSeconds),
+      },
+    },
+  );
+}
+
+function rateLimitResponse(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/api/rsvp") {
+    const result = checkRateLimit(request, { key: "api:rsvp", limit: 5, windowMs: 60_000 });
+    if (result.limited) return tooManyRequests(result.retryAfterSeconds);
+  }
+
+  if (pathname === "/api/auth/login") {
+    const result = checkRateLimit(request, { key: "api:auth-login", limit: 5, windowMs: 15 * 60_000 });
+    if (result.limited) return tooManyRequests(result.retryAfterSeconds);
+  }
+
+  if (startsWithAny(pathname, ["/invitation", ...PUBLIC_INVITATION_API_ROUTES])) {
+    const result = checkRateLimit(request, { key: "public:invitation", limit: 150, windowMs: 60_000 });
+    if (result.limited) return tooManyRequests(result.retryAfterSeconds);
+  }
+
+  return null;
+}
+
 function roleAllowed(role: string | undefined, expected: AuthRole) {
   return role === expected;
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const limitedResponse = rateLimitResponse(request);
+  if (limitedResponse) return limitedResponse;
 
   if (isPublicPath(pathname)) {
     return NextResponse.next();

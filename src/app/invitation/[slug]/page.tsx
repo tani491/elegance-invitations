@@ -1,46 +1,13 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
+import { getCachedInvitation, type CachedInvitationEvent } from "@/lib/cached-invitation";
 import { serializePublicEvent } from "@/lib/public-event";
-import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { InvitationExperience } from "@/components/invitation/InvitationExperience";
 
 type InvitationPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ guest?: string }>;
 };
-
-const getInvitationEvent = cache(async (slug: string) => {
-  try {
-    return await db.event.findFirst({
-      where: { slug, isActive: true },
-      include: {
-        theme: true,
-      },
-    });
-  } catch (error) {
-    console.error("Invitation theme relation failed, retrying with compatible theme columns:", error);
-    try {
-      return await db.event.findFirst({
-        where: { slug, isActive: true },
-        include: {
-          theme: { select: THEME_COMPAT_SELECT },
-        },
-      });
-    } catch (compatError) {
-      console.error("Invitation compatible theme relation failed, retrying without theme:", compatError);
-      try {
-        return await db.event.findFirst({
-          where: { slug, isActive: true },
-        });
-      } catch (retryError) {
-        console.error("Invitation event fallback failed:", retryError);
-        return null;
-      }
-    }
-  }
-});
 
 function metadataBaseUrl() {
   const raw =
@@ -55,7 +22,7 @@ function metadataBaseUrl() {
   }
 }
 
-function weddingTitle(event: Awaited<ReturnType<typeof getInvitationEvent>>) {
+function weddingTitle(event: CachedInvitationEvent | null) {
   const bride = event?.brideName ?? "la Mariée";
   const groom = event?.groomName ?? "le Marié";
   return `Mariage de ${bride} & ${groom}`;
@@ -63,7 +30,7 @@ function weddingTitle(event: Awaited<ReturnType<typeof getInvitationEvent>>) {
 
 export async function generateMetadata({ params }: Pick<InvitationPageProps, "params">): Promise<Metadata> {
   const { slug } = await params;
-  const event = await getInvitationEvent(slug);
+  const event = await getCachedInvitation(slug);
   const title = weddingTitle(event);
   const description = "Vous êtes cordialement invité(e) à célébrer notre union.";
   const imageUrl = `/invitation/${event?.slug ?? slug}/opengraph-image`;
@@ -100,7 +67,7 @@ export default async function InvitationPage({
 }: InvitationPageProps) {
   const { slug } = await params;
   const { guest } = await searchParams;
-  const event = await getInvitationEvent(slug);
+  const event = await getCachedInvitation(slug);
 
   if (!event) notFound();
 

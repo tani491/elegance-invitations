@@ -4,7 +4,7 @@ import { serializeTheme, type SerializableThemeInput } from "@/lib/theme-store";
 import type { Event } from "@prisma/client";
 import type { DressCodeColor, OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
 
-type PublicEventRecord = Event & { theme?: SerializableThemeInput };
+type PublicEventRecord = Event & { theme?: SerializableThemeInput | null };
 
 const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "wax_seal_burst",

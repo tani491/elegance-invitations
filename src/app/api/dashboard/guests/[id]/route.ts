@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireApiRole } from "@/lib/server-auth";
+import { normalizePhoneNumber, sanitizeText } from "@/lib/validations/rsvp";
 import { AUTH_ROLES } from "@/types/database.types";
 
 const updateGuestSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
+  firstName: z.string().min(1).max(80).transform(sanitizeText).optional(),
+  lastName: z.string().min(1).max(80).transform(sanitizeText).optional(),
   phone: z.string().nullable().optional(),
   email: z.string().email().nullable().optional(),
-  table: z.string().nullable().optional(),
+  table: z.string().max(80).nullable().optional(),
   maxGuests: z.number().int().min(1).max(10).optional(),
   rsvpStatus: z.enum(["pending", "confirmed", "declined"]).optional(),
   isVip: z.boolean().optional(),
 });
+
+function isUniqueConstraintError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -37,16 +43,35 @@ export async function PATCH(
   }
 
   const data: Record<string, unknown> = { ...parsed.data };
+  if ("phone" in parsed.data) {
+    data.phone = normalizePhoneNumber(parsed.data.phone);
+  }
+  if ("table" in parsed.data) {
+    data.table = parsed.data.table ? sanitizeText(parsed.data.table) : null;
+  }
+
   const firstName = parsed.data.firstName ?? existing.firstName ?? "";
   const lastName = parsed.data.lastName ?? existing.lastName ?? "";
   if (parsed.data.firstName || parsed.data.lastName) {
     data.fullName = `${firstName} ${lastName}`.trim() || existing.fullName;
   }
 
-  const guest = await db.eventGuest.update({
-    where: { id },
-    data,
-  });
+  try {
+    const guest = await db.eventGuest.update({
+      where: { id },
+      data,
+    });
 
-  return NextResponse.json({ success: true, data: guest });
+    return NextResponse.json({ success: true, data: guest });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { success: false, error: "Un invite existe deja avec ce numero pour cet evenement." },
+        { status: 409 },
+      );
+    }
+
+    console.error("Guest update failed:", error);
+    return NextResponse.json({ success: false, error: "Mise a jour de l'invite impossible." }, { status: 500 });
+  }
 }

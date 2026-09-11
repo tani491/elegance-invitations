@@ -42,6 +42,8 @@ interface Template {
   slug?: string;
   name: string;
   category: string;
+  style?: string | null;
+  tags?: string[] | string | null;
   gradient: string;
   accent: string;
   animationHint: string;
@@ -51,7 +53,15 @@ interface Template {
   titleFont?: string;
   openingVideoUrl?: string | null;
   demoVideoUrl?: string | null;
+  isActive?: boolean;
+  isVisible?: boolean;
+  isPublished?: boolean;
 }
+
+type TemplateFilter = {
+  label: string;
+  slug: string;
+};
 
 type LandingTestimonial = {
   id?: string;
@@ -225,6 +235,152 @@ function templateMediaSource(template?: Template | null) {
   return template?.openingVideoUrl ?? template?.demoVideoUrl ?? null;
 }
 
+const normalize = (str: string) =>
+  str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+const FILTER_STOP_WORDS = new Set(["and", "avec", "des", "de", "du", "et", "la", "le", "les", "the"]);
+
+const ALL_FILTER_VALUES = new Set(["all", "tous", "tout", "todos", "الكل"]);
+
+const STYLE_FILTER_ALIASES: Record<string, string[]> = {
+  orientale: [
+    "porte orientale",
+    "orientale",
+    "oriental",
+    "medina",
+    "porte doree",
+    "portes royales dorees",
+    "portes",
+    "doors",
+    "golden palace doors",
+    "palais",
+    "palace",
+    "imperial",
+  ],
+  cire: [
+    "cachet de cire",
+    "cire",
+    "enveloppe de cire",
+    "sceau",
+    "wax",
+    "wax seal",
+    "seal",
+    "wax seal burst",
+  ],
+  ruban: [
+    "ruban de soie",
+    "ruban",
+    "soie",
+    "silk",
+    "ribbon",
+    "silk ribbon untie",
+    "rideau",
+    "rideaux",
+    "curtain",
+    "curtains",
+    "velvet curtains",
+    "theatre",
+  ],
+  boheme: [
+    "boheme",
+    "bohemian",
+    "roseraie",
+    "rose",
+    "botanical",
+    "botanique",
+    "fleur",
+    "ficelle",
+    "floral",
+  ],
+  minimaliste: [
+    "minimaliste",
+    "minimalist",
+    "minimal",
+    "epure",
+    "pure",
+    "ivoire",
+    "classique",
+    "intemporel",
+  ],
+};
+
+function toSearchableValue(value?: string | null) {
+  return normalize(value ?? "").replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+}
+
+function compactSearchValue(value: string) {
+  return toSearchableValue(value).replace(/[^a-z0-9]+/g, "");
+}
+
+function uniqueSearchTerms(values: Array<string | string[] | null | undefined>) {
+  const terms = values.flatMap((value) => {
+    const rawValues = Array.isArray(value) ? value : [value];
+    return rawValues.flatMap((rawValue) => {
+      const searchable = toSearchableValue(rawValue);
+      const words = searchable
+        .split(/[^a-z0-9]+/)
+        .filter((word) => word.length > 2 && !FILTER_STOP_WORDS.has(word));
+
+      return [searchable, ...words];
+    });
+  });
+
+  return Array.from(new Set(terms.filter(Boolean)));
+}
+
+function isAllFilter(filter: TemplateFilter) {
+  const slug = normalize(filter.slug);
+  const label = normalize(filter.label);
+
+  return ALL_FILTER_VALUES.has(slug) || ALL_FILTER_VALUES.has(label);
+}
+
+function filterKeywords(filter: TemplateFilter) {
+  const slug = normalize(filter.slug);
+  const label = normalize(filter.label);
+  const aliases = STYLE_FILTER_ALIASES[slug] ?? STYLE_FILTER_ALIASES[label] ?? [];
+
+  return uniqueSearchTerms([filter.slug, filter.label, aliases]);
+}
+
+function templateSearchValues(template: Template) {
+  return uniqueSearchTerms([
+    template.category,
+    template.name,
+    template.slug,
+    template.style,
+    template.tags,
+    template.animationHint,
+    template.titleFont,
+  ]);
+}
+
+function matchesKeyword(value: string, keyword: string) {
+  const compactValue = compactSearchValue(value);
+  const compactKeyword = compactSearchValue(keyword);
+
+  return (
+    value === keyword ||
+    value.includes(keyword) ||
+    keyword.includes(value) ||
+    compactValue.includes(compactKeyword) ||
+    compactKeyword.includes(compactValue)
+  );
+}
+
+function templateMatchesFilter(template: Template, filter: TemplateFilter) {
+  if (isAllFilter(filter)) return true;
+
+  const keywords = filterKeywords(filter);
+  const values = templateSearchValues(template);
+
+  return keywords.some((keyword) => values.some((value) => matchesKeyword(value, keyword)));
+}
+
+function isTemplateVisible(template: Template) {
+  return template.isPublished !== false && template.isVisible !== false && template.isActive !== false;
+}
+
 function isVideoMedia(src?: string | null) {
   return Boolean(src && /\.(mp4|mov|webm)(\?|$)/i.test(src));
 }
@@ -324,10 +480,19 @@ export default function HomePage() {
         const response = await fetch("/api/themes", { cache: "no-store" });
         const json = await response.json();
         if (!json.success || !Array.isArray(json.data)) return;
-        const nextTemplates: Template[] = (json.data as ThemeConfig[]).map((theme) => ({
+        const nextTemplates: Template[] = (json.data as ThemeConfig[]).map((theme) => {
+          const themeRecord = theme as ThemeConfig & {
+            isPublished?: boolean;
+            style?: string | null;
+            tags?: string[] | string | null;
+          };
+
+          return ({
             slug: theme.slug,
             name: theme.name,
             category: theme.category,
+            style: themeRecord.style ?? null,
+            tags: themeRecord.tags ?? null,
             gradient: theme.previewGradient,
             accent: theme.accentColor,
             animationHint: theme.animationType,
@@ -337,7 +502,11 @@ export default function HomePage() {
             titleFont: theme.titleFont,
             openingVideoUrl: theme.openingVideoUrl,
             demoVideoUrl: theme.demoVideoUrl,
-          }));
+            isActive: theme.isActive,
+            isVisible: theme.isVisible,
+            isPublished: themeRecord.isPublished,
+          });
+        });
         setTemplates(nextTemplates);
         setPreviewTemplate((current) => (
           current?.slug ? nextTemplates.find((theme: Template) => theme.slug === current.slug) ?? current : current
@@ -386,15 +555,24 @@ export default function HomePage() {
     void loadTestimonials();
   }, []);
 
-  const filteredTemplates =
-    activeFilter === "all"
-      ? templates
-      : templates.filter((tpl) => tpl.category === activeFilter);
+  const visibleTemplates = templates.filter(isTemplateVisible);
+  const filterOptions = t.templates.filters.filter((filter) =>
+    isAllFilter(filter) || visibleTemplates.some((template) => templateMatchesFilter(template, filter)),
+  );
+  const safeFilterOptions =
+    filterOptions.length > 0 ? filterOptions : [{ label: t.templates.filters[0]?.label ?? "Tous", slug: "all" }];
+  const selectedFilter =
+    safeFilterOptions.find((filter) => filter.slug === activeFilter) ??
+    safeFilterOptions.find(isAllFilter) ??
+    safeFilterOptions[0];
+  const filteredTemplates = selectedFilter && !isAllFilter(selectedFilter)
+    ? visibleTemplates.filter((template) => templateMatchesFilter(template, selectedFilter))
+    : visibleTemplates;
 
-  const featuredTemplate = templates.find((tpl) => templateMediaSource(tpl)) ?? templates[0] ?? null;
+  const featuredTemplate = visibleTemplates.find((tpl) => templateMediaSource(tpl)) ?? visibleTemplates[0] ?? null;
   const secondaryTemplate =
-    templates.find((tpl) => tpl.slug !== featuredTemplate?.slug && templateMediaSource(tpl)) ??
-    templates.find((tpl) => tpl.name !== featuredTemplate?.name) ??
+    visibleTemplates.find((tpl) => tpl.slug !== featuredTemplate?.slug && templateMediaSource(tpl)) ??
+    visibleTemplates.find((tpl) => tpl.name !== featuredTemplate?.name) ??
     featuredTemplate;
   const heroPhone1Src = homepageSettings.heroPhone1 || templateMediaSource(featuredTemplate) || DEFAULT_HERO_PHONE_MEDIA[0];
   const heroPhone2Src = homepageSettings.heroPhone2 || templateMediaSource(secondaryTemplate) || DEFAULT_HERO_PHONE_MEDIA[1];
@@ -605,79 +783,95 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
             className="mb-10 flex flex-wrap items-center justify-center gap-2 sm:mb-14 sm:gap-3"
           >
-            {t.templates.filters.map((filter) => (
-              <button
-                key={filter.slug}
-                type="button"
-                onClick={() => setActiveFilter(filter.slug)}
-                className="rounded-full px-4 py-2 text-xs font-semibold tracking-elegant uppercase transition-all duration-300 sm:text-sm"
-                style={{
-                  background: activeFilter === filter.slug ? GOLD_GRADIENT : "transparent",
-                  color: activeFilter === filter.slug ? EBONY : SILK,
-                  border: `1px solid ${activeFilter === filter.slug ? GOLD : `${GOLD}40`}`,
-                }}
-              >
-                {filter.label}
-              </button>
-            ))}
+            {safeFilterOptions.map((filter) => {
+              const isActive = selectedFilter?.slug === filter.slug;
+
+              return (
+                <button
+                  key={filter.slug}
+                  type="button"
+                  onClick={() => setActiveFilter(filter.slug)}
+                  className={`rounded-full px-4 py-2 text-xs uppercase tracking-elegant transition-all duration-300 sm:text-sm ${
+                    isActive
+                      ? "border border-transparent bg-[#C5A059] text-black font-semibold shadow-md"
+                      : "border border-white/10 bg-white/5 text-white/80 hover:border-[#C5A059]/40"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
           </motion.div>
 
           {/* Template grid + Phone mockup */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6">
             <AnimatePresence mode="popLayout">
-              {filteredTemplates.map((tpl, i) => (
-                <motion.div
-                  key={tpl.name}
-                  layout
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.92 }}
-                  transition={{ duration: 0.4, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <Card className={`${DEEP_SURFACE} group cursor-pointer gap-0 overflow-hidden rounded-lg py-0 shadow-[0_22px_70px_rgba(0,0,0,.28)] transition-transform duration-300 hover:-translate-y-1`}>
-                    <div
-                      className="relative h-40 w-full overflow-hidden sm:h-48"
-                      style={{ background: tpl.gradient }}
-                    >
-                      {/* Inner decoration */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="h-px w-16 opacity-30" style={{ backgroundColor: tpl.accent }} />
-                        <span className="mt-3 font-script text-lg opacity-40 sm:text-xl" style={{ color: IVORY }}>
-                          A & B
-                        </span>
-                        <div className="mt-3 h-px w-16 opacity-30" style={{ backgroundColor: tpl.accent }} />
-                      </div>
-                      {/* Hover overlay with preview button */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/30">
-                        <div className="flex scale-75 items-center gap-2 opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
-                          <div className="flex size-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-                            <Play className="size-4 text-white" />
+              {filteredTemplates.length > 0 ? (
+                filteredTemplates.map((tpl, i) => (
+                  <motion.div
+                    key={tpl.slug ?? tpl.name}
+                    layout
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.92 }}
+                    transition={{ duration: 0.4, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <Card className={`${DEEP_SURFACE} group cursor-pointer gap-0 overflow-hidden rounded-lg py-0 shadow-[0_22px_70px_rgba(0,0,0,.28)] transition-transform duration-300 hover:-translate-y-1`}>
+                      <div
+                        className="relative h-40 w-full overflow-hidden sm:h-48"
+                        style={{ background: tpl.gradient }}
+                      >
+                        {/* Inner decoration */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div className="h-px w-16 opacity-30" style={{ backgroundColor: tpl.accent }} />
+                          <span className="mt-3 font-script text-lg opacity-40 sm:text-xl" style={{ color: IVORY }}>
+                            A & B
+                          </span>
+                          <div className="mt-3 h-px w-16 opacity-30" style={{ backgroundColor: tpl.accent }} />
+                        </div>
+                        {/* Hover overlay with preview button */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/30">
+                          <div className="flex scale-75 items-center gap-2 opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
+                            <div className="flex size-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                              <Play className="size-4 text-white" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <CardContent className="flex flex-col items-center p-4 sm:p-5">
-                      <h3 className="font-display text-base tracking-luxury text-[#FAF7F2] sm:text-lg">
-                        {tpl.name}
-                      </h3>
-                      <button
-                        type="button"
-                        className="mt-3 flex items-center gap-1.5 text-xs font-semibold tracking-elegant uppercase transition-colors duration-200"
-                        style={{ color: GOLD }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewTemplate(tpl);
-                        }}
-                      >
-                        <Smartphone className="size-3.5" />
-                        {t.templates.seeDemo}
-                        <ChevronRight className="size-3" />
-                      </button>
-                    </CardContent>
-                  </Card>
+                      <CardContent className="flex flex-col items-center p-4 sm:p-5">
+                        <h3 className="font-display text-base tracking-luxury text-[#FAF7F2] sm:text-lg">
+                          {tpl.name}
+                        </h3>
+                        <button
+                          type="button"
+                          className="mt-3 flex items-center gap-1.5 text-xs font-semibold tracking-elegant uppercase transition-colors duration-200"
+                          style={{ color: GOLD }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewTemplate(tpl);
+                          }}
+                        >
+                          <Smartphone className="size-3.5" />
+                          {t.templates.seeDemo}
+                          <ChevronRight className="size-3" />
+                        </button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))
+              ) : (
+                <motion.div
+                  key="empty-template-collection"
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`${DEEP_SURFACE} col-span-full rounded-lg px-6 py-10 text-center text-sm leading-relaxed text-[#D8D2C7] sm:text-base`}
+                >
+                  Nouvelle création en cours dans cette collection...
                 </motion.div>
-              ))}
+              )}
             </AnimatePresence>
           </div>
         </div>

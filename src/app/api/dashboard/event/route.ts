@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { revalidateInvitation } from "@/lib/cached-invitation";
 import { getThemeOrDefault, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { serializePublicEvent } from "@/lib/public-event";
 import { canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
@@ -118,7 +119,7 @@ export async function PATCH(request: NextRequest) {
 
   let currentEvent;
   try {
-    currentEvent = await db.event.findUnique({ where: { id: eventId }, select: { planType: true } });
+    currentEvent = await db.event.findUnique({ where: { id: eventId }, select: { planType: true, slug: true } });
   } catch (error) {
     console.error("Dashboard event lookup failed:", error);
     return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 500 });
@@ -193,6 +194,8 @@ export async function PATCH(request: NextRequest) {
       }
     }
   }
+
+  revalidateInvitation(updated.slug ?? currentEvent.slug);
 
   return NextResponse.json({
     success: true,
