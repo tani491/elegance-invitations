@@ -2,12 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, ExternalLink, FileText, LogOut, MessageCircle, Plus, Save, ScanLine, Send, Users } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  FileText,
+  LogOut,
+  MessageCircle,
+  Music2,
+  Plus,
+  Save,
+  ScanLine,
+  Send,
+  Trash2,
+  UploadCloud,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CameraScanner } from "@/components/dashboard/CameraScanner";
@@ -31,6 +46,26 @@ interface Guest {
   qrToken: string;
 }
 
+const MUSIC_PRESETS = [
+  { label: "Piano Romantique", url: "/music/presets/piano-romantique.wav" },
+  { label: "Harpe Royale", url: "/music/presets/harpe-royale.wav" },
+  { label: "Violon & Violoncelle", url: "/music/presets/violon-violoncelle.wav" },
+  { label: "Kora Traditionnelle Royale", url: "/music/presets/kora-royale.wav" },
+  { label: "Acoustique Douce", url: "/music/presets/acoustique-douce.wav" },
+] as const;
+
+const NO_MUSIC_VALUE = "__none__";
+const CUSTOM_MUSIC_VALUE = "__custom__";
+
+function normalizePhotoList(photos: Array<string | null | undefined>, limit: number) {
+  return Array.from(new Set(photos.filter(Boolean) as string[])).slice(0, limit);
+}
+
+function musicSelectValue(musicUrl: string | null | undefined) {
+  if (!musicUrl) return NO_MUSIC_VALUE;
+  return MUSIC_PRESETS.some((preset) => preset.url === musicUrl) ? musicUrl : CUSTOM_MUSIC_VALUE;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [event, setEvent] = useState<PublicEventPayload | null>(null);
@@ -39,6 +74,8 @@ export default function DashboardPage() {
   const [origin, setOrigin] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingMusic, setUploadingMusic] = useState(false);
+  const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState<number | null>(null);
   const [newGuest, setNewGuest] = useState({
     firstName: "",
     lastName: "",
@@ -158,37 +195,132 @@ export default function DashboardPage() {
     toast.success(json.message ?? "Check-in valide.");
   }
 
-  async function uploadCoverImage(file: File) {
+  async function uploadMediaFile(file: File, kind: "image" | "audio") {
+    const formData = new FormData();
+    formData.append("kind", kind);
+    formData.append("file", file);
+
+    const upload = await fetch("/api/uploads", { method: "POST", body: formData });
+    const uploadJson = await upload.json();
+
+    if (!upload.ok || !uploadJson.success) {
+      throw new Error(uploadJson.error ?? "Upload impossible.");
+    }
+
+    return uploadJson.data.url as string;
+  }
+
+  async function persistPhotoList(displayPhotos: string[]) {
+    if (!event) return;
+    const nextPhotos = normalizePhotoList(displayPhotos, photoLimitForPlan(event.planType));
+    await updateEvent({
+      coverPhotoUrl: nextPhotos[0] ?? null,
+      officialPhotoUrls: nextPhotos.slice(1),
+    });
+  }
+
+  async function addOfficialPhoto(file: File) {
     if (!event) return;
     setUploadingCover(true);
     const previewUrl = URL.createObjectURL(file);
-    const currentPhotos = event.officialPhotoUrls ?? [];
+    const photoLimit = photoLimitForPlan(event.planType);
+    const currentPhotos = normalizePhotoList(event.officialPhotoUrls ?? [], photoLimit);
+    const previewPhotos = normalizePhotoList([...currentPhotos, previewUrl], photoLimit);
     setEvent({
       ...event,
-      coverPhotoUrl: previewUrl,
-      officialPhotoUrls: [previewUrl, ...currentPhotos].slice(0, photoLimitForPlan(event.planType)),
+      coverPhotoUrl: previewPhotos[0] ?? previewUrl,
+      officialPhotoUrls: previewPhotos,
     });
 
     try {
-      const formData = new FormData();
-      formData.append("kind", "image");
-      formData.append("file", file);
-      const upload = await fetch("/api/uploads", { method: "POST", body: formData });
-      const uploadJson = await upload.json();
-      if (!upload.ok || !uploadJson.success) {
-        toast.error(uploadJson.error ?? "Upload image impossible.");
-        setEvent(event);
-        return;
-      }
-      const nextPhotos = [
-        uploadJson.data.url,
-        ...currentPhotos.filter((url) => url !== uploadJson.data.url),
-      ].slice(0, photoLimitForPlan(event.planType));
-      await updateEvent({ coverPhotoUrl: uploadJson.data.url, officialPhotoUrls: nextPhotos });
-      toast.success("Photo de couverture mise a jour.");
+      const uploadedUrl = await uploadMediaFile(file, "image");
+      const nextPhotos = normalizePhotoList([...currentPhotos, uploadedUrl], photoLimit);
+      await persistPhotoList(nextPhotos);
+      toast.success("Photo officielle ajoutee.");
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error(error instanceof Error ? error.message : "Upload image impossible.");
+      setEvent(event);
     } finally {
       URL.revokeObjectURL(previewUrl);
       setUploadingCover(false);
+    }
+  }
+
+  async function replaceOfficialPhoto(index: number, file: File) {
+    if (!event) return;
+    const photoLimit = photoLimitForPlan(event.planType);
+    const currentPhotos = normalizePhotoList(event.officialPhotoUrls ?? [], photoLimit);
+    const previewUrl = URL.createObjectURL(file);
+    const previewPhotos = [...currentPhotos];
+    previewPhotos[index] = previewUrl;
+
+    setUploadingPhotoIndex(index);
+    setEvent({
+      ...event,
+      coverPhotoUrl: previewPhotos[0] ?? null,
+      officialPhotoUrls: previewPhotos,
+    });
+
+    try {
+      const uploadedUrl = await uploadMediaFile(file, "image");
+      const nextPhotos = [...currentPhotos];
+      nextPhotos[index] = uploadedUrl;
+      await persistPhotoList(nextPhotos);
+      toast.success("Photo remplacee.");
+    } catch (error) {
+      console.error("Image replacement failed:", error);
+      toast.error(error instanceof Error ? error.message : "Remplacement impossible.");
+      setEvent(event);
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      setUploadingPhotoIndex(null);
+    }
+  }
+
+  async function deleteOfficialPhoto(index: number) {
+    if (!event) return;
+    const photoLimit = photoLimitForPlan(event.planType);
+    const currentPhotos = normalizePhotoList(event.officialPhotoUrls ?? [], photoLimit);
+    const photo = currentPhotos[index];
+    if (!photo || !window.confirm("Supprimer cette photo officielle ?")) return;
+
+    const nextPhotos = currentPhotos.filter((_, photoIndex) => photoIndex !== index);
+    setEvent({
+      ...event,
+      coverPhotoUrl: nextPhotos[0] ?? null,
+      officialPhotoUrls: nextPhotos,
+    });
+
+    try {
+      await persistPhotoList(nextPhotos);
+      toast.success("Photo supprimee.");
+    } catch (error) {
+      console.error("Image delete failed:", error);
+      toast.error("Suppression impossible.");
+      setEvent(event);
+    }
+  }
+
+  async function uploadMusicFile(file: File) {
+    if (!event) return;
+
+    if (!file.type.startsWith("audio/") && !/\.(mp3|m4a|aac|wav)$/i.test(file.name)) {
+      toast.error("Format audio non autorise.");
+      return;
+    }
+
+    setUploadingMusic(true);
+    try {
+      const uploadedUrl = await uploadMediaFile(file, "audio");
+      setEvent({ ...event, musicUrl: uploadedUrl });
+      await updateEvent({ musicUrl: uploadedUrl });
+      toast.success("Musique d'ambiance mise a jour.");
+    } catch (error) {
+      console.error("Audio upload failed:", error);
+      toast.error(error instanceof Error ? error.message : "Upload audio impossible.");
+    } finally {
+      setUploadingMusic(false);
     }
   }
 
@@ -212,8 +344,9 @@ export default function DashboardPage() {
   }
 
   const photoLimit = photoLimitForPlan(event.planType);
-  const officialPhotos = event.officialPhotoUrls ?? [];
+  const officialPhotos = normalizePhotoList(event.officialPhotoUrls ?? [], photoLimit);
   const publicInvitationUrl = `${origin}/invitation/${event.slug}`;
+  const selectedMusicValue = musicSelectValue(event.musicUrl);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#FAF7F2] px-4 py-8 sm:px-6 lg:px-8">
@@ -294,15 +427,40 @@ export default function DashboardPage() {
                     <Label>Photos officielles ({officialPhotos.length}/{photoLimit})</Label>
                     <ImageUploader
                       disabled={uploadingCover || officialPhotos.length >= photoLimit}
-                      label={uploadingCover ? "Upload en cours..." : officialPhotos.length >= photoLimit ? "Limite de formule atteinte" : "Uploader une image HD"}
+                      label={uploadingCover ? "Upload en cours..." : officialPhotos.length >= photoLimit ? "Limite de formule atteinte" : "Ajouter une image HD"}
                       helper={`Portrait 9:16 recommande. ${PLAN_LABELS[event.planType]} autorise ${photoLimit} photo${photoLimit > 1 ? "s" : ""}.`}
-                      onUpload={(file) => void uploadCoverImage(file)}
+                      onUpload={(file) => void addOfficialPhoto(file)}
                     />
                     {officialPhotos.length > 0 && (
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {officialPhotos.map((photo, index) => (
-                          <div key={photo} className="aspect-[9/16] overflow-hidden rounded-lg border bg-muted">
-                            <img src={photo} alt={`Photo officielle ${index + 1}`} className="size-full object-cover" />
+                          <div key={`${photo}-${index}`} className="group relative aspect-[9/16] overflow-hidden rounded-lg border bg-muted shadow-sm">
+                            <label className="block size-full cursor-pointer">
+                              <img src={photo} alt={`Photo officielle ${index + 1}`} className="size-full object-cover transition group-hover:scale-[1.02]" />
+                              <span className="absolute inset-x-2 bottom-2 rounded-full bg-black/55 px-3 py-1.5 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
+                                {uploadingPhotoIndex === index ? "Upload..." : "Remplacer"}
+                              </span>
+                              <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/avif"
+                                className="hidden"
+                                disabled={uploadingPhotoIndex !== null || uploadingCover}
+                                onChange={(changeEvent) => {
+                                  const file = changeEvent.target.files?.[0];
+                                  if (file) void replaceOfficialPhoto(index, file);
+                                  changeEvent.currentTarget.value = "";
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              aria-label={`Supprimer la photo ${index + 1}`}
+                              onClick={() => void deleteOfficialPhoto(index)}
+                              disabled={uploadingPhotoIndex !== null || uploadingCover}
+                              className="absolute right-2 top-2 rounded-full bg-red-600/80 p-1.5 text-white shadow-md transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -344,9 +502,50 @@ export default function DashboardPage() {
                   <Label>Sous-titre / citation calligraphiee</Label>
                   <Textarea value={event.invitationQuote ?? ""} onChange={(e) => setEvent({ ...event, invitationQuote: e.target.value })} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Audio d'ambiance MP3 (URL)</Label>
-                  <Input value={event.musicUrl ?? ""} onChange={(e) => setEvent({ ...event, musicUrl: e.target.value })} />
+                <div className="space-y-3 md:col-span-2">
+                  <Label>Musique d&apos;ambiance</Label>
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <Select
+                      value={selectedMusicValue}
+                      onValueChange={(value) => {
+                        if (value === CUSTOM_MUSIC_VALUE) return;
+                        setEvent({ ...event, musicUrl: value === NO_MUSIC_VALUE ? null : value });
+                      }}
+                    >
+                      <SelectTrigger className="min-h-12 rounded-xl border-[#D4AF37]/25 bg-white">
+                        <SelectValue placeholder="Choisir une melodie" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_MUSIC_VALUE}>Aucune musique</SelectItem>
+                        {MUSIC_PRESETS.map((preset) => (
+                          <SelectItem key={preset.url} value={preset.url}>
+                            {preset.label}
+                          </SelectItem>
+                        ))}
+                        {selectedMusicValue === CUSTOM_MUSIC_VALUE && (
+                          <SelectItem value={CUSTOM_MUSIC_VALUE}>Musique personnalisee</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#D4AF37]/35 bg-white px-5 text-sm font-medium text-[#2A211A] shadow-sm transition hover:bg-[#FFF8EA] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60">
+                      {uploadingMusic ? <Music2 className="size-4 animate-pulse text-[#B89248]" /> : <UploadCloud className="size-4 text-[#B89248]" />}
+                      <span>{uploadingMusic ? "Upload audio..." : "Uploader MP3"}</span>
+                      <Input
+                        type="file"
+                        accept="audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/x-m4a,audio/wav"
+                        className="hidden"
+                        disabled={uploadingMusic}
+                        onChange={(changeEvent) => {
+                          const file = changeEvent.target.files?.[0];
+                          if (file) void uploadMusicFile(file);
+                          changeEvent.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {event.musicUrl && (
+                    <audio controls preload="metadata" src={event.musicUrl} className="w-full rounded-xl" />
+                  )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Lien d&apos;invitation du Groupe WhatsApp</Label>

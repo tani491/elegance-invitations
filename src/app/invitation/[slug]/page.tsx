@@ -28,9 +28,27 @@ function weddingTitle(event: CachedInvitationEvent | null) {
   return `Mariage de ${bride} & ${groom}`;
 }
 
+function decodeSlug(slug: string) {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
+async function getInvitationSafely(slug: string, context: string) {
+  try {
+    return await getCachedInvitation(slug);
+  } catch (error) {
+    console.error(`Invitation fetch failed in ${context}:`, error);
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: Pick<InvitationPageProps, "params">): Promise<Metadata> {
-  const { slug } = await params;
-  const event = await getCachedInvitation(slug);
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
+  const event = await getInvitationSafely(slug, "metadata");
   const title = weddingTitle(event);
   const description = "Vous êtes cordialement invité(e) à célébrer notre union.";
   const imageUrl = `/invitation/${event?.slug ?? slug}/opengraph-image`;
@@ -65,11 +83,17 @@ export default async function InvitationPage({
   params,
   searchParams,
 }: InvitationPageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
   const { guest } = await searchParams;
-  const event = await getCachedInvitation(slug);
+  const slug = decodeSlug(rawSlug);
+  const event = await getInvitationSafely(slug, "page");
 
   if (!event) notFound();
 
-  return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} />;
+  try {
+    return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} />;
+  } catch (error) {
+    console.error("Invitation serialization failed:", error);
+    notFound();
+  }
 }
