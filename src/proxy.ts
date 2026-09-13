@@ -70,6 +70,12 @@ function roleAllowed(role: string | undefined, expected: AuthRole) {
   return role === expected;
 }
 
+function readAuthToken(request: NextRequest) {
+  const authorization = request.headers.get("authorization");
+  const bearerToken = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : null;
+  return request.cookies.get(AUTH_COOKIE_NAME)?.value ?? bearerToken ?? request.headers.get("x-elegance-session");
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const limitedResponse = rateLimitResponse(request);
@@ -79,7 +85,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const token = readAuthToken(request);
   const session = await verifySessionToken(token);
 
   if (startsWithAny(pathname, ADMIN_API_ROUTES)) {

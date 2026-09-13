@@ -19,8 +19,13 @@ export async function POST(request: NextRequest) {
     // Build the update payload with only provided optional fields
     const updateData: Record<string, unknown> = { rsvpStatus: status }
 
-    const existingGuest = await db.eventGuest.findUnique({
-      where: { qrToken: guestToken },
+    const existingGuest = await db.eventGuest.findFirst({
+      where: {
+        OR: [
+          { qrToken: guestToken },
+          { id: guestToken },
+        ],
+      },
       include: { event: { select: { isActive: true } } },
     })
 

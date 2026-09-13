@@ -359,7 +359,7 @@ export default function DashboardPage() {
           <div className="flex gap-2">
             <Button asChild variant="outline"><a href={`/invitation/${event.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 size-4" />Invitation</a></Button>
             <Button variant="outline" onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
+              await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
               router.push("/login");
             }}>
               <LogOut className="mr-2 size-4" />Sortir

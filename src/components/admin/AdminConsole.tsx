@@ -40,6 +40,7 @@ interface ClientAccessPayload {
   email: string;
   password: string;
   whatsAppMessage: string;
+  whatsAppUrl: string | null;
 }
 
 interface CreateClientResponse {
@@ -136,6 +137,20 @@ function themeInitials(name: string) {
   return (letters || "EI").toUpperCase();
 }
 
+function normalizeWhatsAppPhone(phone: string) {
+  let digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("221")) return digits;
+  return `221${digits.replace(/^0+/, "")}`;
+}
+
+function buildWhatsAppUrl(phone: string, message: string) {
+  const normalizedPhone = normalizeWhatsAppPhone(phone);
+  if (!normalizedPhone) return null;
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
 export default function AdminConsole() {
   const router = useRouter();
   const [themes, setThemes] = useState<ThemeConfig[]>([]);
@@ -174,8 +189,8 @@ export default function AdminConsole() {
 
   async function loadAdminData() {
     const [themesResult, eventsResult] = await Promise.allSettled([
-      fetch("/api/admin/themes", { cache: "no-store" }).then((response) => response.json()),
-      fetch("/api/admin/events", { cache: "no-store" }).then((response) => response.json()),
+      fetch("/api/admin/themes", { cache: "no-store", credentials: "include" }).then((response) => response.json()),
+      fetch("/api/admin/events", { cache: "no-store", credentials: "include" }).then((response) => response.json()),
     ]);
 
     if (themesResult.status === "fulfilled" && themesResult.value.success) {
@@ -198,46 +213,84 @@ export default function AdminConsole() {
   }, []);
 
   async function copyText(text: string) {
-    await navigator.clipboard.writeText(text);
-    toast.success("Message WhatsApp copie.");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Message WhatsApp copie.");
+      return true;
+    } catch {
+      toast("Message WhatsApp prêt. Copie automatique indisponible sur ce navigateur.");
+      return false;
+    }
   }
 
   async function createClient(event: React.FormEvent) {
     event.preventDefault();
     setCreating(true);
+    const pendingWhatsAppWindow = normalizeWhatsAppPhone(form.whatsapp) ? window.open("about:blank", "_blank") : null;
 
     try {
-      const response = await fetch("/api/admin/clients", {
+      const requestClientCreation = () => fetch("/api/admin/clients", {
         method: "POST",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const json = (await response.json()) as CreateClientResponse;
+
+      let response = await requestClientCreation();
+      let json = (await response.json()) as CreateClientResponse;
+
+      if ((response.status === 401 || response.status === 403) && !json.success) {
+        const sessionResponse = await fetch("/api/auth/session", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const sessionJson = await sessionResponse.json().catch(() => null) as { authenticated?: boolean; user?: { role?: string } } | null;
+
+        if (sessionJson?.authenticated && sessionJson.user?.role === "SUPER_ADMIN") {
+          response = await requestClientCreation();
+          json = (await response.json()) as CreateClientResponse;
+        }
+      }
 
       if (!response.ok || !json.success) {
+        pendingWhatsAppWindow?.close();
         toast.error(json.error ?? "Creation impossible.");
         return;
       }
 
       if (!json.data) {
+        pendingWhatsAppWindow?.close();
         toast.error("Reponse admin incomplete.");
         return;
       }
 
+      const whatsAppUrl = buildWhatsAppUrl(form.whatsapp, json.data.whatsAppMessage);
       const access = {
         loginUrl: json.data.loginUrl,
         invitationUrl: json.data.invitationUrl,
         email: json.data.user.email,
         password: json.data.provisionalPassword,
         whatsAppMessage: json.data.whatsAppMessage,
+        whatsAppUrl,
       };
       setAccessModal(access);
       setLastMessage(access.whatsAppMessage);
       await copyText(access.whatsAppMessage);
+      if (whatsAppUrl) {
+        if (pendingWhatsAppWindow) {
+          pendingWhatsAppWindow.location.href = whatsAppUrl;
+        } else {
+          window.open(whatsAppUrl, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        pendingWhatsAppWindow?.close();
+      }
       toast.success("Compte client cree.");
       setForm({ coupleName: "", email: "", whatsapp: "", password: "", planType: "prestige", template: form.template });
       await loadAdminData();
     } catch {
+      pendingWhatsAppWindow?.close();
       toast.error("Erreur reseau pendant la creation.");
     } finally {
       setCreating(false);
@@ -248,6 +301,8 @@ export default function AdminConsole() {
     setEvents((prev) => prev.map((event) => (event.id === eventId ? { ...event, isActive } : event)));
     await fetch(`/api/admin/events/${eventId}`, {
       method: "PATCH",
+      credentials: "include",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive }),
     });
@@ -258,6 +313,8 @@ export default function AdminConsole() {
     try {
       const response = await fetch("/api/admin/themes", {
         method: "PATCH",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug, ...data }),
       });
@@ -313,6 +370,8 @@ export default function AdminConsole() {
       const filePath = `${Date.now()}_${sanitizeStorageFilename(file.name)}`;
       const signatureResponse = await fetch("/api/admin/themes/upload-url", {
         method: "POST",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filePath }),
       });
@@ -372,6 +431,8 @@ export default function AdminConsole() {
 
       const response = await fetch("/api/admin/themes", {
         method: "POST",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...createThemeForm,
@@ -444,6 +505,8 @@ export default function AdminConsole() {
     try {
       const response = await fetch("/api/admin/themes", {
         method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug: theme.slug }),
       });
@@ -492,7 +555,7 @@ export default function AdminConsole() {
               </Link>
             </Button>
             <Button variant="outline" onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
+              await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
               router.push("/admin/login");
             }}>
               Deconnexion
@@ -1127,6 +1190,14 @@ export default function AdminConsole() {
                 <Copy className="mr-2 size-4" />
                 Copier les acces WhatsApp
               </Button>
+              {accessModal.whatsAppUrl && (
+                <Button type="button" variant="outline" className="w-full border-[#D6C5A8]" asChild>
+                  <a href={accessModal.whatsAppUrl} target="_blank" rel="noreferrer">
+                    <Phone className="mr-2 size-4" />
+                    Ouvrir WhatsApp
+                  </a>
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>

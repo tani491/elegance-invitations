@@ -99,7 +99,9 @@ export function clearAuthCookie(response: NextResponse) {
 }
 
 export async function authenticateRequest(request: NextRequest) {
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const authorization = request.headers.get("authorization");
+  const bearerToken = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : null;
+  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value ?? bearerToken ?? request.headers.get("x-elegance-session");
   const payload = await verifySessionToken(token);
   if (!payload || !token) return null;
 

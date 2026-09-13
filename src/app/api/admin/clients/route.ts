@@ -30,13 +30,14 @@ function splitCoupleName(coupleName: string) {
   };
 }
 
-function planLabel(plan: string) {
-  const labels: Record<string, string> = {
-    essentielle: "Essentielle",
-    prestige: "Prestige",
-    privilege: "Privilege",
-  };
-  return labels[plan] ?? plan;
+function publicBaseUrl(request: NextRequest) {
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+
+  if (!configured) return request.nextUrl.origin;
+  return configured.startsWith("http") ? configured.replace(/\/$/, "") : `https://${configured.replace(/\/$/, "")}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -123,16 +124,14 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const origin = request.nextUrl.origin;
+  const origin = publicBaseUrl(request);
   const loginUrl = `${origin}/login`;
   const invitationUrl = `${origin}/invitation/${event.slug}`;
   const whatsAppMessage = [
-    `Bonjour ${parsed.data.coupleName}, voici vos acces pour personnaliser votre invitation de mariage :`,
+    `Félicitations ${parsed.data.coupleName} ! Vos accès à votre espace Élégance Invitations sont prêts :`,
     `Lien : ${loginUrl}`,
-    `Email : ${email}`,
-    `Mot de passe temporaire : ${password}`,
-    `Formule : ${planLabel(parsed.data.planType)}`,
-    `Invitation : ${invitationUrl}`,
+    `Identifiant : ${email}`,
+    `Mot de passe : ${password}`,
   ].join("\n");
 
   return NextResponse.json({

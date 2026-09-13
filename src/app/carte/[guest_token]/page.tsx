@@ -22,13 +22,28 @@ function formatEventDate(date: Date | null) {
   }).format(date);
 }
 
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export default async function GuestPassPage({ params }: { params: Promise<{ guest_token: string }> }) {
-  const { guest_token } = await params;
+  const { guest_token: rawGuestToken } = await params;
+  const guestToken = safeDecode(rawGuestToken);
   let guest;
 
   try {
-    guest = await db.eventGuest.findUnique({
-      where: { qrToken: guest_token },
+    guest = await db.eventGuest.findFirst({
+      where: {
+        OR: [
+          { qrToken: guestToken },
+          { id: guestToken },
+          { accessCode: guestToken },
+        ],
+      },
       include: {
         event: {
           include: { theme: true },
@@ -38,15 +53,27 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
   } catch (error) {
     console.error("Guest pass theme relation failed, retrying with compatible theme columns:", error);
     try {
-      guest = await db.eventGuest.findUnique({
-        where: { qrToken: guest_token },
+      guest = await db.eventGuest.findFirst({
+        where: {
+          OR: [
+            { qrToken: guestToken },
+            { id: guestToken },
+            { accessCode: guestToken },
+          ],
+        },
         include: { event: { include: { theme: { select: THEME_COMPAT_SELECT } } } },
       });
     } catch (compatError) {
       console.error("Guest pass compatible theme relation failed, retrying without theme:", compatError);
       try {
-        guest = await db.eventGuest.findUnique({
-          where: { qrToken: guest_token },
+        guest = await db.eventGuest.findFirst({
+          where: {
+            OR: [
+              { qrToken: guestToken },
+              { id: guestToken },
+              { accessCode: guestToken },
+            ],
+          },
           include: { event: true },
         });
       } catch (retryError) {
@@ -74,7 +101,7 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
   const program = parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM).slice(0, 3);
   const names = `${event.brideName ?? "Mariée"} & ${event.groomName ?? "Marié"}`;
   const eventDate = formatEventDate(event.eventDate);
-  const invitationHref = `/invitation/${event.slug}?guest=${encodeURIComponent(guest.qrToken)}`;
+  const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.id)}`;
   const passStyle = {
     ...themeToCssVars(theme),
     backgroundImage:
