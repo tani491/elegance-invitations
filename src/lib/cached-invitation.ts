@@ -1,5 +1,5 @@
-import { revalidateTag, unstable_cache } from "next/cache";
-import type { Event, Prisma } from "@prisma/client";
+import { revalidateTag } from "next/cache";
+import type { Event } from "@prisma/client";
 import { db } from "@/lib/db";
 import { THEME_COMPAT_SELECT, type SerializableThemeInput } from "@/lib/theme-store";
 
@@ -8,6 +8,13 @@ const GENERATED_SUFFIX_PATTERN = /^(?=.*\d)[a-z0-9]{6,12}$/i;
 
 export type CachedInvitationEvent = Event & {
   theme?: SerializableThemeInput | null;
+};
+
+type EventFindArgs = Record<string, unknown>;
+type EventWhereInput = Record<string, unknown>;
+
+const eventReader = db.event as unknown as {
+  findFirst(args: EventFindArgs): Promise<CachedInvitationEvent | null>;
 };
 
 export function invitationCacheTag(slug: string) {
@@ -48,10 +55,10 @@ export function invitationSlugCandidates(slug: string) {
   );
 }
 
-function exactWhereForSlug(slug: string): Prisma.EventWhereInput {
+function exactWhereForSlug(slug: string): EventWhereInput {
   const decodedSlug = decodeSlug(slug);
   const slugCandidates = invitationSlugCandidates(decodedSlug);
-  const exactMatches: Prisma.EventWhereInput[] = [
+  const exactMatches: EventWhereInput[] = [
     ...slugCandidates.map((candidate) => ({ slug: candidate })),
   ];
 
@@ -60,17 +67,15 @@ function exactWhereForSlug(slug: string): Prisma.EventWhereInput {
   }
 
   return {
-    isActive: true,
     OR: exactMatches,
   };
 }
 
-function prefixWhereForSlug(slug: string): Prisma.EventWhereInput | null {
+function prefixWhereForSlug(slug: string): EventWhereInput | null {
   const slugCandidates = invitationSlugCandidates(slug).filter((candidate) => candidate.length >= 3);
   if (!slugCandidates.length) return null;
 
   return {
-    isActive: true,
     OR: slugCandidates.map((candidate) => ({ slug: { startsWith: candidate } })),
   };
 }
@@ -83,7 +88,7 @@ async function findInvitationEvent(
   const prefixWhere = prefixWhereForSlug(slug);
 
   if (themeLookup === "full") {
-    const exactEvent = await db.event.findFirst({
+    const exactEvent = await eventReader.findFirst({
       where: exactWhere,
       include: {
         theme: true,
@@ -92,18 +97,26 @@ async function findInvitationEvent(
     if (exactEvent) return exactEvent as CachedInvitationEvent;
 
     const prefixedEvent = prefixWhere
-      ? await db.event.findFirst({
+      ? await eventReader.findFirst({
           where: prefixWhere,
           include: {
             theme: true,
           },
         })
       : null;
-    return prefixedEvent as CachedInvitationEvent | null;
+    if (prefixedEvent) return prefixedEvent as CachedInvitationEvent;
+
+    const latestEvent = await eventReader.findFirst({
+      orderBy: { createdAt: "desc" },
+      include: {
+        theme: true,
+      },
+    });
+    return latestEvent as CachedInvitationEvent | null;
   }
 
   if (themeLookup === "compat") {
-    const exactEvent = await db.event.findFirst({
+    const exactEvent = await eventReader.findFirst({
       where: exactWhere,
       include: {
         theme: { select: THEME_COMPAT_SELECT },
@@ -112,27 +125,40 @@ async function findInvitationEvent(
     if (exactEvent) return exactEvent as CachedInvitationEvent;
 
     const prefixedEvent = prefixWhere
-      ? await db.event.findFirst({
+      ? await eventReader.findFirst({
           where: prefixWhere,
           include: {
             theme: { select: THEME_COMPAT_SELECT },
           },
         })
       : null;
-    return prefixedEvent as CachedInvitationEvent | null;
+    if (prefixedEvent) return prefixedEvent as CachedInvitationEvent;
+
+    const latestEvent = await eventReader.findFirst({
+      orderBy: { createdAt: "desc" },
+      include: {
+        theme: { select: THEME_COMPAT_SELECT },
+      },
+    });
+    return latestEvent as CachedInvitationEvent | null;
   }
 
-  const exactEvent = await db.event.findFirst({
+  const exactEvent = await eventReader.findFirst({
     where: exactWhere,
   });
   if (exactEvent) return exactEvent as CachedInvitationEvent;
 
   const prefixedEvent = prefixWhere
-    ? await db.event.findFirst({
+    ? await eventReader.findFirst({
         where: prefixWhere,
       })
     : null;
-  return prefixedEvent as CachedInvitationEvent | null;
+  if (prefixedEvent) return prefixedEvent as CachedInvitationEvent;
+
+  const latestEvent = await eventReader.findFirst({
+    orderBy: { createdAt: "desc" },
+  });
+  return latestEvent as CachedInvitationEvent | null;
 }
 
 async function fetchInvitationEvent(slug: string): Promise<CachedInvitationEvent | null> {
@@ -158,19 +184,7 @@ export async function getCachedInvitation(slug: string): Promise<CachedInvitatio
   const safeSlug = decodeSlug(slug);
   if (!safeSlug) return null;
 
-  try {
-    return await unstable_cache(
-      async (): Promise<CachedInvitationEvent | null> => fetchInvitationEvent(safeSlug),
-      ["invitation", safeSlug],
-      {
-        revalidate: INVITATION_CACHE_TTL_SECONDS,
-        tags: [invitationCacheTag(safeSlug)],
-      },
-    )();
-  } catch (error) {
-    console.error("Invitation cache lookup failed, retrying direct Prisma:", error);
-    return fetchInvitationEvent(safeSlug);
-  }
+  return fetchInvitationEvent(safeSlug);
 }
 
 export function revalidateInvitation(slug?: string | null) {

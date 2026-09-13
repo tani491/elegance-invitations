@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getCachedInvitation, type CachedInvitationEvent } from "@/lib/cached-invitation";
 import { serializePublicEvent } from "@/lib/public-event";
 import { InvitationExperience } from "@/components/invitation/InvitationExperience";
 
 type InvitationPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ guest?: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 function metadataBaseUrl() {
@@ -45,13 +44,30 @@ async function getInvitationSafely(slug: string, context: string) {
   }
 }
 
+function firstSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function InvitationFallbackScreen({ slug }: { slug: string }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D0B0A] p-6 text-center text-white">
+      <h1 className="mb-4 font-serif text-2xl text-[#D4AF37]">Élégance Invitations</h1>
+      <p className="mb-2 text-stone-400">Impossible de trouver l'événement demandé.</p>
+      <code className="mb-6 rounded bg-black/50 p-2 text-xs text-stone-500">Slug recherché : {slug}</code>
+      <a href="/" className="rounded-full bg-[#D4AF37] px-6 py-2 text-sm font-semibold text-black">
+        Retour à l'accueil
+      </a>
+    </div>
+  );
+}
+
 export async function generateMetadata({ params }: Pick<InvitationPageProps, "params">): Promise<Metadata> {
   const { slug: rawSlug } = await params;
   const slug = decodeSlug(rawSlug);
   const event = await getInvitationSafely(slug, "metadata");
   const title = weddingTitle(event);
   const description = "Vous êtes cordialement invité(e) à célébrer notre union.";
-  const imageUrl = `/invitation/${event?.slug ?? slug}/opengraph-image`;
+  const imageUrl = `/invitation/${encodeURIComponent(event?.slug ?? slug)}/opengraph-image`;
 
   return {
     metadataBase: metadataBaseUrl(),
@@ -84,19 +100,20 @@ export default async function InvitationPage({
   searchParams,
 }: InvitationPageProps) {
   const { slug: rawSlug } = await params;
-  const { guest } = await searchParams;
+  const resolvedSearchParams = await searchParams;
+  const guest = firstSearchParam(resolvedSearchParams.guest);
   const slug = decodeSlug(rawSlug);
   const event = await getInvitationSafely(slug, "page");
 
   if (!event) {
     console.error("Mariage introuvable pour le slug:", slug);
-    notFound();
+    return <InvitationFallbackScreen slug={slug} />;
   }
 
   try {
     return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} />;
   } catch (error) {
     console.error("Invitation serialization failed:", error);
-    notFound();
+    return <InvitationFallbackScreen slug={slug} />;
   }
 }
