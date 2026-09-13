@@ -333,8 +333,15 @@ export default function DashboardPage() {
   function sharePublicInvitation() {
     if (!event) return;
     const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
+    const names = `${event.brideName?.trim() || "La Mariée"} & ${event.groomName?.trim() || "Le Marié"}`;
     const text = encodeURIComponent(
-      `Chers proches, nous sommes heureux de vous inviter a notre mariage ! Decouvrez notre invitation ici : ${invitationUrl}`,
+      `✨ Mariage de ${names} ✨
+
+Chère famille, chers amis,
+Nous avons la joie de vous transmettre notre faire-part officiel.
+Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
+
+👉 ${invitationUrl}`,
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
   }

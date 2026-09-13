@@ -12,19 +12,34 @@ function metadataBaseUrl() {
   const raw =
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://elegance-invitations.sn");
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://elegance-invitations.vercel.app");
 
   try {
     return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
   } catch {
-    return new URL("https://elegance-invitations.sn");
+    return new URL("https://elegance-invitations.vercel.app");
   }
 }
 
 function weddingTitle(event: CachedInvitationEvent | null) {
-  const bride = event?.brideName ?? "la Mariée";
-  const groom = event?.groomName ?? "le Marié";
-  return `Mariage de ${bride} & ${groom}`;
+  const bride = event?.brideName?.trim() || "La Mariée";
+  const groom = event?.groomName?.trim() || "Le Marié";
+  return `${bride} & ${groom} — Invitation Officielle`;
+}
+
+function weddingDescription(event: CachedInvitationEvent | null) {
+  const date = event?.eventDate
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        timeZone: "Africa/Dakar",
+      }).format(event.eventDate)
+    : "";
+
+  return date
+    ? `Nous vous invitons à célébrer notre mariage le ${date}. Touchez pour ouvrir votre enveloppe d'invitation.`
+    : "Nous avons l'honneur de vous convier à célébrer notre union. Touchez pour ouvrir votre enveloppe d'invitation.";
 }
 
 function decodeSlug(slug: string) {
@@ -65,24 +80,32 @@ export async function generateMetadata({ params }: Pick<InvitationPageProps, "pa
   const { slug: rawSlug } = await params;
   const slug = decodeSlug(rawSlug);
   const event = await getInvitationSafely(slug, "metadata");
+  const baseUrl = metadataBaseUrl();
+  const canonicalSlug = encodeURIComponent(event?.slug ?? slug);
+  const invitationUrl = new URL(`/invitation/${canonicalSlug}`, baseUrl).toString();
+  const shareImageUrl = new URL(`/invitation/${canonicalSlug}/opengraph-image`, baseUrl).toString();
   const title = weddingTitle(event);
-  const description = "Vous êtes cordialement invité(e) à célébrer notre union.";
-  const imageUrl = `/invitation/${encodeURIComponent(event?.slug ?? slug)}/opengraph-image`;
+  const description = weddingDescription(event);
 
   return {
-    metadataBase: metadataBaseUrl(),
+    metadataBase: baseUrl,
     title,
     description,
+    alternates: {
+      canonical: invitationUrl,
+    },
     openGraph: {
       title,
       description,
+      url: invitationUrl,
+      siteName: "Élégance Invitations",
       type: "website",
       images: [
         {
-          url: imageUrl,
+          url: shareImageUrl,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: `Enveloppe d'invitation de mariage - ${title}`,
         },
       ],
     },
@@ -90,7 +113,7 @@ export async function generateMetadata({ params }: Pick<InvitationPageProps, "pa
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
+      images: [shareImageUrl],
     },
   };
 }

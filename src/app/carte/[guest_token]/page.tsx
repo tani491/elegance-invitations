@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, Clock, Crown, MapPin, Sparkles, UsersRound } from "lucide-react";
@@ -30,9 +31,41 @@ function safeDecode(value: string) {
   }
 }
 
-export default async function GuestPassPage({ params }: { params: Promise<{ guest_token: string }> }) {
-  const { guest_token: rawGuestToken } = await params;
-  const guestToken = safeDecode(rawGuestToken);
+function metadataBaseUrl() {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://elegance-invitations.vercel.app");
+
+  try {
+    return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+  } catch {
+    return new URL("https://elegance-invitations.vercel.app");
+  }
+}
+
+function weddingTitle(event: { brideName?: string | null; groomName?: string | null } | null | undefined) {
+  const bride = event?.brideName?.trim() || "La Mariée";
+  const groom = event?.groomName?.trim() || "Le Marié";
+  return `${bride} & ${groom} — Pass Invité`;
+}
+
+function weddingDescription(event: { eventDate?: Date | null } | null | undefined) {
+  const date = event?.eventDate
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        timeZone: "Africa/Dakar",
+      }).format(event.eventDate)
+    : "";
+
+  return date
+    ? `Votre pass privé pour célébrer notre mariage le ${date}. Touchez pour ouvrir votre enveloppe d'invitation.`
+    : "Votre pass privé pour accéder à notre invitation de mariage.";
+}
+
+async function getGuestPass(guestToken: string) {
   let guest;
 
   try {
@@ -82,6 +115,65 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
       }
     }
   }
+
+  return guest;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ guest_token: string }> }): Promise<Metadata> {
+  const { guest_token: rawGuestToken } = await params;
+  const guestToken = safeDecode(rawGuestToken);
+  const guest = await getGuestPass(guestToken);
+
+  if (!guest?.event) {
+    return {
+      title: "Élégance Invitations",
+      description: "Votre invitation privée vous attend.",
+    };
+  }
+
+  const baseUrl = metadataBaseUrl();
+  const eventSlug = encodeURIComponent(guest.event.slug);
+  const passToken = encodeURIComponent(guest.qrToken ?? guest.id);
+  const passUrl = new URL(`/carte/${passToken}`, baseUrl).toString();
+  const shareImageUrl = new URL(`/invitation/${eventSlug}/opengraph-image`, baseUrl).toString();
+  const title = weddingTitle(guest.event);
+  const description = weddingDescription(guest.event);
+
+  return {
+    metadataBase: baseUrl,
+    title,
+    description,
+    alternates: {
+      canonical: passUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: passUrl,
+      siteName: "Élégance Invitations",
+      type: "website",
+      images: [
+        {
+          url: shareImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `Enveloppe d'invitation de mariage - ${title}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [shareImageUrl],
+    },
+  };
+}
+
+export default async function GuestPassPage({ params }: { params: Promise<{ guest_token: string }> }) {
+  const { guest_token: rawGuestToken } = await params;
+  const guestToken = safeDecode(rawGuestToken);
+  const guest = await getGuestPass(guestToken);
 
   if (!guest || !guest.event.isActive) notFound();
 
