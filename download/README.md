@@ -652,7 +652,7 @@ Les particules d’or du hero et la grille QR sont générées de manière déte
 
 Le design system inclut un thème sombre complet (ébène profond + or lumineux) géré par la classe `.dark` sur `<html>`. Les tokens CSS basculent automatiquement via les mêmes variables.
 
-### Output standalone
+### Output standalonec
 
 Le build utilise `output: 'standalone'` pour générer un bundle auto-suffisant, déployable sans `node_modules`. Le script de build copie également les assets statiques et le dossier `public/` dans le répertoire standalone.
 

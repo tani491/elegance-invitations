@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
   const origin = publicBaseUrl(request);
   const loginUrl = `${origin}/login`;
-  const invitationUrl = `${origin}/invitation/${event.slug}`;
+  const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
   const whatsAppMessage = [
     `Félicitations ${parsed.data.coupleName} ! Vos accès à votre espace Élégance Invitations sont prêts :`,
     `Lien : ${loginUrl}`,

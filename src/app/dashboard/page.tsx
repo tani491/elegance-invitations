@@ -325,14 +325,14 @@ export default function DashboardPage() {
   }
 
   async function copyPublicInvitationLink() {
-    const invitationUrl = `${origin}/invitation/${event?.slug ?? ""}`;
+    const invitationUrl = `${origin}/invitation/${event?.slug ? encodeURIComponent(event.slug) : ""}`;
     await navigator.clipboard.writeText(invitationUrl);
     toast.success("Lien d'invitation copie.");
   }
 
   function sharePublicInvitation() {
     if (!event) return;
-    const invitationUrl = `${origin}/invitation/${event.slug}`;
+    const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
     const text = encodeURIComponent(
       `Chers proches, nous sommes heureux de vous inviter a notre mariage ! Decouvrez notre invitation ici : ${invitationUrl}`,
     );
@@ -345,7 +345,7 @@ export default function DashboardPage() {
 
   const photoLimit = photoLimitForPlan(event.planType);
   const officialPhotos = normalizePhotoList(event.officialPhotoUrls ?? [], photoLimit);
-  const publicInvitationUrl = `${origin}/invitation/${event.slug}`;
+  const publicInvitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
   const selectedMusicValue = musicSelectValue(event.musicUrl);
 
   return (
@@ -357,7 +357,7 @@ export default function DashboardPage() {
             <h1 className="font-display-bold text-3xl tracking-luxury">Espace Maries</h1>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline"><a href={`/invitation/${event.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 size-4" />Invitation</a></Button>
+            <Button asChild variant="outline"><a href={`/invitation/${encodeURIComponent(event.slug)}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 size-4" />Invitation</a></Button>
             <Button variant="outline" onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
               router.push("/login");

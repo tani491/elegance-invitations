@@ -88,7 +88,10 @@ export default async function InvitationPage({
   const slug = decodeSlug(rawSlug);
   const event = await getInvitationSafely(slug, "page");
 
-  if (!event) notFound();
+  if (!event) {
+    console.error("Mariage introuvable pour le slug:", slug);
+    notFound();
+  }
 
   try {
     return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} />;
