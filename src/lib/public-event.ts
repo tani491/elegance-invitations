@@ -50,6 +50,7 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     coverPhotoUrl: event.coverPhotoUrl,
     officialPhotoUrls: photos,
     musicUrl: event.musicUrl,
+    motionVideoUrl: event.motionVideoUrl,
     whatsappGroupUrl: event.whatsappGroupUrl,
     invitationQuote: event.invitationQuote,
     giftIban: event.giftIban,

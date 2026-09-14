@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
         coverPhotoUrl: body.coverPhotoUrl,
         coverPhotoCloudinaryId: body.coverPhotoCloudinaryId,
         musicUrl: body.musicUrl,
+        motionVideoUrl: body.motionVideoUrl,
         brideName: body.brideName,
         groomName: body.groomName,
         eventDate: body.eventDate ? new Date(body.eventDate) : null,

@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
 import { SCROLL_ANIMATION_OPTIONS, TITLE_FONT_OPTIONS } from "@/types/database.types";
@@ -28,6 +29,7 @@ interface EventRow {
   organizerName: string;
   clientEmail: string | null;
   planType: string;
+  motionVideoUrl: string | null;
   isActive: boolean;
   isPaid: boolean;
   createdAt: string;
@@ -306,6 +308,35 @@ export default function AdminConsole() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive }),
     });
+  }
+
+  async function updateEventMotionVideo(eventId: string, motionVideoUrl: string | null) {
+    const previousEvents = events;
+    setEvents((prev) => prev.map((event) => (event.id === eventId ? { ...event, motionVideoUrl } : event)));
+
+    try {
+      const response = await fetch(`/api/admin/events/${eventId}`, {
+        method: "PATCH",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ motionVideoUrl }),
+      });
+      const json = await response.json();
+
+      if (!response.ok || !json.success) {
+        setEvents(previousEvents);
+        toast.error(json.error ?? "Video motion non sauvegardee.");
+        return;
+      }
+
+      setEvents((prev) => prev.map((event) => (event.id === eventId ? { ...event, ...json.data } : event)));
+      toast.success(motionVideoUrl ? "Video motion associee." : "Video motion retiree.");
+    } catch (error) {
+      console.error("Motion video event update failed:", error);
+      setEvents(previousEvents);
+      toast.error("Video motion non sauvegardee.");
+    }
   }
 
   async function updateTheme(slug: string, data: Partial<ThemeConfig>, successMessage = "Theme sauvegarde.") {
@@ -615,6 +646,7 @@ export default function AdminConsole() {
                         <SelectItem value="essentielle">Essentielle</SelectItem>
                         <SelectItem value="prestige">Prestige</SelectItem>
                         <SelectItem value="privilege">Privilege</SelectItem>
+                        <SelectItem value="imperiale">Imperiale Motion</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -658,6 +690,7 @@ export default function AdminConsole() {
                       <TableHead>Evenement</TableHead>
                       <TableHead>Formule</TableHead>
                       <TableHead>Invites</TableHead>
+                      <TableHead>Motion</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead className="text-right">Actif</TableHead>
                     </TableRow>
@@ -669,6 +702,14 @@ export default function AdminConsole() {
                         <TableCell>{event.name}</TableCell>
                         <TableCell>{event.planType}</TableCell>
                         <TableCell>{event._count?.guests ?? 0}</TableCell>
+                        <TableCell>
+                          <MotionVideoUploader
+                            compact
+                            value={event.motionVideoUrl}
+                            eventId={event.id}
+                            onChange={(motionVideoUrl) => updateEventMotionVideo(event.id, motionVideoUrl)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <Badge variant={event.isActive ? "default" : "outline"}>{event.isActive ? "Actif" : "Suspendu"}</Badge>
                         </TableCell>

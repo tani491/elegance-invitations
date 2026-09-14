@@ -29,6 +29,7 @@ import { CameraScanner } from "@/components/dashboard/CameraScanner";
 import { GuestTable } from "@/components/dashboard/GuestTable";
 import { ImageUploader } from "@/components/dashboard/ImageUploader";
 import { LiveMobilePreview } from "@/components/dashboard/LiveMobilePreview";
+import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { ThemeSelector } from "@/components/dashboard/ThemeSelector";
 import { PLAN_LABELS, photoLimitForPlan } from "@/lib/plan-gating";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
@@ -154,6 +155,7 @@ export default function DashboardPage() {
       coupleStory: event.coupleStory,
       invitationQuote: event.invitationQuote,
       musicUrl: event.musicUrl,
+      motionVideoUrl: event.motionVideoUrl,
       whatsappGroupUrl: event.whatsappGroupUrl,
       program: event.program,
     });
@@ -473,6 +475,12 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                       </div>
                     )}
                   </div>
+                  <MotionVideoUploader
+                    value={event.motionVideoUrl}
+                    eventId={event.id}
+                    disabled={saving}
+                    onChange={(motionVideoUrl) => updateEvent({ motionVideoUrl })}
+                  />
                 </CardContent>
               </Card>
               <LiveMobilePreview event={event} />

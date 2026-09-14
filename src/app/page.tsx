@@ -1164,13 +1164,13 @@ export default function HomePage() {
       {/*  PRICING SECTION (currency-aware)                                    */}
       {/* ------------------------------------------------------------------ */}
       <section id="tarifs" className="bg-[#0D0B0A] py-20 text-[#FAF7F2] sm:py-28 lg:py-32">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[94rem] px-5 sm:px-8 lg:px-12">
           <div className="mb-16 flex flex-col items-center text-center sm:mb-20">
             <SectionHeading>{t.pricing.heading}</SectionHeading>
             <SectionSubheading className="mt-4">{t.pricing.subheading}</SectionSubheading>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3 md:gap-5 lg:gap-8">
+          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 2xl:grid-cols-4 2xl:gap-6">
             {t.pricing.tiers.map((tier, i) => (
               <motion.div
                 key={tier.name}
@@ -1198,18 +1198,23 @@ export default function HomePage() {
                   {tier.recommended && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge
-                        className="rounded-full px-4 py-1 text-xs font-semibold tracking-elegant uppercase"
+                        className="whitespace-nowrap rounded-full px-4 py-1 text-[10px] font-semibold tracking-elegant uppercase sm:text-xs"
                         style={{ background: GOLD_GRADIENT, color: EBONY, borderColor: GOLD }}
                       >
-                        {t.pricing.popular}
+                        {tier.badge ?? t.pricing.popular}
                       </Badge>
                     </div>
                   )}
 
-                  <CardContent className="flex flex-col items-center p-6 pt-8 sm:p-8 sm:pt-10">
-                    <h3 className="font-display-bold text-2xl tracking-luxury text-[#FAF7F2] sm:text-3xl">
+                  <CardContent className="flex min-h-full flex-col items-center p-6 pt-8 sm:p-8 sm:pt-10 xl:px-5">
+                    <h3 className="text-center font-display-bold text-2xl tracking-luxury text-[#FAF7F2] sm:text-3xl xl:text-2xl">
                       {tier.name}
                     </h3>
+                    {tier.subtitle && (
+                      <p className="mt-4 text-center font-body text-sm leading-6 text-[#D8D2C7]">
+                        {tier.subtitle}
+                      </p>
+                    )}
 
                     <div className="mt-4 flex items-baseline gap-1">
                       <span

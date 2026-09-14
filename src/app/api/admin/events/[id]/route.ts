@@ -8,7 +8,8 @@ import { AUTH_ROLES } from "@/types/database.types";
 const updateEventSchema = z.object({
   isActive: z.boolean().optional(),
   isPaid: z.boolean().optional(),
-  planType: z.enum(["essentielle", "prestige", "privilege"]).optional(),
+  planType: z.enum(["essentielle", "prestige", "privilege", "imperiale"]).optional(),
+  motionVideoUrl: z.string().url().nullable().optional(),
 });
 
 export async function PATCH(

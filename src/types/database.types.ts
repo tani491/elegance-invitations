@@ -5,7 +5,7 @@ export const AUTH_ROLES = {
 
 export type AuthRole = (typeof AUTH_ROLES)[keyof typeof AUTH_ROLES];
 
-export type PlanType = "essentielle" | "prestige" | "privilege";
+export type PlanType = "essentielle" | "prestige" | "privilege" | "imperiale";
 export type OpeningAnimationType =
   | "wax_seal_burst"
   | "botanical_envelope"
@@ -133,6 +133,7 @@ export interface PublicEventPayload {
   coverPhotoUrl: string | null;
   officialPhotoUrls: string[];
   musicUrl: string | null;
+  motionVideoUrl: string | null;
   whatsappGroupUrl: string | null;
   invitationQuote: string | null;
   giftIban: string | null;

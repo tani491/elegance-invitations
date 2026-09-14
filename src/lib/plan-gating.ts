@@ -5,18 +5,21 @@ export const PLAN_LABELS: Record<PlanTier, string> = {
   essentielle: "Essentielle",
   prestige: "Prestige",
   privilege: "Privilege",
+  imperiale: "Imperiale Motion",
 };
 
 export const PLAN_ORDER: Record<PlanTier, number> = {
   essentielle: 1,
   prestige: 2,
   privilege: 3,
+  imperiale: 4,
 };
 
 export const PLAN_PHOTO_LIMITS: Record<PlanTier, number> = {
   essentielle: 1,
   prestige: 2,
   privilege: 3,
+  imperiale: 5,
 };
 
 export const THEME_PLAN_REQUIREMENTS: Record<string, PlanTier> = {
@@ -34,7 +37,7 @@ export const THEME_PLAN_REQUIREMENTS: Record<string, PlanTier> = {
 };
 
 export function normalizePlan(plan?: string | null): PlanTier {
-  return plan === "privilege" || plan === "prestige" || plan === "essentielle" ? plan : "essentielle";
+  return plan === "imperiale" || plan === "privilege" || plan === "prestige" || plan === "essentielle" ? plan : "essentielle";
 }
 
 export function requiredPlanForTheme(slug: string): PlanTier {

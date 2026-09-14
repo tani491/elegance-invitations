@@ -96,6 +96,7 @@ model Event {
   coverPhotoCloudinaryId String?
   officialPhotoUrls      Json?
   musicUrl               String?
+  motionVideoUrl         String?      // URL du fichier MP4 (Format 9:16) stocké sur Supabase Storage
   whatsappGroupUrl       String?
   invitationQuote        String?
   giftIban               String?

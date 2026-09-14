@@ -1,15 +1,17 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, CheckCircle, Flower2, MapPin, MessageCircle, Phone, Send, Sparkles } from "lucide-react";
+import { ArrowDown, CheckCircle, ChevronUp, Flower2, MapPin, MessageCircle, Phone, QrCode, Send, Sparkles, Ticket, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { VideoOpeningGate } from "@/components/animations/VideoOpeningGate";
 import { DressCodeSection } from "@/components/invitation/DressCodeSection";
 import { GiftListIBAN } from "@/components/invitation/GiftListIBAN";
+import { PassQrCode } from "@/components/invitation/PassQrCode";
 import { TimelineSection } from "@/components/invitation/TimelineSection";
 import { TripleScratchDate } from "@/components/invitation/TripleScratchDate";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -393,6 +395,302 @@ function WhatsAppCelebrationCTA({
   );
 }
 
+function MotionInvitationExperience({
+  event,
+  guestToken,
+  names,
+  monogram,
+  heroPhoto,
+  surfaceStyle,
+}: {
+  event: PublicEventPayload;
+  guestToken?: string;
+  names: string;
+  monogram: string;
+  heroPhoto?: string;
+  surfaceStyle: CSSProperties;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const envelopeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [showEnvelope, setShowEnvelope] = useState(true);
+  const [sealOpened, setSealOpened] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const [rsvpOpen, setRsvpOpen] = useState(false);
+  const [passOpen, setPassOpen] = useState(false);
+  const [origin, setOrigin] = useState("");
+  const motionVideoUrl = event.motionVideoUrl ?? "";
+  const eventDateLabel = event.eventDate
+    ? new Date(event.eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
+    : "Date à confirmer";
+  const mapHref = event.venueMapUrl || event.wazeUrl || null;
+  const passUrl = guestToken && origin ? `${origin}/carte/${encodeURIComponent(guestToken)}` : null;
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    return () => {
+      if (envelopeTimeoutRef.current) clearTimeout(envelopeTimeoutRef.current);
+    };
+  }, []);
+
+  async function startMotionReel() {
+    if (!videoRef.current) return;
+
+    const video = videoRef.current;
+    setHasStarted(true);
+    setShowEnvelope(true);
+    setSealOpened(true);
+    setVideoEnded(false);
+    setPanelOpen(false);
+    video.muted = false;
+    video.volume = 1;
+    video.currentTime = 0;
+    if (envelopeTimeoutRef.current) clearTimeout(envelopeTimeoutRef.current);
+    envelopeTimeoutRef.current = setTimeout(() => setShowEnvelope(false), 1_120);
+
+    try {
+      await video.play();
+      setSoundOn(!video.muted);
+    } catch (error) {
+      console.error("Motion video playback with sound failed:", error);
+      video.muted = true;
+      setSoundOn(false);
+      try {
+        await video.play();
+        toast("Activez le son avec le bouton en haut a droite.");
+      } catch (mutedError) {
+        console.error("Motion video playback failed:", mutedError);
+        toast.error("Lecture video impossible sur ce navigateur.");
+        setPanelOpen(true);
+      }
+    }
+  }
+
+  function toggleSound() {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const nextMuted = !video.muted;
+    video.muted = nextMuted;
+    setSoundOn(!nextMuted);
+
+    if (hasStarted && video.paused) {
+      void video.play().catch(() => undefined);
+    }
+  }
+
+  function handleVideoEnded() {
+    setVideoEnded(true);
+    setPanelOpen(true);
+  }
+
+  return (
+    <main
+      style={surfaceStyle}
+      className="relative h-[100dvh] w-full overflow-hidden bg-[#050403] text-[#FFFDF9]"
+    >
+      <video
+        ref={videoRef}
+        src={motionVideoUrl}
+        poster={heroPhoto}
+        playsInline
+        preload="auto"
+        onEnded={handleVideoEnded}
+        className="absolute inset-0 h-full w-full bg-black object-cover"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.06)_42%,rgba(0,0,0,.55))]" />
+
+      {showEnvelope && (
+        <motion.div
+          initial={{ opacity: 1 }}
+          animate={sealOpened ? { opacity: 0 } : { opacity: 1 }}
+          transition={{ duration: 0.42, delay: sealOpened ? 0.74 : 0 }}
+          className="absolute inset-0 z-30 overflow-hidden"
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 38%, rgba(255,253,249,.96), rgba(238,220,190,.88) 42%, rgba(96,63,31,.42) 100%)",
+            }}
+          />
+          <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(90deg,rgba(139,96,39,.08)_1px,transparent_1px),linear-gradient(0deg,rgba(139,96,39,.06)_1px,transparent_1px),repeating-linear-gradient(115deg,rgba(255,255,255,.5)_0_1px,transparent_1px_12px)] [background-size:56px_56px,56px_56px,100%_100%]" />
+          <motion.div
+            className="absolute inset-x-[-12%] top-0 h-[48dvh] origin-top bg-[linear-gradient(160deg,rgba(255,251,241,.95),rgba(221,194,154,.78)_58%,rgba(150,103,44,.2))] shadow-[0_26px_70px_rgba(116,76,26,.24)] [clip-path:polygon(0_0,100%_0,50%_100%)]"
+            animate={hasStarted ? { y: "-54%", rotateX: 62 } : { y: 0, rotateX: 0 }}
+            transition={{ duration: 1.05, ease: SCROLL_EASE }}
+          />
+          <motion.div
+            className="absolute inset-x-[-10%] bottom-0 h-[57dvh] bg-[linear-gradient(20deg,rgba(235,213,179,.92),rgba(255,249,238,.82)_46%,rgba(190,143,75,.28))] [clip-path:polygon(0_100%,100%_100%,50%_0)]"
+            animate={hasStarted ? { y: "58%" } : { y: 0 }}
+            transition={{ duration: 1.05, ease: SCROLL_EASE }}
+          />
+          <motion.div
+            className="absolute left-[-18%] top-[24dvh] h-[72dvh] w-[68%] bg-[linear-gradient(55deg,rgba(232,208,169,.88),rgba(255,249,238,.46))] [clip-path:polygon(0_0,100%_50%,0_100%)]"
+            animate={hasStarted ? { x: "-55%" } : { x: 0 }}
+            transition={{ duration: 1.05, ease: SCROLL_EASE }}
+          />
+          <motion.div
+            className="absolute right-[-18%] top-[24dvh] h-[72dvh] w-[68%] bg-[linear-gradient(305deg,rgba(232,208,169,.88),rgba(255,249,238,.46))] [clip-path:polygon(100%_0,0_50%,100%_100%)]"
+            animate={hasStarted ? { x: "55%" } : { x: 0 }}
+            transition={{ duration: 1.05, ease: SCROLL_EASE }}
+          />
+
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center">
+            <p className="font-serif text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--invitation-gold)]">
+              Invitation cinematique
+            </p>
+            <h1
+              style={{ fontFamily: "var(--invitation-title-font)" }}
+              className="mt-5 text-5xl font-light italic leading-none text-[#2A211A]"
+            >
+              {names}
+            </h1>
+            <p className="mt-5 font-serif text-xs font-semibold uppercase tracking-[0.22em] text-[#5B4935]">{eventDateLabel}</p>
+            <button
+              type="button"
+              onClick={() => void startMotionReel()}
+              className="relative mt-12 grid size-24 place-items-center rounded-full text-[#FFFDF9] shadow-[0_22px_65px_rgba(0,0,0,.34),inset_0_0_0_1px_rgba(255,253,249,.44)] ring-4 ring-[var(--invitation-gold-line)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--invitation-gold)]"
+              style={{
+                background:
+                  "radial-gradient(circle at 35% 28%, #FFFDF9, var(--invitation-gold) 36%, var(--invitation-accent) 72%, var(--invitation-primary) 100%)",
+              }}
+              aria-label="Ouvrir l'invitation cinematique"
+            >
+              <span className="absolute inset-3 rounded-full border border-[#FFFDF9]/45" />
+              <span className="font-serif text-3xl italic tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,.26)]">{monogram}</span>
+            </button>
+            <p className="mt-6 font-serif text-[10px] font-semibold uppercase tracking-[0.3em] text-[#6F5A3E]">
+              Touchez le sceau
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {hasStarted && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={toggleSound}
+          className="absolute right-4 top-4 z-40 h-10 rounded-full border-white/20 bg-black/28 px-3 font-serif text-xs uppercase tracking-[0.16em] text-white shadow-[0_12px_30px_rgba(0,0,0,.22)] backdrop-blur-md hover:bg-black/42 hover:text-white"
+        >
+          {soundOn ? <Volume2 className="mr-2 size-4" /> : <VolumeX className="mr-2 size-4" />}
+          {soundOn ? "Son On" : "Son Off"}
+        </Button>
+      )}
+
+      {hasStarted && (
+        <motion.div
+          initial={false}
+          animate={{ y: panelOpen || videoEnded ? 0 : "calc(100% - 58px)" }}
+          transition={{ duration: 0.48, ease: SCROLL_EASE }}
+          className="absolute inset-x-0 bottom-0 z-40 mx-auto max-w-[440px] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+        >
+          <div className="overflow-hidden rounded-t-[30px] border border-white/15 bg-[#0D0B0A]/88 text-white shadow-[0_-22px_70px_rgba(0,0,0,.4)] backdrop-blur-xl">
+            <button
+              type="button"
+              onClick={() => setPanelOpen((current) => !current)}
+              className="flex h-14 w-full items-center justify-center gap-2 font-serif text-[10px] uppercase tracking-[0.24em] text-[#E6CA65]"
+            >
+              <ChevronUp className={`size-4 transition ${panelOpen || videoEnded ? "rotate-180" : ""}`} />
+              {videoEnded ? "Votre invitation continue" : "Actions"}
+            </button>
+            <div className="space-y-3 px-4 pb-5">
+              <Button
+                type="button"
+                onClick={() => setRsvpOpen(true)}
+                className={`h-12 w-full rounded-full border font-serif text-xs uppercase tracking-[0.2em] ${ACTION_BUTTON_CLASS}`}
+              >
+                <Send className="size-4" />
+                Confirmer ma présence (RSVP)
+              </Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {mapHref ? (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-12 rounded-full border-white/20 bg-white/10 font-serif text-xs uppercase tracking-[0.16em] text-white hover:bg-white/16 hover:text-white"
+                  >
+                    <a href={mapHref} target="_blank" rel="noreferrer">
+                      <MapPin className="size-4" />
+                      Itinéraire Maps
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled
+                    className="h-12 rounded-full border-white/10 bg-white/5 font-serif text-xs uppercase tracking-[0.16em] text-white/45"
+                  >
+                    <MapPin className="size-4" />
+                    Itinéraire Maps
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPassOpen(true)}
+                  className="h-12 rounded-full border-white/20 bg-white/10 font-serif text-xs uppercase tracking-[0.16em] text-white hover:bg-white/16 hover:text-white"
+                >
+                  <Ticket className="size-4" />
+                  Mon Pass VIP QR Code
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      <Dialog open={rsvpOpen} onOpenChange={setRsvpOpen}>
+        <DialogContent className="max-h-[92dvh] overflow-y-auto border-[color:var(--invitation-sheet-border)] bg-[color:var(--invitation-sheet)] text-[var(--invitation-sheet-text)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle
+              className="font-serif text-2xl italic text-[var(--invitation-sheet-text)]"
+              style={{ fontFamily: "var(--invitation-title-font)" }}
+            >
+              Confirmer ma présence
+            </DialogTitle>
+            <DialogDescription className="font-serif text-[var(--invitation-sheet-muted)]">
+              Votre réponse est enregistrée sans quitter l'invitation.
+            </DialogDescription>
+          </DialogHeader>
+          <RSVPForm event={event} guestToken={guestToken} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passOpen} onOpenChange={setPassOpen}>
+        <DialogContent className="border-[#D7C4A3] bg-[#FDFBF7] text-[#2A211A] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl italic">Pass VIP</DialogTitle>
+            <DialogDescription>QR Code nominatif pour le contrôle d'accès.</DialogDescription>
+          </DialogHeader>
+          {passUrl ? (
+            <div className="flex flex-col items-center gap-5 py-3 text-center">
+              <div className="rounded-2xl border border-[#D6C5A8] bg-white p-4 shadow-sm">
+                <PassQrCode value={passUrl} size={176} />
+              </div>
+              <Button asChild className="h-11 rounded-full bg-[#171312] px-5 text-white hover:bg-[#2A2320]">
+                <a href={passUrl} target="_blank" rel="noreferrer">
+                  <QrCode className="size-4" />
+                  Ouvrir mon pass
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-[#E5D9C7] bg-white/70 p-4 text-sm text-muted-foreground">
+              Votre pass nominatif apparaît depuis un lien invité personnel.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </main>
+  );
+}
+
 export function InvitationExperience({ event, guestToken }: { event: PublicEventPayload; guestToken?: string }) {
   const [countdown, setCountdown] = useState(() => countdownParts(event.eventDate));
   const [isOpened, setIsOpened] = useState(false);
@@ -421,6 +719,19 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
     const timer = setInterval(() => setCountdown(countdownParts(event.eventDate)), 1_000);
     return () => clearInterval(timer);
   }, [event.eventDate]);
+
+  if (event.motionVideoUrl) {
+    return (
+      <MotionInvitationExperience
+        event={event}
+        guestToken={guestToken}
+        names={names}
+        monogram={monogram}
+        heroPhoto={heroPhoto}
+        surfaceStyle={invitationSurfaceStyle}
+      />
+    );
+  }
 
   return (
     <VideoOpeningGate

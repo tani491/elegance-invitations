@@ -7,6 +7,7 @@ export const SUPABASE_STORAGE_BUCKETS = {
   weddingPhotos: "wedding-photos",
   music: "gallery-photos",
   themeVideos: "theme-videos",
+  motionVideos: "theme-videos",
 } as const;
 
 export function isSupabaseStorageConfigured() {

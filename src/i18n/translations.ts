@@ -58,6 +58,8 @@ export interface Translations {
     tiers: {
       name: string;
       priceFcfa: number;
+      subtitle?: string;
+      badge?: string;
       features: string[];
       recommended?: boolean;
     }[];
@@ -169,7 +171,6 @@ const fr: Translations = {
       {
         name: "Prestige",
         priceFcfa: 10000,
-        recommended: true,
         features: [
           "Invitation numérique personnalisée",
           "Suivi RSVP",
@@ -191,6 +192,23 @@ const fr: Translations = {
           "Éditeur en ligne avancé",
           "Scanner QR Jour J",
           "Support prioritaire",
+        ],
+      },
+      {
+        name: "Formule Impériale — Cinématique Motion",
+        priceFcfa: 35000,
+        recommended: true,
+        badge: "L'Expérience Ultime",
+        subtitle: "L'alliance parfaite entre le film d'animation cinématique sur-mesure et l'invitation interactive.",
+        features: [
+          "Film d'animation 9:16 personnalisé (60 secondes de pur raffinement)",
+          "Intégration de vos photos de couple, date et programme animés",
+          "Bande-son musicale synchronisée & effet d'ouverture d'enveloppe 3D",
+          "Partage WhatsApp enrichi avec aperçu d'enveloppe personnalisée",
+          "Gestion intelligente des confirmations RSVP en direct",
+          "Itinéraire Google Maps interactif vers la salle",
+          "Pass VIP nominatifs avec QR Code pour le contrôle d'accès",
+          "Accompagnement VIP dédié pour la conception vidéo",
         ],
       },
     ],
@@ -323,7 +341,6 @@ const en: Translations = {
       {
         name: "Prestige",
         priceFcfa: 10000,
-        recommended: true,
         features: [
           "Personalised digital invitation",
           "RSVP tracking",
@@ -345,6 +362,23 @@ const en: Translations = {
           "Advanced online editor",
           "Day-of QR scanner",
           "Priority support",
+        ],
+      },
+      {
+        name: "Imperial Formula — Cinematic Motion",
+        priceFcfa: 35000,
+        recommended: true,
+        badge: "The Ultimate Experience",
+        subtitle: "The perfect union of a bespoke cinematic animation film and an interactive invitation.",
+        features: [
+          "Personalised 9:16 animation film (60 seconds of pure refinement)",
+          "Couple photos, date and animated programme integration",
+          "Synchronised music soundtrack and 3D envelope opening effect",
+          "Enhanced WhatsApp sharing with a personalised envelope preview",
+          "Smart live RSVP confirmation management",
+          "Interactive Google Maps route to the venue",
+          "Named VIP passes with QR Code access control",
+          "Dedicated VIP guidance for video design",
         ],
       },
     ],
@@ -477,7 +511,6 @@ const es: Translations = {
       {
         name: "Prestigio",
         priceFcfa: 10000,
-        recommended: true,
         features: [
           "Invitación digital personalizada",
           "Seguimiento RSVP",
@@ -499,6 +532,23 @@ const es: Translations = {
           "Editor avanzado online",
           "Escáner QR día de la boda",
           "Soporte prioritario",
+        ],
+      },
+      {
+        name: "Fórmula Imperial — Cinemática Motion",
+        priceFcfa: 35000,
+        recommended: true,
+        badge: "La Experiencia Definitiva",
+        subtitle: "La alianza perfecta entre una película de animación cinematográfica a medida y la invitación interactiva.",
+        features: [
+          "Película de animación 9:16 personalizada (60 segundos de puro refinamiento)",
+          "Integración de fotos de pareja, fecha y programa animado",
+          "Banda sonora sincronizada y apertura de sobre 3D",
+          "Compartir en WhatsApp con vista previa de sobre personalizado",
+          "Gestión inteligente de confirmaciones RSVP en directo",
+          "Ruta interactiva de Google Maps hasta el salón",
+          "Pases VIP nominativos con QR Code para control de acceso",
+          "Acompañamiento VIP dedicado para la concepción del video",
         ],
       },
     ],
@@ -631,7 +681,6 @@ const ar: Translations = {
       {
         name: "البريستيج",
         priceFcfa: 10000,
-        recommended: true,
         features: [
           "دعوة رقمية مخصصة",
           "متابعة RSVP",
@@ -653,6 +702,23 @@ const ar: Translations = {
           "محرر انترنتي متقدم",
           "ماسح QR يوم الحدث",
           "دعم أولوي",
+        ],
+      },
+      {
+        name: "الباقة الإمبراطورية — سينماتيك موشن",
+        priceFcfa: 35000,
+        recommended: true,
+        badge: "التجربة النهائية",
+        subtitle: "المزيج المثالي بين فيلم أنيميشن سينمائي مصمم خصيصا والدعوة التفاعلية.",
+        features: [
+          "فيلم أنيميشن 9:16 مخصص (60 ثانية من الفخامة)",
+          "دمج صور الزوجين والتاريخ والبرنامج بحركة أنيقة",
+          "موسيقى متزامنة وتأثير فتح ظرف ثلاثي الأبعاد",
+          "مشاركة WhatsApp محسنة بمعاينة ظرف مخصص",
+          "إدارة ذكية لتأكيدات RSVP مباشرة",
+          "مسار Google Maps تفاعلي نحو القاعة",
+          "بطاقات VIP بالاسم مع QR Code للتحقق من الدخول",
+          "مرافقة VIP مخصصة لتصميم الفيديو",
         ],
       },
     ],

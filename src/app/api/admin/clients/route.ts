@@ -18,7 +18,7 @@ const createClientSchema = z.object({
   email: z.string().email(),
   whatsapp: z.string().min(6).optional().default(""),
   password: z.string().min(8).optional(),
-  planType: z.enum(["essentielle", "prestige", "privilege"]),
+  planType: z.enum(["essentielle", "prestige", "privilege", "imperiale"]),
   template: z.string().min(2).default("medina-orientale"),
 });
 
