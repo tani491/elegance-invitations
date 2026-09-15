@@ -178,6 +178,8 @@ export default function AdminConsole() {
   const [creatingTheme, setCreatingTheme] = useState(false);
   const [createThemeOpen, setCreateThemeOpen] = useState(false);
   const [expandedThemeSlug, setExpandedThemeSlug] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const active = events.filter((event) => event.isActive).length;
@@ -337,6 +339,33 @@ export default function AdminConsole() {
       console.error("Motion video event update failed:", error);
       setEvents(previousEvents);
       toast.error("Video motion non sauvegardee.");
+    }
+  }
+
+  async function deleteOrderPermanently(order: EventRow) {
+    setDeletingOrderId(order.id);
+
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+      });
+      const json = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+
+      if (!response.ok || !json?.success) {
+        toast.error(json?.error ?? "Suppression impossible.");
+        return;
+      }
+
+      setEvents((prev) => prev.filter((event) => event.id !== order.id));
+      setDeleteTarget(null);
+      toast.success("Commande supprimée avec succès");
+    } catch (error) {
+      console.error("Order hard delete failed:", error);
+      toast.error("Suppression impossible.");
+    } finally {
+      setDeletingOrderId(null);
     }
   }
 
@@ -693,6 +722,7 @@ export default function AdminConsole() {
                       <TableHead>Motion</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead className="text-right">Actif</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -716,6 +746,20 @@ export default function AdminConsole() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Switch checked={event.isActive} onCheckedChange={(checked) => toggleEvent(event.id, checked)} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            title="Supprimer définitivement"
+                            aria-label={`Supprimer définitivement ${event.name}`}
+                            className="group text-red-500 hover:bg-red-50 hover:text-red-700"
+                            disabled={deletingOrderId === event.id}
+                            onClick={() => setDeleteTarget(event)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500 transition group-hover:text-red-700" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1242,6 +1286,45 @@ export default function AdminConsole() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deletingOrderId) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="border-red-100 bg-[#FDFBF7] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[#171312]">
+              <Trash2 className="size-5 text-red-500" />
+              Suppression définitive
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-6 text-muted-foreground">
+              Êtes-vous sûr de vouloir supprimer définitivement {deleteTarget?.name ?? "cette commande"} ? Cette action supprimera tous les invités, le QR code et la page d'invitation sans retour possible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-[#D6C5A8]"
+              disabled={Boolean(deletingOrderId)}
+              onClick={() => setDeleteTarget(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-600 text-white hover:bg-red-700"
+              disabled={!deleteTarget || Boolean(deletingOrderId)}
+              onClick={() => {
+                if (deleteTarget) void deleteOrderPermanently(deleteTarget);
+              }}
+            >
+              {deletingOrderId ? "Suppression..." : "Confirmer la suppression"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </main>
