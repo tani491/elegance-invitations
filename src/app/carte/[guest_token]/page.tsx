@@ -193,7 +193,7 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
   const program = parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM).slice(0, 3);
   const names = `${event.brideName ?? "Mariée"} & ${event.groomName ?? "Marié"}`;
   const eventDate = formatEventDate(event.eventDate);
-  const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.id)}`;
+  const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.id)}&open=1`;
   const passStyle = {
     ...themeToCssVars(theme),
     backgroundImage:
@@ -215,23 +215,25 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
               <div className="absolute inset-0" style={{ background: theme.previewGradient }} />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-            <div className="absolute left-5 top-5">
-              <Badge className="rounded-full border border-amber-200/45 bg-black/25 px-3 py-1 font-serif text-[10px] uppercase tracking-[0.24em] text-amber-50 backdrop-blur">
-                {guest.isVip ? "VIP" : "Invité"}
-              </Badge>
-            </div>
-            <div className="absolute inset-x-0 bottom-0 px-6 pb-8 text-center">
-              <p className="font-serif text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/85">
-                Pass Invité Privé
-              </p>
-              <h1 className="mt-4 font-serif text-5xl font-light italic leading-none text-[#fff7e4] drop-shadow-[0_2px_18px_rgba(0,0,0,.55)]">
-                {names}
-              </h1>
+            <div className="absolute inset-0 flex flex-col px-5 pb-12 pt-5">
+              <div className="relative flex min-h-8 items-center justify-center">
+                <Badge className="absolute left-0 top-0 rounded-full border border-amber-200/45 bg-black/25 px-3 py-1 font-serif text-[10px] uppercase tracking-[0.24em] text-amber-50 backdrop-blur">
+                  {guest.isVip ? "VIP" : "Invité"}
+                </Badge>
+                <p className="max-w-[62%] text-center font-serif text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/88">
+                  Pass Invité Privé
+                </p>
+              </div>
+              <div className="flex flex-1 items-center justify-center pb-6 pt-7 text-center">
+                <h1 className="max-w-full break-words font-serif text-[clamp(2.4rem,11vw,3.6rem)] font-light italic leading-[0.94] text-[#fff7e4] drop-shadow-[0_2px_18px_rgba(0,0,0,.55)]">
+                  {names}
+                </h1>
+              </div>
             </div>
           </div>
 
           <div className="px-5 pb-6">
-            <div className="relative -mt-10 rounded-[24px] border border-amber-300/45 bg-[#fffaf3]/95 p-5 text-center shadow-[0_18px_45px_rgba(93,62,18,.16)] backdrop-blur">
+            <div className="relative -mt-6 rounded-[24px] border border-amber-300/45 bg-[#fffaf3]/95 p-5 text-center shadow-[0_18px_45px_rgba(93,62,18,.16)] backdrop-blur">
               <p className="font-serif text-[11px] uppercase tracking-[0.24em] text-amber-900/65">Bienvenue</p>
               <h2 className="mt-2 font-serif text-3xl italic text-amber-950">{guest.fullName}</h2>
               <div className="mx-auto mt-5 inline-flex rounded-[22px] border border-amber-300/45 bg-white/65 p-3">

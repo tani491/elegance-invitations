@@ -31,7 +31,7 @@ import { ImageUploader } from "@/components/dashboard/ImageUploader";
 import { LiveMobilePreview } from "@/components/dashboard/LiveMobilePreview";
 import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { ThemeSelector } from "@/components/dashboard/ThemeSelector";
-import { PLAN_LABELS, photoLimitForPlan } from "@/lib/plan-gating";
+import { canUseMotionVideo, photoLimitForPlan, planLabelForPlan } from "@/lib/plan-gating";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
 import type { PublicEventPayload, ThemeConfig } from "@/types/database.types";
 
@@ -327,14 +327,14 @@ export default function DashboardPage() {
   }
 
   async function copyPublicInvitationLink() {
-    const invitationUrl = `${origin}/invitation/${event?.slug ? encodeURIComponent(event.slug) : ""}`;
+    const invitationUrl = `${origin}/invitation/${event?.slug ? encodeURIComponent(event.slug) : ""}?open=1`;
     await navigator.clipboard.writeText(invitationUrl);
     toast.success("Lien d'invitation copie.");
   }
 
   function sharePublicInvitation() {
     if (!event) return;
-    const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
+    const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}?open=1`;
     const names = `${event.brideName?.trim() || "La Mariée"} & ${event.groomName?.trim() || "Le Marié"}`;
     const text = encodeURIComponent(
       `✨ Mariage de ${names} ✨
@@ -354,8 +354,10 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
 
   const photoLimit = photoLimitForPlan(event.planType);
   const officialPhotos = normalizePhotoList(event.officialPhotoUrls ?? [], photoLimit);
-  const publicInvitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
+  const publicInvitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}?open=1`;
   const selectedMusicValue = musicSelectValue(event.musicUrl);
+  const canUploadMotionVideo = canUseMotionVideo(event.planType);
+  const planLabel = planLabelForPlan(event.planType);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#FAF7F2] px-4 py-8 sm:px-6 lg:px-8">
@@ -366,7 +368,7 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
             <h1 className="font-display-bold text-3xl tracking-luxury">Espace Maries</h1>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline"><a href={`/invitation/${encodeURIComponent(event.slug)}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 size-4" />Invitation</a></Button>
+            <Button asChild variant="outline"><a href={`/invitation/${encodeURIComponent(event.slug)}?open=1`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 size-4" />Invitation</a></Button>
             <Button variant="outline" onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
               router.push("/login");
@@ -425,7 +427,7 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#D4AF37]/20 bg-white/70 p-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Votre formule</p>
-                      <p className="font-display-bold text-xl">{PLAN_LABELS[event.planType]}</p>
+                      <p className="font-display-bold text-xl">{planLabel}</p>
                     </div>
                     <p className="max-w-sm text-sm text-muted-foreground">
                       Les cadenas indiquent les modeles reserves aux formules superieures. Les photos sont limitees a {photoLimit} pour votre offre.
@@ -437,7 +439,7 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                     <ImageUploader
                       disabled={uploadingCover || officialPhotos.length >= photoLimit}
                       label={uploadingCover ? "Upload en cours..." : officialPhotos.length >= photoLimit ? "Limite de formule atteinte" : "Ajouter une image HD"}
-                      helper={`Portrait 9:16 recommande. ${PLAN_LABELS[event.planType]} autorise ${photoLimit} photo${photoLimit > 1 ? "s" : ""}.`}
+                      helper={`Portrait 9:16 recommande. ${planLabel} autorise ${photoLimit} photo${photoLimit > 1 ? "s" : ""}.`}
                       onUpload={(file) => void addOfficialPhoto(file)}
                     />
                     {officialPhotos.length > 0 && (
@@ -479,6 +481,7 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                     value={event.motionVideoUrl}
                     eventId={event.id}
                     disabled={saving}
+                    locked={!canUploadMotionVideo}
                     onChange={(motionVideoUrl) => updateEvent({ motionVideoUrl })}
                   />
                 </CardContent>

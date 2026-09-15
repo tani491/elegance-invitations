@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Film, RefreshCw, Trash2, UploadCloud } from "lucide-react";
+import { Film, LockKeyhole, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ type MotionVideoUploaderProps = {
   value?: string | null;
   eventId?: string | null;
   disabled?: boolean;
+  locked?: boolean;
   compact?: boolean;
   onChange: (url: string | null) => Promise<void> | void;
 };
@@ -33,6 +34,7 @@ export function MotionVideoUploader({
   value,
   eventId,
   disabled,
+  locked,
   compact,
   onChange,
 }: MotionVideoUploaderProps) {
@@ -108,7 +110,27 @@ export function MotionVideoUploader({
   }
 
   const uploadLabel = value ? "Remplacer" : "Uploader";
-  const isDisabled = disabled || uploading;
+  const isDisabled = disabled || uploading || locked;
+
+  if (locked) {
+    if (compact) {
+      return (
+        <Badge variant="outline" className="whitespace-nowrap border-[#C5A059]/35 bg-[#C5A059]/10 text-[#8A6A2F]">
+          <LockKeyhole className="mr-1.5 size-3" />
+          Réservé Motion
+        </Badge>
+      );
+    }
+
+    return (
+      <div className="rounded-lg border border-[#D4AF37]/25 bg-[#FDFBF7]/80 p-4 shadow-sm">
+        <Badge variant="outline" className="w-fit border-[#C5A059]/35 bg-[#C5A059]/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#8A6A2F]">
+          <LockKeyhole className="mr-1.5 size-3.5" />
+          Réservé à la formule Cinématique Motion
+        </Badge>
+      </div>
+    );
+  }
 
   if (compact) {
     return (

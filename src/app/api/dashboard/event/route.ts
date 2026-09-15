@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { revalidateInvitation } from "@/lib/cached-invitation";
 import { getThemeOrDefault, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { serializePublicEvent } from "@/lib/public-event";
-import { canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
+import { canUseMotionVideo, canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
 import { requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
@@ -131,6 +131,13 @@ export async function PATCH(request: NextRequest) {
 
   const { themeSlug, eventDate, officialPhotoUrls, ...safeData } = parsed.data;
   const updateData: Record<string, unknown> = { ...safeData };
+
+  if (parsed.data.motionVideoUrl && !canUseMotionVideo(currentEvent.planType)) {
+    return NextResponse.json(
+      { success: false, error: "Video Cinematique Motion reservee a la formule Imperiale." },
+      { status: 403 },
+    );
+  }
 
   if (eventDate !== undefined) {
     updateData.eventDate = eventDate ? new Date(eventDate) : null;

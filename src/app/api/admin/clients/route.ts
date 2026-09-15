@@ -8,6 +8,7 @@ import {
   hashPassword,
   normalizeEmail,
 } from "@/lib/server-auth";
+import { normalizePlan } from "@/lib/plan-gating";
 import { uniqueSlug } from "@/lib/slug";
 import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme } from "@/lib/theme-presets";
 import { AUTH_ROLES } from "@/types/database.types";
@@ -18,7 +19,12 @@ const createClientSchema = z.object({
   email: z.string().email(),
   whatsapp: z.string().min(6).optional().default(""),
   password: z.string().min(8).optional(),
-  planType: z.enum(["essentielle", "prestige", "privilege", "imperiale"]),
+  planType: z
+    .preprocess(
+      (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
+      z.enum(["prestige", "privilege", "imperiale", "motion"]),
+    )
+    .transform((planType) => normalizePlan(planType)),
   template: z.string().min(2).default("medina-orientale"),
 });
 
@@ -126,7 +132,7 @@ export async function POST(request: NextRequest) {
 
   const origin = publicBaseUrl(request);
   const loginUrl = `${origin}/login`;
-  const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}`;
+  const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}?open=1`;
   const whatsAppMessage = [
     `Félicitations ${parsed.data.coupleName} ! Vos accès à votre espace Élégance Invitations sont prêts :`,
     `Lien : ${loginUrl}`,

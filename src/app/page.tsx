@@ -1164,13 +1164,13 @@ export default function HomePage() {
       {/*  PRICING SECTION (currency-aware)                                    */}
       {/* ------------------------------------------------------------------ */}
       <section id="tarifs" className="bg-[#0D0B0A] py-20 text-[#FAF7F2] sm:py-28 lg:py-32">
-        <div className="mx-auto max-w-[94rem] px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
           <div className="mb-16 flex flex-col items-center text-center sm:mb-20">
             <SectionHeading>{t.pricing.heading}</SectionHeading>
             <SectionSubheading className="mt-4">{t.pricing.subheading}</SectionSubheading>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 2xl:grid-cols-4 2xl:gap-6">
+          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
             {t.pricing.tiers.map((tier, i) => (
               <motion.div
                 key={tier.name}
@@ -1503,8 +1503,8 @@ export default function HomePage() {
               <MessageCircle className="mr-2 size-4" />
               +221 77 361 59 44
             </a>
-            <a href="mailto:contact@elegance-invitations.com" className="mt-5 block text-sm text-[#D8D2C7] transition hover:text-[#FAF7F2]">
-              contact@elegance-invitations.com
+            <a href="mailto:hsamassa360@gmail.com" className="mt-5 block text-sm text-[#D8D2C7] transition hover:text-[#FAF7F2]">
+              hsamassa360@gmail.com
             </a>
             <p className="mt-3 text-sm leading-7 text-[#D8D2C7]/70">
               Dakar, Sénégal — Accompagnement diaspora monde entier

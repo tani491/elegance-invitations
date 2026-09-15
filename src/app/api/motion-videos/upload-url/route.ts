@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { canUseMotionVideo } from "@/lib/plan-gating";
 import { requireApiRole } from "@/lib/server-auth";
 import { SUPABASE_STORAGE_BUCKETS } from "@/lib/supabase-storage";
 import { AUTH_ROLES } from "@/types/database.types";
@@ -36,9 +37,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Evenement introuvable pour cet upload." }, { status: 404 });
   }
 
-  const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true, planType: true } });
   if (!event) {
     return NextResponse.json({ success: false, error: "Evenement introuvable." }, { status: 404 });
+  }
+
+  if (!canUseMotionVideo(event.planType)) {
+    return NextResponse.json(
+      { success: false, error: "Video Cinematique Motion reservee a la formule Imperiale." },
+      { status: 403 },
+    );
   }
 
   const extension = parsed.data.fileName.split(".").pop()?.toLowerCase();

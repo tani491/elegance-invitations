@@ -63,6 +63,11 @@ function firstSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function shouldOpenDirectly(searchParams: Awaited<InvitationPageProps["searchParams"]>) {
+  const open = firstSearchParam(searchParams.open);
+  return open === "1" || open === "true" || Boolean(firstSearchParam(searchParams.guest));
+}
+
 function InvitationFallbackScreen({ slug }: { slug: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D0B0A] p-6 text-center text-white">
@@ -134,7 +139,7 @@ export default async function InvitationPage({
   }
 
   try {
-    return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} />;
+    return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} autoOpen={shouldOpenDirectly(resolvedSearchParams)} />;
   } catch (error) {
     console.error("Invitation serialization failed:", error);
     return <InvitationFallbackScreen slug={slug} />;

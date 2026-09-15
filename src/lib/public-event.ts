@@ -1,5 +1,5 @@
 import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme, parseJsonArray } from "@/lib/theme-presets";
-import { normalizePlan, photoLimitForPlan } from "@/lib/plan-gating";
+import { canUseMotionVideo, normalizePlan, photoLimitForPlan } from "@/lib/plan-gating";
 import { serializeTheme, type SerializableThemeInput } from "@/lib/theme-store";
 import type { Event } from "@prisma/client";
 import type { DressCodeColor, OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
@@ -50,7 +50,7 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     coverPhotoUrl: event.coverPhotoUrl,
     officialPhotoUrls: photos,
     musicUrl: event.musicUrl,
-    motionVideoUrl: event.motionVideoUrl,
+    motionVideoUrl: canUseMotionVideo(planType) ? event.motionVideoUrl : null,
     whatsappGroupUrl: event.whatsappGroupUrl,
     invitationQuote: event.invitationQuote,
     giftIban: event.giftIban,

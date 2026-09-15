@@ -12,9 +12,9 @@ import { ELEGANCE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
    ============================================================ */
 
 const PLAN_ICONS = {
-  essentielle: Sparkles,
   prestige: Crown,
-  privilege: Gem,
+  privilege: Sparkles,
+  imperiale: Gem,
 };
 
 export default function WhatsAppOrderCheckout() {

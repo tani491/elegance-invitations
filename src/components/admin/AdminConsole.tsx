@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
+import { canUseMotionVideo, planLabelForPlan } from "@/lib/plan-gating";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
 import { SCROLL_ANIMATION_OPTIONS, TITLE_FONT_OPTIONS } from "@/types/database.types";
 import type { ScrollAnimationType, ThemeConfig } from "@/types/database.types";
@@ -643,10 +644,9 @@ export default function AdminConsole() {
                     <Select value={form.planType} onValueChange={(planType) => setForm({ ...form, planType })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="essentielle">Essentielle</SelectItem>
                         <SelectItem value="prestige">Prestige</SelectItem>
-                        <SelectItem value="privilege">Privilege</SelectItem>
-                        <SelectItem value="imperiale">Imperiale Motion</SelectItem>
+                        <SelectItem value="privilege">Privilège</SelectItem>
+                        <SelectItem value="imperiale">Impériale Motion</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -700,13 +700,14 @@ export default function AdminConsole() {
                       <TableRow key={event.id}>
                         <TableCell>{event.clientEmail ?? event.organizerName}</TableCell>
                         <TableCell>{event.name}</TableCell>
-                        <TableCell>{event.planType}</TableCell>
+                        <TableCell>{planLabelForPlan(event.planType)}</TableCell>
                         <TableCell>{event._count?.guests ?? 0}</TableCell>
                         <TableCell>
                           <MotionVideoUploader
                             compact
                             value={event.motionVideoUrl}
                             eventId={event.id}
+                            locked={!canUseMotionVideo(event.planType)}
                             onChange={(motionVideoUrl) => updateEventMotionVideo(event.id, motionVideoUrl)}
                           />
                         </TableCell>

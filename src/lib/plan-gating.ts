@@ -3,9 +3,9 @@ import type { ThemeConfig } from "@/types/database.types";
 
 export const PLAN_LABELS: Record<PlanTier, string> = {
   essentielle: "Essentielle",
-  prestige: "Prestige",
-  privilege: "Privilege",
-  imperiale: "Imperiale Motion",
+  prestige: "Formule Prestige",
+  privilege: "Formule Privilège",
+  imperiale: "Formule Impériale — Cinématique Motion",
 };
 
 export const PLAN_ORDER: Record<PlanTier, number> = {
@@ -37,7 +37,21 @@ export const THEME_PLAN_REQUIREMENTS: Record<string, PlanTier> = {
 };
 
 export function normalizePlan(plan?: string | null): PlanTier {
-  return plan === "imperiale" || plan === "privilege" || plan === "prestige" || plan === "essentielle" ? plan : "essentielle";
+  const normalized = plan?.trim().toLowerCase();
+
+  if (normalized === "motion") return "imperiale";
+
+  return normalized === "imperiale" || normalized === "privilege" || normalized === "prestige" || normalized === "essentielle"
+    ? normalized
+    : "essentielle";
+}
+
+export function planLabelForPlan(plan: string | null | undefined) {
+  return PLAN_LABELS[normalizePlan(plan)];
+}
+
+export function canUseMotionVideo(plan: string | null | undefined) {
+  return normalizePlan(plan) === "imperiale";
 }
 
 export function requiredPlanForTheme(slug: string): PlanTier {

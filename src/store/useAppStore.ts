@@ -74,7 +74,7 @@ export interface EventData {
   guests: Guest[];
 }
 
-export type PlanKey = 'essentielle' | 'prestige' | 'privilege';
+export type PlanKey = 'prestige' | 'privilege' | 'imperiale';
 
 export interface PricingPlan {
   key: PlanKey;
@@ -239,48 +239,42 @@ const MOCK_EVENT: EventData = {
 /* --- Pricing plans --- */
 export const PRICING_PLANS: PricingPlan[] = [
   {
-    key: 'essentielle',
-    name: 'Essentielle',
-    price: 5000,
-    priceLabel: '5 000 F CFA',
-    features: [
-      'Invitation numérique personnalisée',
-      'QR Code RSVP',
-      'Pass d\'accès PDF nominatif',
-      'Jusqu\'à 50 invités',
-      'Support WhatsApp',
-    ],
-    highlighted: false,
-  },
-  {
     key: 'prestige',
-    name: 'Prestige',
+    name: 'Formule Prestige',
     price: 10000,
     priceLabel: '10 000 F CFA',
     features: [
-      'Tout du forfait Essentielle',
-      'Animations premium (enveloppe / rideau)',
-      'Musique personnalisée',
-      'Jusqu\'à 200 invités',
-      'Scanner QR check-in Jour J',
-      'Frise chronologique',
-      'Support prioritaire',
+      'Design haut de gamme',
+      'RSVP WhatsApp',
+      'Pass QR Code',
     ],
-    highlighted: true,
+    highlighted: false,
   },
   {
     key: 'privilege',
-    name: 'Privilège',
+    name: 'Formule Privilège',
     price: 15000,
     priceLabel: '15 000 F CFA',
     features: [
-      'Tout du forfait Prestige',
-      'Jusqu\'à 500 invités',
-      'Domaine personnalisé',
-      'Assistance dédiée 24/7',
-      'Statistiques avancées',
+      'Multi-thèmes personnalisés',
+      'Musique d\'ambiance',
+      'Itinéraire Maps',
+      'Galerie photos',
     ],
     highlighted: false,
+  },
+  {
+    key: 'imperiale',
+    name: 'Formule Impériale — Cinématique Motion',
+    price: 25000,
+    priceLabel: '25 000 F CFA',
+    features: [
+      'Film d\'animation 9:16 complet',
+      'Synchronisation audio',
+      'Enveloppe 3D',
+      'Conciergerie VIP',
+    ],
+    highlighted: true,
   },
 ];
 

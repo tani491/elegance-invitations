@@ -54,6 +54,18 @@ function buildWhatsAppHref(phone: string | null | undefined, text: string) {
   return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(text)}` : null;
 }
 
+function buildMapsHref(event: PublicEventPayload) {
+  const directMapsUrl = event.venueMapUrl?.trim();
+  if (directMapsUrl) return directMapsUrl;
+
+  const query = [event.venueName, event.venueAddress]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : null;
+}
+
 function RoyalDivider({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center justify-center gap-3 ${className}`} aria-hidden="true">
@@ -402,6 +414,7 @@ function MotionInvitationExperience({
   monogram,
   heroPhoto,
   surfaceStyle,
+  autoOpen = false,
 }: {
   event: PublicEventPayload;
   guestToken?: string;
@@ -409,12 +422,14 @@ function MotionInvitationExperience({
   monogram: string;
   heroPhoto?: string;
   surfaceStyle: CSSProperties;
+  autoOpen?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const envelopeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [showEnvelope, setShowEnvelope] = useState(true);
-  const [sealOpened, setSealOpened] = useState(false);
+  const autoPlayAttemptedRef = useRef(false);
+  const [hasStarted, setHasStarted] = useState(autoOpen);
+  const [showEnvelope, setShowEnvelope] = useState(!autoOpen);
+  const [sealOpened, setSealOpened] = useState(autoOpen);
   const [videoEnded, setVideoEnded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
@@ -425,7 +440,7 @@ function MotionInvitationExperience({
   const eventDateLabel = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
     : "Date à confirmer";
-  const mapHref = event.venueMapUrl || event.wazeUrl || null;
+  const mapHref = buildMapsHref(event);
   const passUrl = guestToken && origin ? `${origin}/carte/${encodeURIComponent(guestToken)}` : null;
 
   useEffect(() => {
@@ -434,6 +449,35 @@ function MotionInvitationExperience({
       if (envelopeTimeoutRef.current) clearTimeout(envelopeTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!autoOpen || autoPlayAttemptedRef.current || !videoRef.current) return;
+    autoPlayAttemptedRef.current = true;
+
+    const video = videoRef.current;
+    setHasStarted(true);
+    setShowEnvelope(false);
+    setSealOpened(true);
+    setVideoEnded(false);
+    setPanelOpen(false);
+    video.muted = false;
+    video.volume = 1;
+    video.currentTime = 0;
+
+    void video.play()
+      .then(() => {
+        setSoundOn(!video.muted);
+      })
+      .catch((error) => {
+        console.error("Motion video direct playback with sound failed:", error);
+        video.muted = true;
+        setSoundOn(false);
+        void video.play().catch((mutedError) => {
+          console.error("Motion video direct playback failed:", mutedError);
+          setPanelOpen(true);
+        });
+      });
+  }, [autoOpen]);
 
   async function startMotionReel() {
     if (!videoRef.current) return;
@@ -489,18 +533,20 @@ function MotionInvitationExperience({
   return (
     <main
       style={surfaceStyle}
-      className="relative h-[100dvh] w-full overflow-hidden bg-[#050403] text-[#FFFDF9]"
+      className="fixed inset-0 flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-black text-[#FFFDF9]"
     >
       <video
         ref={videoRef}
         src={motionVideoUrl}
         poster={heroPhoto}
         playsInline
+        autoPlay={autoOpen}
+        loop={false}
         preload="auto"
         onEnded={handleVideoEnded}
-        className="absolute inset-0 h-full w-full bg-black object-cover"
+        className="h-full w-full bg-black object-cover object-center"
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.06)_42%,rgba(0,0,0,.55))]" />
+      <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
       {showEnvelope && (
         <motion.div
@@ -587,7 +633,7 @@ function MotionInvitationExperience({
           initial={false}
           animate={{ y: panelOpen || videoEnded ? 0 : "calc(100% - 58px)" }}
           transition={{ duration: 0.48, ease: SCROLL_EASE }}
-          className="absolute inset-x-0 bottom-0 z-40 mx-auto max-w-[440px] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+          className="absolute inset-x-0 bottom-0 z-40 mx-auto max-w-[440px] bg-gradient-to-t from-black/90 via-black/40 to-transparent px-3 pb-[calc(env(safe-area-inset-bottom)+12px)]"
         >
           <div className="overflow-hidden rounded-t-[30px] border border-white/15 bg-[#0D0B0A]/88 text-white shadow-[0_-22px_70px_rgba(0,0,0,.4)] backdrop-blur-xl">
             <button
@@ -691,9 +737,17 @@ function MotionInvitationExperience({
   );
 }
 
-export function InvitationExperience({ event, guestToken }: { event: PublicEventPayload; guestToken?: string }) {
+export function InvitationExperience({
+  event,
+  guestToken,
+  autoOpen = false,
+}: {
+  event: PublicEventPayload;
+  guestToken?: string;
+  autoOpen?: boolean;
+}) {
   const [countdown, setCountdown] = useState(() => countdownParts(event.eventDate));
-  const [isOpened, setIsOpened] = useState(false);
+  const [isOpened, setIsOpened] = useState(autoOpen);
   const names = `${event.brideName ?? "Mariée"} & ${event.groomName ?? "Marié"}`;
   const photos = event.officialPhotoUrls.length > 0 ? event.officialPhotoUrls : event.coverPhotoUrl ? [event.coverPhotoUrl] : [];
   const heroPhoto = photos[0];
@@ -705,6 +759,7 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
     ? new Date(event.eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
     : "Date à confirmer";
   const hasOrganizerContact = Boolean(buildWhatsAppHref(event.organizerPhone, ""));
+  const mapHref = buildMapsHref(event);
   const invitationSurfaceStyle = useMemo(() => themeToCssVars(theme), [theme]);
 
   useEffect(() => {
@@ -729,22 +784,12 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
         monogram={monogram}
         heroPhoto={heroPhoto}
         surfaceStyle={invitationSurfaceStyle}
+        autoOpen={autoOpen}
       />
     );
   }
 
-  return (
-    <VideoOpeningGate
-      videoSrc={openingVideoUrl}
-      backdropSrc={theme.backdropUrl}
-      ambientAudioSrc={event.musicUrl}
-      monogram={monogram}
-      title={names}
-      fallbackGradient={theme.previewGradient}
-      fallbackImage={heroPhoto}
-      surfaceStyle={invitationSurfaceStyle}
-      onOpened={() => setIsOpened(true)}
-    >
+  const invitationContent = (
       <div
         style={invitationSurfaceStyle}
         className="relative isolate mx-auto h-[100dvh] max-w-[440px] snap-y snap-proximity overflow-x-hidden overflow-y-auto scroll-smooth bg-transparent text-[#FFFDF9] shadow-[0_0_80px_rgba(0,0,0,.35)] [-webkit-overflow-scrolling:touch]"
@@ -865,13 +910,13 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
                 {event.organizerPhone}
               </p>
             )}
-            {event.venueMapUrl && (
+            {mapHref && (
               <Button
                 asChild
                 variant="outline"
                 className={`mt-8 h-11 rounded-full px-5 font-serif text-xs uppercase tracking-[0.2em] ${OUTLINE_BUTTON_CLASS}`}
               >
-                <a href={event.venueMapUrl} target="_blank" rel="noreferrer">
+                <a href={mapHref} target="_blank" rel="noreferrer">
                   Ouvrir Maps
                 </a>
               </Button>
@@ -916,6 +961,48 @@ export function InvitationExperience({ event, guestToken }: { event: PublicEvent
           </footer>
         </div>
       </div>
+  );
+
+  if (autoOpen) {
+    return (
+      <div
+        style={invitationSurfaceStyle}
+        className="relative isolate min-h-[100dvh] overflow-x-hidden bg-[var(--invitation-primary)] [-webkit-overflow-scrolling:touch] md:px-6"
+      >
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 h-[100dvh] w-full overflow-hidden bg-[var(--invitation-primary)]">
+          {theme.backdropUrl || heroPhoto ? (
+            <div
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: `url("${theme.backdropUrl ?? heroPhoto}")` }}
+            />
+          ) : (
+            <div
+              className="h-full w-full"
+              style={{ background: theme.previewGradient }}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/25 backdrop-blur-[0.5px]" />
+        </div>
+        <main id="invitation-content" className="relative z-10 mx-auto min-h-[100dvh] w-full max-w-[440px]">
+          {invitationContent}
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <VideoOpeningGate
+      videoSrc={openingVideoUrl}
+      backdropSrc={theme.backdropUrl}
+      ambientAudioSrc={event.musicUrl}
+      monogram={monogram}
+      title={names}
+      fallbackGradient={theme.previewGradient}
+      fallbackImage={heroPhoto}
+      surfaceStyle={invitationSurfaceStyle}
+      onOpened={() => setIsOpened(true)}
+    >
+      {invitationContent}
     </VideoOpeningGate>
   );
 }

@@ -87,8 +87,13 @@ export const metadata: Metadata = {
     "invitation élégante",
   ],
   authors: [{ name: "Élégance Invitations" }],
+  applicationName: "Élégance Invitations",
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
   },
   openGraph: {
     title: "Élégance Invitations — Invitations de Mariage sur Mesure",
