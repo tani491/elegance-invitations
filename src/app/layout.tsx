@@ -108,9 +108,6 @@ export const metadata: Metadata = {
     description:
       "Des invitations numériques d'exception pour les moments les plus importants de votre vie.",
   },
-  verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "INSERER_LE_CODE_ICI",
-  },
 };
 
 const fontVariables = [
