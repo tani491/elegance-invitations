@@ -10,7 +10,17 @@ const CLIENT_API_ROUTES = ["/api/dashboard", "/api/guests", "/api/checkin"];
 const SHARED_CHECKIN_API_ROUTES = ["/api/guests/check-in"];
 const SHARED_UPLOAD_API_ROUTES = ["/api/uploads"];
 const SHARED_CHECKIN_ROLES: AuthRole[] = [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT];
-const PUBLIC_ROUTES = ["/", "/login", "/admin/login", "/builder", "/favicon.ico", "/logo.svg"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/admin/login",
+  "/builder",
+  "/favicon.ico",
+  "/logo.svg",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/google0636c54d932fbe1b.html",
+];
 const PUBLIC_PREFIXES = ["/_next", "/invitation", "/carte", "/api/auth"];
 const PUBLIC_INVITATION_API_ROUTES = ["/api/public/events"];
 
@@ -143,6 +153,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next|favicon.ico|logo.svg|invitation|carte).*)",
+    "/((?!_next|favicon.ico|logo.svg|robots.txt|sitemap.xml|google0636c54d932fbe1b.html|invitation|carte|.*\\..*).*)",
   ],
 };
