@@ -76,10 +76,28 @@ function readAuthToken(request: NextRequest) {
   return request.cookies.get(AUTH_COOKIE_NAME)?.value ?? bearerToken ?? request.headers.get("x-elegance-session");
 }
 
+function authenticatedLoginDestination(pathname: string, role: string | undefined) {
+  if (pathname === "/login" && role === AUTH_ROLES.CLIENT) return "/dashboard";
+  if (pathname === "/admin/login" && role === AUTH_ROLES.SUPER_ADMIN) return "/admin";
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const limitedResponse = rateLimitResponse(request);
   if (limitedResponse) return limitedResponse;
+
+  if (pathname === "/login" || pathname === "/admin/login") {
+    const token = readAuthToken(request);
+    const session = await verifySessionToken(token);
+    const redirectPath = authenticatedLoginDestination(pathname, session?.role);
+
+    if (redirectPath) {
+      return NextResponse.redirect(new URL(redirectPath, request.url));
+    }
+
+    return NextResponse.next();
+  }
 
   if (isPublicPath(pathname)) {
     return NextResponse.next();

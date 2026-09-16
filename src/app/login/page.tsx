@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, Mail } from "lucide-react";
@@ -13,9 +13,14 @@ import { Label } from "@/components/ui/label";
 function ClientLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const prefilledEmail = searchParams.get("email") ?? "";
+  const [email, setEmail] = useState(prefilledEmail);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (prefilledEmail) setEmail(prefilledEmail);
+  }, [prefilledEmail]);
 
   async function handleLogin(event: React.FormEvent) {
     event.preventDefault();
@@ -42,7 +47,9 @@ function ClientLoginForm() {
       }
 
       toast.success("Connexion reussie.");
-      router.push(searchParams.get("next") || data.redirectTo || "/dashboard");
+      const nextPath = searchParams.get("next");
+      const destination = nextPath?.startsWith("/dashboard") ? nextPath : data.redirectTo || "/dashboard";
+      router.replace(destination);
       router.refresh();
     } catch {
       toast.error("Erreur reseau. Veuillez reessayer.");

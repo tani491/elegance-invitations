@@ -5,6 +5,7 @@ import { CalendarDays, Clock, Crown, MapPin, Sparkles, UsersRound } from "lucide
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PassQrCode } from "@/components/invitation/PassQrCode";
+import { SITE_URL } from "@/lib/constants";
 import { DEFAULT_PROGRAM, getDefaultTheme, normalizeThemeConfig, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
 import { serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { db } from "@/lib/db";
@@ -32,16 +33,7 @@ function safeDecode(value: string) {
 }
 
 function metadataBaseUrl() {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://elegance-invitations.vercel.app");
-
-  try {
-    return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-  } catch {
-    return new URL("https://elegance-invitations.vercel.app");
-  }
+  return new URL(SITE_URL);
 }
 
 function weddingTitle(event: { brideName?: string | null; groomName?: string | null } | null | undefined) {

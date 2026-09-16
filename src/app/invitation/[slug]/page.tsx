@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/constants";
 import { getCachedInvitation, type CachedInvitationEvent } from "@/lib/cached-invitation";
 import { serializePublicEvent } from "@/lib/public-event";
 import { InvitationExperience } from "@/components/invitation/InvitationExperience";
@@ -9,16 +10,7 @@ type InvitationPageProps = {
 };
 
 function metadataBaseUrl() {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://elegance-invitations.vercel.app");
-
-  try {
-    return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-  } catch {
-    return new URL("https://elegance-invitations.vercel.app");
-  }
+  return new URL(SITE_URL);
 }
 
 function weddingTitle(event: CachedInvitationEvent | null) {

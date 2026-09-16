@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { siteUrl } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { getThemeOrDefault } from "@/lib/theme-store";
 import {
@@ -34,16 +35,6 @@ function splitCoupleName(coupleName: string) {
     brideName: parts[0] ?? coupleName.trim(),
     groomName: parts[1] ?? null,
   };
-}
-
-function publicBaseUrl(request: NextRequest) {
-  const configured =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
-
-  if (!configured) return request.nextUrl.origin;
-  return configured.startsWith("http") ? configured.replace(/\/$/, "") : `https://${configured.replace(/\/$/, "")}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -130,14 +121,16 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const origin = publicBaseUrl(request);
-  const loginUrl = `${origin}/login`;
-  const invitationUrl = `${origin}/invitation/${encodeURIComponent(event.slug)}?open=1`;
+  const loginUrl = siteUrl("/login");
+  const invitationUrl = siteUrl(`/invitation/${encodeURIComponent(event.slug)}?open=1`);
   const whatsAppMessage = [
-    `Félicitations ${parsed.data.coupleName} ! Vos accès à votre espace Élégance Invitations sont prêts :`,
+    `Félicitations ${brideName} ! Vos accès à votre espace Élégance Invitations sont prêts :`,
+    "",
     `Lien : ${loginUrl}`,
     `Identifiant : ${email}`,
     `Mot de passe : ${password}`,
+    "",
+    "Connectez-vous pour personnaliser votre invitation, suivre vos confirmations RSVP et télécharger vos pass invités.",
   ].join("\n");
 
   return NextResponse.json({
