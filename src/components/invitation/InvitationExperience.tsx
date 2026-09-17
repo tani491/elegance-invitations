@@ -139,6 +139,8 @@ function CinematicVideoSection({
   videoSrc,
   posterSrc,
   detailsRef,
+  hasScrolled,
+  autoOpen,
 }: {
   event: PublicEventPayload;
   names: string;
@@ -146,18 +148,23 @@ function CinematicVideoSection({
   videoSrc: string | null;
   posterSrc: string | null;
   detailsRef: RefObject<HTMLElement | null>;
+  hasScrolled: boolean;
+  autoOpen?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<"idle" | "playing" | "paused" | "ended">("idle");
   const [muted, setMuted] = useState(false);
   const [failed, setFailed] = useState(false);
+  const scrollHintVisible = !hasScrolled && (autoOpen || status !== "idle" || failed || !videoSrc);
 
   async function playWithSound(replay = false) {
     const video = videoRef.current;
     if (!video || !videoSrc) return;
 
     try {
-      if (replay) video.currentTime = 0;
+      if (replay) {
+        video.currentTime = 0;
+      }
       video.muted = false;
       video.volume = 1;
       setMuted(false);
@@ -205,15 +212,16 @@ function CinematicVideoSection({
   }
 
   return (
-    <section className="relative mx-auto flex min-h-[100dvh] w-full max-w-md items-center justify-center overflow-hidden bg-black text-white">
+    <section className="sticky top-0 z-0 mx-auto flex h-[100dvh] w-full max-w-md items-center justify-center overflow-hidden bg-black text-white">
       {videoSrc ? (
         <video
           ref={videoRef}
           src={videoSrc}
           poster={posterSrc ?? undefined}
           playsInline
-          preload="metadata"
+          preload="auto"
           controls={false}
+          loop={false}
           onClick={() => {
             if (status === "idle" || status === "paused" || status === "ended") void playWithSound(status === "ended");
           }}
@@ -222,7 +230,7 @@ function CinematicVideoSection({
             if (!videoRef.current?.ended) setStatus("paused");
           }}
           onEnded={() => setStatus("ended")}
-          className="aspect-[9/16] h-full max-h-[100dvh] w-full object-cover"
+          className="h-full w-full object-cover"
         />
       ) : (
         <div className="aspect-[9/16] h-full max-h-[100dvh] w-full" style={{ background: event.theme.previewGradient }} />
@@ -256,7 +264,7 @@ function CinematicVideoSection({
       </div>
 
       {videoSrc && status !== "idle" && (
-        <div className="absolute right-3 top-3 z-20 flex gap-2">
+        <div className="absolute right-3 top-3 z-30 flex gap-2">
           <Button
             type="button"
             variant="outline"
@@ -280,16 +288,17 @@ function CinematicVideoSection({
         </div>
       )}
 
-      {status === "ended" && (
-        <button
-          type="button"
-          onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          className="absolute bottom-8 left-1/2 z-20 flex w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 animate-in fade-in duration-700 flex-col items-center rounded-[26px] border border-white/16 bg-black/44 px-5 py-4 text-center text-white shadow-[0_18px_60px_rgba(0,0,0,.36)] backdrop-blur-md"
-        >
-          <ChevronDown className="mb-2 size-7 animate-bounce text-[#D4AF37]" />
-          <span className="font-serif text-base italic">Découvrir les détails & confirmer votre présence</span>
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        className={`absolute bottom-6 left-1/2 z-30 flex min-h-12 w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 flex-col items-center justify-center rounded-full border border-[#D4AF37]/45 bg-black/48 px-5 py-3 text-center text-white shadow-[0_18px_60px_rgba(0,0,0,.36)] backdrop-blur-md transition duration-500 ${
+          scrollHintVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+        }`}
+        aria-label="Faire défiler vers les détails de l'invitation"
+      >
+        <ChevronDown className="mb-1 size-6 animate-bounce text-[#D4AF37]" />
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/86">Faites défiler pour voir les détails</span>
+      </button>
     </section>
   );
 }
@@ -407,7 +416,7 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
   return (
     <InfoCard icon={<Ticket className="size-5" />} label={guest.isVip ? "Pass VIP" : "Pass invité"} title={guest.fullName}>
       <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-[#E9DDC9] bg-[#FDFBF7] p-4 text-center">
-        <PassQrCode value={passUrl} size={176} />
+        <PassQrCode value={guest.qrToken} size={176} />
         <p className="text-xs uppercase tracking-[0.18em] text-stone-500">
           {guest.table ? `Table ${guest.table}` : "Table à confirmer"} · {guest.maxGuests > 1 ? `${guest.maxGuests} accès` : "Accès nominatif"}
         </p>
@@ -512,6 +521,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
 export function InvitationExperience({
   event,
   guestToken,
+  autoOpen = false,
 }: {
   event: PublicEventPayload;
   guestToken?: string;
@@ -520,6 +530,7 @@ export function InvitationExperience({
   const detailsRef = useRef<HTMLElement>(null);
   const [origin, setOrigin] = useState("");
   const [guest, setGuest] = useState<GuestPassPayload | null>(null);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const names = coupleNames(event);
   const monogram = coupleMonogram(event);
   const theme = useMemo(() => normalizeThemeConfig(event.theme), [event.theme]);
@@ -530,6 +541,15 @@ export function InvitationExperience({
 
   useEffect(() => {
     setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    const updateScrollState = () => setHasScrolled(window.scrollY > 8);
+
+    updateScrollState();
+    window.addEventListener("scroll", updateScrollState, { passive: true });
+
+    return () => window.removeEventListener("scroll", updateScrollState);
   }, []);
 
   useEffect(() => {
@@ -551,7 +571,7 @@ export function InvitationExperience({
   }, [guestToken]);
 
   return (
-    <main style={vars} className="min-h-screen bg-black text-[#211916]">
+    <main style={vars} className="relative min-h-screen w-full overflow-x-hidden bg-black text-[#211916]">
       <CinematicVideoSection
         event={event}
         names={names}
@@ -559,12 +579,15 @@ export function InvitationExperience({
         videoSrc={videoSrc}
         posterSrc={posterSrc}
         detailsRef={detailsRef}
+        hasScrolled={hasScrolled}
+        autoOpen={autoOpen}
       />
 
       <section
         ref={detailsRef}
-        className="mx-auto w-full max-w-md bg-[#FDFBF7] px-4 py-8 text-[#211916] shadow-[0_-24px_80px_rgba(0,0,0,.34)]"
+        className="relative z-10 mx-auto mt-[-15dvh] w-full max-w-md rounded-t-3xl border-t border-[#D4AF37]/30 bg-[#FDFBF7] px-4 pb-16 pt-6 text-[#211916] shadow-[0_-24px_80px_rgba(0,0,0,.34)]"
       >
+        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#D4AF37]/40" aria-hidden="true" />
         <div className="mb-8 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#A47A29]">Élégance Invitations</p>
           <h1 className="mt-3 font-serif text-4xl italic leading-none">{names}</h1>

@@ -185,7 +185,7 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
   const program = parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM).slice(0, 3);
   const names = `${event.brideName ?? "Mariée"} & ${event.groomName ?? "Marié"}`;
   const eventDate = formatEventDate(event.eventDate);
-  const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.id)}&open=1`;
+  const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.qrToken)}&open=1`;
   const passStyle = {
     ...themeToCssVars(theme),
     backgroundImage:
