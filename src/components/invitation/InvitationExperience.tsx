@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type FormEvent, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -8,10 +8,8 @@ import {
   Download,
   MapPin,
   MessageCircle,
-  Pause,
   Play,
   QrCode,
-  RotateCcw,
   Send,
   Shirt,
   Ticket,
@@ -63,10 +61,6 @@ function firstName(value: string | null | undefined, fallback: string) {
 
 function coupleNames(event: PublicEventPayload) {
   return `${firstName(event.brideName, "La Mariée")} & ${firstName(event.groomName, "Le Marié")}`;
-}
-
-function coupleMonogram(event: PublicEventPayload) {
-  return `${firstName(event.brideName, "E").charAt(0)}${firstName(event.groomName, "I").charAt(0)}`.toUpperCase();
 }
 
 function formatEventDate(value: string | null) {
@@ -128,177 +122,6 @@ function InfoCard({
           {children && <div className="mt-3 text-sm leading-6 text-stone-600">{children}</div>}
         </div>
       </div>
-    </section>
-  );
-}
-
-function CinematicVideoSection({
-  event,
-  names,
-  monogram,
-  videoSrc,
-  posterSrc,
-  detailsRef,
-  hasScrolled,
-  autoOpen,
-}: {
-  event: PublicEventPayload;
-  names: string;
-  monogram: string;
-  videoSrc: string | null;
-  posterSrc: string | null;
-  detailsRef: RefObject<HTMLElement | null>;
-  hasScrolled: boolean;
-  autoOpen?: boolean;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [status, setStatus] = useState<"idle" | "playing" | "paused" | "ended">("idle");
-  const [muted, setMuted] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const scrollHintVisible = !hasScrolled && (autoOpen || status !== "idle" || failed || !videoSrc);
-
-  async function playWithSound(replay = false) {
-    const video = videoRef.current;
-    if (!video || !videoSrc) return;
-
-    try {
-      if (replay) {
-        video.currentTime = 0;
-      }
-      video.muted = false;
-      video.volume = 1;
-      setMuted(false);
-      await video.play();
-      setStatus("playing");
-      setFailed(false);
-    } catch (error) {
-      console.error("Cinematic video playback with sound failed:", error);
-      try {
-        video.muted = true;
-        setMuted(true);
-        await video.play();
-        setStatus("playing");
-        toast("Lecture lancée en mode silencieux. Touchez le bouton son pour l'activer.");
-      } catch (mutedError) {
-        console.error("Cinematic video playback failed:", mutedError);
-        setFailed(true);
-        toast.error("Lecture vidéo impossible sur ce navigateur.");
-      }
-    }
-  }
-
-  function togglePlayback() {
-    const video = videoRef.current;
-    if (!videoSrc || !video) return;
-
-    if (status === "playing") {
-      video.pause();
-      setStatus("paused");
-      return;
-    }
-
-    void playWithSound(status === "ended");
-  }
-
-  function toggleMute() {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.muted = !video.muted;
-    setMuted(video.muted);
-    if (video.paused && status !== "ended") {
-      void video.play().then(() => setStatus("playing")).catch(() => undefined);
-    }
-  }
-
-  return (
-    <section className="sticky top-0 z-0 mx-auto flex h-[100dvh] w-full max-w-md items-center justify-center overflow-hidden bg-black text-white">
-      {videoSrc ? (
-        <video
-          ref={videoRef}
-          src={videoSrc}
-          poster={posterSrc ?? undefined}
-          playsInline
-          preload="auto"
-          controls={false}
-          loop={false}
-          onClick={() => {
-            if (status === "idle" || status === "paused" || status === "ended") void playWithSound(status === "ended");
-          }}
-          onPlay={() => setStatus("playing")}
-          onPause={() => {
-            if (!videoRef.current?.ended) setStatus("paused");
-          }}
-          onEnded={() => setStatus("ended")}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="aspect-[9/16] h-full max-h-[100dvh] w-full" style={{ background: event.theme.previewGradient }} />
-      )}
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/16 to-black/48" />
-
-      {(status === "idle" || failed || !videoSrc) && (
-        <button
-          type="button"
-          onClick={() => void playWithSound(false)}
-          disabled={!videoSrc}
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center disabled:cursor-default"
-          aria-label="Lancer la vidéo cinématique"
-        >
-          <span className="mb-5 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#D4AF37]">Invitation cinématique</span>
-          <span className="grid size-24 place-items-center rounded-full border border-[#FFF4C4]/50 bg-[#D4AF37]/95 text-[#211916] shadow-[0_24px_70px_rgba(0,0,0,.42)]">
-            <Play className="ml-1 size-10 fill-current" />
-          </span>
-          <span className="mt-7 font-serif text-5xl italic leading-none text-white drop-shadow-[0_8px_36px_rgba(0,0,0,.75)]">
-            {names}
-          </span>
-          <span className="mt-4 rounded-full border border-white/20 bg-black/35 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/82 backdrop-blur">
-            {videoSrc ? "Touchez pour démarrer avec le son" : "Vidéo bientôt disponible"}
-          </span>
-        </button>
-      )}
-
-      <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-full border border-white/18 bg-black/30 px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-white/80 backdrop-blur">
-        {monogram}
-      </div>
-
-      {videoSrc && status !== "idle" && (
-        <div className="absolute right-3 top-3 z-30 flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={togglePlayback}
-            className="size-12 rounded-full border-white/20 bg-black/35 text-[#D4AF37] backdrop-blur hover:bg-black/55 hover:text-[#D4AF37]"
-            aria-label={status === "playing" ? "Mettre en pause" : "Relancer la vidéo"}
-          >
-            {status === "ended" ? <RotateCcw className="size-5" /> : status === "playing" ? <Pause className="size-5" /> : <Play className="size-5" />}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={toggleMute}
-            className="size-12 rounded-full border-white/20 bg-black/35 text-[#D4AF37] backdrop-blur hover:bg-black/55 hover:text-[#D4AF37]"
-            aria-label={muted ? "Activer le son" : "Couper le son"}
-          >
-            {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
-          </Button>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-        className={`absolute bottom-6 left-1/2 z-30 flex min-h-12 w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 flex-col items-center justify-center rounded-full border border-[#D4AF37]/45 bg-black/48 px-5 py-3 text-center text-white shadow-[0_18px_60px_rgba(0,0,0,.36)] backdrop-blur-md transition duration-500 ${
-          scrollHintVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
-        }`}
-        aria-label="Faire défiler vers les détails de l'invitation"
-      >
-        <ChevronDown className="mb-1 size-6 animate-bounce text-[#D4AF37]" />
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/86">Faites défiler pour voir les détails</span>
-      </button>
     </section>
   );
 }
@@ -528,16 +351,69 @@ export function InvitationExperience({
   autoOpen?: boolean;
 }) {
   const detailsRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [origin, setOrigin] = useState("");
   const [guest, setGuest] = useState<GuestPassPayload | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [playbackFailed, setPlaybackFailed] = useState(false);
   const names = coupleNames(event);
-  const monogram = coupleMonogram(event);
   const theme = useMemo(() => normalizeThemeConfig(event.theme), [event.theme]);
   const vars = useMemo(() => surfaceVars(theme), [theme]);
   const videoSrc = motionVideoSource({ ...event, theme });
   const posterSrc = event.coverPhotoUrl ?? event.officialPhotoUrls[0] ?? null;
   const passUrl = origin && guest ? `${origin}/carte/${encodeURIComponent(guest.qrToken)}` : null;
+
+  async function handleStart() {
+    const video = videoRef.current;
+    if (!video || !videoSrc) {
+      setPlaybackFailed(true);
+      return;
+    }
+
+    try {
+      video.muted = false;
+      video.volume = 1;
+      setIsMuted(false);
+      await video.play();
+      setHasStarted(true);
+      setPlaybackFailed(false);
+    } catch (error) {
+      console.error("Cinematic video playback with sound failed:", error);
+      try {
+        video.muted = true;
+        setIsMuted(true);
+        await video.play();
+        setHasStarted(true);
+        setPlaybackFailed(false);
+        toast("Lecture lancée en mode silencieux. Touchez le bouton son pour l'activer.");
+      } catch (mutedError) {
+        console.error("Cinematic video playback failed:", mutedError);
+        setPlaybackFailed(true);
+        toast.error("Lecture vidéo impossible sur ce navigateur.");
+      }
+    }
+  }
+
+  function toggleSound() {
+    const video = videoRef.current;
+    if (!video || !videoSrc) return;
+
+    const nextMuted = !isMuted;
+    video.muted = nextMuted;
+    setIsMuted(nextMuted);
+
+    if (!hasStarted || (video.paused && !video.ended)) {
+      void video
+        .play()
+        .then(() => {
+          setHasStarted(true);
+          setPlaybackFailed(false);
+        })
+        .catch(() => undefined);
+    }
+  }
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -551,6 +427,27 @@ export function InvitationExperience({
 
     return () => window.removeEventListener("scroll", updateScrollState);
   }, []);
+
+  useEffect(() => {
+    if (!autoOpen || !videoSrc || hasStarted) return;
+
+    const timeout = window.setTimeout(() => {
+      const video = videoRef.current;
+      if (!video || hasStarted) return;
+
+      video.muted = true;
+      setIsMuted(true);
+      void video
+        .play()
+        .then(() => {
+          setHasStarted(true);
+          setPlaybackFailed(false);
+        })
+        .catch(() => undefined);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [autoOpen, hasStarted, videoSrc]);
 
   useEffect(() => {
     if (!guestToken) return;
@@ -571,35 +468,89 @@ export function InvitationExperience({
   }, [guestToken]);
 
   return (
-    <main style={vars} className="relative min-h-screen w-full overflow-x-hidden bg-black text-[#211916]">
-      <CinematicVideoSection
-        event={event}
-        names={names}
-        monogram={monogram}
-        videoSrc={videoSrc}
-        posterSrc={posterSrc}
-        detailsRef={detailsRef}
-        hasScrolled={hasScrolled}
-        autoOpen={autoOpen}
-      />
+    <div style={vars} className="relative w-full min-h-screen bg-[#0d0d0d] text-[#1a1a1a] overflow-x-hidden">
+      <div className="fixed inset-0 w-full h-[100dvh] max-w-md mx-auto z-0 pointer-events-none overflow-hidden">
+        {videoSrc ? (
+          <video
+            ref={videoRef}
+            src={videoSrc}
+            poster={posterSrc ?? undefined}
+            playsInline
+            preload="auto"
+            controls={false}
+            loop={false}
+            muted={isMuted}
+            onEnded={() => setHasStarted(true)}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full" style={{ background: event.theme.previewGradient }} />
+        )}
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" />
+      </div>
 
-      <section
-        ref={detailsRef}
-        className="relative z-10 mx-auto mt-[-15dvh] w-full max-w-md rounded-t-3xl border-t border-[#D4AF37]/30 bg-[#FDFBF7] px-4 pb-16 pt-6 text-[#211916] shadow-[0_-24px_80px_rgba(0,0,0,.34)]"
-      >
-        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#D4AF37]/40" aria-hidden="true" />
-        <div className="mb-8 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#A47A29]">Élégance Invitations</p>
-          <h1 className="mt-3 font-serif text-4xl italic leading-none">{names}</h1>
-          <p className="mt-4 text-sm leading-6 text-stone-600">{event.invitationQuote ?? "Nous avons l'honneur de vous convier à célébrer notre union."}</p>
+      {videoSrc && (
+        <button
+          type="button"
+          onClick={toggleSound}
+          className="fixed top-4 right-4 z-50 min-h-12 min-w-12 rounded-full bg-black/60 border border-[#d4af37]/40 p-3 text-[#d4af37] backdrop-blur-md"
+          aria-label={isMuted ? "Activer le son" : "Couper le son"}
+        >
+          {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+        </button>
+      )}
+
+      <div className="relative z-10 w-full max-w-md mx-auto flex flex-col">
+        <div className="h-[82dvh] w-full flex flex-col justify-end items-center px-4 pb-8 pointer-events-auto">
+          {!hasStarted && (
+            <button
+              type="button"
+              onClick={() => void handleStart()}
+              disabled={!videoSrc}
+              className="mb-auto mt-auto flex min-h-12 items-center gap-2 rounded-full bg-[#d4af37] px-6 py-3 font-medium tracking-wide text-black shadow-xl animate-pulse disabled:cursor-default disabled:opacity-80"
+            >
+              <Play className="size-4 fill-current" />
+              <span>{videoSrc ? "Toucher pour ouvrir" : "Vidéo bientôt disponible"}</span>
+            </button>
+          )}
+
+          {playbackFailed && (
+            <p className="mb-4 rounded-full border border-white/15 bg-black/55 px-4 py-2 text-center text-xs text-white/85 backdrop-blur">
+              La vidéo ne peut pas être lancée ici, mais les détails restent accessibles.
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className={`flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/30 bg-black/60 px-5 py-2.5 text-white backdrop-blur-md transition-opacity duration-300 ${
+              hasScrolled ? "pointer-events-none opacity-0" : "opacity-100 animate-bounce"
+            }`}
+            aria-label="Glisser vers le haut pour découvrir les détails"
+          >
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-[#d4af37]">Glisser vers le haut pour découvrir</span>
+            <ChevronDown className="size-4 text-[#d4af37]" />
+          </button>
         </div>
 
-        <div className="grid gap-4">
-          <GuestPassCard guest={guest} passUrl={passUrl} />
-          <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
-          <EventDetails event={event} />
-        </div>
-      </section>
-    </main>
+        <main
+          ref={detailsRef}
+          className="w-full bg-[#FDFBF7] rounded-t-[32px] px-5 pt-8 pb-20 shadow-2xl space-y-6 border-t border-[#d4af37]/40"
+        >
+          <div className="text-center space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#A47A29]">Élégance Invitations</p>
+            <h1 className="mt-3 font-serif text-4xl italic leading-none">{names}</h1>
+            <p className="text-sm italic leading-6 text-stone-500">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
+          </div>
+
+          <div className="grid gap-4">
+            <GuestPassCard guest={guest} passUrl={passUrl} />
+            <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
+            <EventDetails event={event} />
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }
