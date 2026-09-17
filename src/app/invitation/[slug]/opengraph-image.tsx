@@ -146,6 +146,7 @@ export default async function Image({ params }: OpenGraphImageProps) {
         <div
           style={{
             position: "absolute",
+            display: "flex",
             top: 68,
             left: 162,
             width: 876,

@@ -30,8 +30,8 @@ function weddingDescription(event: CachedInvitationEvent | null) {
     : "";
 
   return date
-    ? `Nous vous invitons à célébrer notre mariage le ${date}. Touchez pour ouvrir votre enveloppe d'invitation.`
-    : "Nous avons l'honneur de vous convier à célébrer notre union. Touchez pour ouvrir votre enveloppe d'invitation.";
+    ? `Nous vous invitons à célébrer notre mariage le ${date}. Touchez pour lancer l'invitation cinématique.`
+    : "Nous avons l'honneur de vous convier à célébrer notre union. Touchez pour lancer l'invitation cinématique.";
 }
 
 function decodeSlug(slug: string) {

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
-    const { guestToken, status, plusOnes } = parsed.data
+    const { guestToken, status, plusOnes, guestName, dietaryNotes } = parsed.data
 
     // Build the update payload with only provided optional fields
     const updateData: Record<string, unknown> = { rsvpStatus: status }
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
         OR: [
           { qrToken: guestToken },
           { id: guestToken },
+          { accessCode: guestToken },
         ],
       },
       include: { event: { select: { isActive: true } } },
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
     }
 
     updateData.plusOnes = plusOnes
+    if (guestName) updateData.fullName = guestName
+    if (dietaryNotes !== undefined) updateData.dietaryNotes = dietaryNotes
 
     const updatedGuest = await db.eventGuest.update({
       where: { id: existingGuest.id },

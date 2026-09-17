@@ -48,5 +48,11 @@ export const rsvpRequestSchema = z
       .optional()
       .transform((value) => (value ? sanitizeText(value) : null)),
     guestPhone: optionalPhoneSchema,
+    dietaryNotes: z
+      .string()
+      .max(600)
+      .nullable()
+      .optional()
+      .transform((value) => (value ? sanitizeText(value) : null)),
   })
   .strict();

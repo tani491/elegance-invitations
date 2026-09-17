@@ -11,15 +11,27 @@ export async function GET(
   let guest;
 
   try {
-    guest = await db.eventGuest.findUnique({
-      where: { qrToken: guestToken },
+    guest = await db.eventGuest.findFirst({
+      where: {
+        OR: [
+          { qrToken: guestToken },
+          { id: guestToken },
+          { accessCode: guestToken },
+        ],
+      },
       include: { event: { include: { theme: true } } },
     });
   } catch (error) {
     console.error("Public guest theme relation failed, retrying with compatible theme columns:", error);
     try {
-      guest = await db.eventGuest.findUnique({
-        where: { qrToken: guestToken },
+      guest = await db.eventGuest.findFirst({
+        where: {
+          OR: [
+            { qrToken: guestToken },
+            { id: guestToken },
+            { accessCode: guestToken },
+          ],
+        },
         include: {
           event: {
             include: {
@@ -31,8 +43,14 @@ export async function GET(
     } catch (compatError) {
       console.error("Public guest compatible theme relation failed, retrying without theme:", compatError);
       try {
-        guest = await db.eventGuest.findUnique({
-          where: { qrToken: guestToken },
+        guest = await db.eventGuest.findFirst({
+          where: {
+            OR: [
+              { qrToken: guestToken },
+              { id: guestToken },
+              { accessCode: guestToken },
+            ],
+          },
           include: { event: true },
         });
       } catch (retryError) {

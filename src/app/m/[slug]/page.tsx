@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { SITE_URL } from "@/lib/constants";
 
 /* ------------------------------------------------------------------
    Mock data
@@ -556,7 +557,7 @@ export default function GuestInvitationPage() {
           <div className="invisible absolute" aria-hidden="true">
             <div ref={qrRef}>
               <QRCodeSVG
-                value={`https://elegance.sn/m/${slug || COUPLE.slug}`}
+                value={`${SITE_URL}/m/${slug || COUPLE.slug}`}
                 size={120}
                 bgColor="#FAF7F2"
                 fgColor="#5C1D24"

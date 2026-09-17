@@ -53,7 +53,7 @@ function weddingDescription(event: { eventDate?: Date | null } | null | undefine
     : "";
 
   return date
-    ? `Votre pass privé pour célébrer notre mariage le ${date}. Touchez pour ouvrir votre enveloppe d'invitation.`
+    ? `Votre pass privé pour célébrer notre mariage le ${date}. Ouvrez l'invitation cinématique et présentez votre QR Code.`
     : "Votre pass privé pour accéder à notre invitation de mariage.";
 }
 

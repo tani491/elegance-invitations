@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://elegenceinvitation.best";
+const DEFAULT_SITE_URL = "https://www.elegenceinvitation.best";
 
 function normalizeSiteUrl(value: string | undefined) {
   const rawUrl = value?.trim() || DEFAULT_SITE_URL;
