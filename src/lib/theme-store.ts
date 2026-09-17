@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { DEFAULT_THEMES, getDefaultTheme, normalizeThemeConfig } from "@/lib/theme-presets";
+import { allowedPlansForCategory, normalizeAllowedPlans, storeAllowedPlans } from "@/lib/plan-gating";
 import type { Prisma } from "@prisma/client";
 import { SCROLL_ANIMATION_VALUES } from "@/types/database.types";
 import type { OpeningAnimationType, ScrollAnimationType, ThemeConfig } from "@/types/database.types";
@@ -41,6 +42,7 @@ export type SerializableThemeInput = {
   slug?: string | null;
   name?: string | null;
   category?: string | null;
+  allowedPlans?: string[] | null;
   primaryColor?: string | null;
   secondaryColor?: string | null;
   accentColor?: string | null;
@@ -83,6 +85,7 @@ export async function ensureDefaultThemes() {
           update: {
             name: theme.name,
             category: theme.category,
+            allowedPlans: storeAllowedPlans(theme.allowedPlans ?? allowedPlansForCategory(theme.category)),
             primaryColor: theme.primaryColor,
             secondaryColor: theme.secondaryColor,
             accentColor: theme.accentColor,
@@ -102,6 +105,7 @@ export async function ensureDefaultThemes() {
             slug: theme.slug,
             name: theme.name,
             category: theme.category,
+            allowedPlans: storeAllowedPlans(theme.allowedPlans ?? allowedPlansForCategory(theme.category)),
             primaryColor: theme.primaryColor,
             secondaryColor: theme.secondaryColor,
             accentColor: theme.accentColor,
@@ -130,6 +134,7 @@ export async function ensureDefaultThemes() {
 export function serializeTheme(theme: SerializableThemeInput): ThemeConfig {
   if (!theme) return normalizeThemeConfig(getDefaultTheme());
   const fallback = getDefaultTheme(theme.slug ?? undefined);
+  const category = theme.category ?? fallback.category;
   const openingVideoUrl = theme.videoUrl ?? theme.openingVideoUrl ?? theme.demoVideoUrl ?? fallback.openingVideoUrl ?? null;
   const isActive = theme.isActive ?? theme.isVisible ?? fallback.isActive ?? true;
 
@@ -137,7 +142,8 @@ export function serializeTheme(theme: SerializableThemeInput): ThemeConfig {
     id: theme.id,
     slug: theme.slug ?? fallback.slug,
     name: theme.name ?? fallback.name,
-    category: theme.category ?? fallback.category,
+    category,
+    allowedPlans: normalizeAllowedPlans(theme.allowedPlans, fallback.allowedPlans ?? allowedPlansForCategory(category)),
     primaryColor: theme.primaryColor ?? theme.bgPrimary ?? fallback.primaryColor,
     secondaryColor: theme.secondaryColor ?? theme.cardBg ?? fallback.secondaryColor,
     accentColor: theme.accentColor ?? theme.accentGold ?? fallback.accentColor,

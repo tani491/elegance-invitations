@@ -9,7 +9,7 @@ import {
   hashPassword,
   normalizeEmail,
 } from "@/lib/server-auth";
-import { normalizePlan } from "@/lib/plan-gating";
+import { canUseTheme, normalizePlan } from "@/lib/plan-gating";
 import { uniqueSlug } from "@/lib/slug";
 import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme } from "@/lib/theme-presets";
 import { AUTH_ROLES } from "@/types/database.types";
@@ -79,6 +79,12 @@ export async function POST(request: NextRequest) {
   const theme = await getThemeOrDefault(parsed.data.template);
   const fallbackTheme = getDefaultTheme(parsed.data.template);
   const selectedTheme = theme ?? fallbackTheme;
+  const selectedThemeAllowedPlans = "allowedPlans" in selectedTheme ? selectedTheme.allowedPlans : fallbackTheme.allowedPlans;
+
+  if (!canUseTheme(parsed.data.planType, selectedTheme.slug, selectedThemeAllowedPlans)) {
+    return NextResponse.json({ success: false, error: "Ce modele n'est pas disponible pour la formule selectionnee." }, { status: 403 });
+  }
+
   const password = parsed.data.password ?? generateProvisionalPassword();
   const passwordHash = await hashPassword(password);
   const { brideName, groomName } = splitCoupleName(parsed.data.coupleName);

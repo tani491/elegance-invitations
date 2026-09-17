@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Film, KeyRound, MessageSquareQuote, Package, Palette, Phone, Plus, Settings2, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +21,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
-import { canUseMotionVideo, planLabelForPlan } from "@/lib/plan-gating";
+import {
+  allowedPlansForCategory,
+  assignablePlansFromAllowedPlans,
+  canUseMotionVideo,
+  canUseTheme,
+  categoryForAllowedPlans,
+  planLabelForPlan,
+  THEME_PLAN_OPTIONS,
+  type AssignableThemePlan,
+} from "@/lib/plan-gating";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
 import { SCROLL_ANIMATION_OPTIONS, TITLE_FONT_OPTIONS } from "@/types/database.types";
 import type { ScrollAnimationType, ThemeConfig } from "@/types/database.types";
@@ -63,6 +74,7 @@ interface CreateClientResponse {
 type ThemeModelForm = {
   name: string;
   category: string;
+  allowedPlans: AssignableThemePlan[];
   bgPrimary: string;
   cardBg: string;
   accentGold: string;
@@ -74,11 +86,14 @@ type ThemeModelForm = {
 
 type ThemeColorField = "bgPrimary" | "cardBg" | "accentGold" | "textColor";
 
-const COLOR_FIELDS: { key: ThemeColorField; label: string; input: "color" | "text" }[] = [
-  { key: "bgPrimary", label: "Arriere-plan", input: "color" },
-  { key: "cardBg", label: "Cartes / feuillets", input: "text" },
-  { key: "accentGold", label: "Accent & or", input: "color" },
-  { key: "textColor", label: "Textes", input: "color" },
+const DEFAULT_THEME_ALLOWED_PLANS: AssignableThemePlan[] = ["prestige", "privilege"];
+const THEME_COLOR_SAVE_DELAY = 650;
+
+const COLOR_FIELDS: { key: ThemeColorField; label: string; fallback: string }[] = [
+  { key: "bgPrimary", label: "Arriere-plan", fallback: "#1B0F12" },
+  { key: "cardBg", label: "Cartes / feuillets", fallback: "#FDFBF7" },
+  { key: "accentGold", label: "Accent & or", fallback: "#D4AF37" },
+  { key: "textColor", label: "Textes", fallback: "#1B0F12" },
 ] as const;
 
 const THEME_VIDEO_BUCKET = "theme-videos";
@@ -101,8 +116,9 @@ function defaultThemeForm(): ThemeModelForm {
   return {
     name: "",
     category: "Privilege",
+    allowedPlans: DEFAULT_THEME_ALLOWED_PLANS,
     bgPrimary: "#1B0F12",
-    cardBg: "rgba(255,255,255,0.85)",
+    cardBg: "#FDFBF7",
     accentGold: "#D4AF37",
     textColor: "#1B0F12",
     scrollAnimation: "fade-up",
@@ -123,6 +139,76 @@ function themeColorUpdate(key: ThemeColorField, value: string): Partial<ThemeCon
   if (key === "cardBg") return { cardBg: value, secondaryColor: value };
   if (key === "accentGold") return { accentGold: value, accentColor: value, goldColor: value };
   return { textColor: value };
+}
+
+function previewGradientFromTheme(theme: Partial<ThemeConfig>) {
+  const bgPrimary = theme.bgPrimary ?? theme.primaryColor ?? "#5C1D24";
+  const cardBg = theme.cardBg ?? theme.secondaryColor ?? "#FDFBF7";
+  const accentGold = theme.accentGold ?? theme.goldColor ?? "#D4AF37";
+  return `linear-gradient(135deg, ${bgPrimary} 0%, ${accentGold} 52%, ${cardBg} 100%)`;
+}
+
+function assignablePlansForTheme(theme: ThemeConfig) {
+  return assignablePlansFromAllowedPlans(theme.allowedPlans, allowedPlansForCategory(theme.category));
+}
+
+function nextThemePlans(plans: AssignableThemePlan[], plan: AssignableThemePlan, checked: boolean) {
+  const selected = new Set(plans);
+  if (checked) {
+    selected.add(plan);
+  } else if (selected.size > 1) {
+    selected.delete(plan);
+  }
+
+  return THEME_PLAN_OPTIONS.map((option) => option.value).filter((value) => selected.has(value));
+}
+
+function ThemePlanCheckboxGroup({
+  idPrefix,
+  value,
+  onChange,
+}: {
+  idPrefix: string;
+  value: AssignableThemePlan[];
+  onChange: (value: AssignableThemePlan[]) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-3" role="group" aria-label="Formules compatibles">
+      {THEME_PLAN_OPTIONS.map((option) => {
+        const checked = value.includes(option.value);
+        const onlySelected = checked && value.length === 1;
+        const checkboxId = `${idPrefix}-${option.value}`;
+
+        return (
+          <label
+            key={option.value}
+            htmlFor={checkboxId}
+            className={[
+              "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 transition",
+              checked ? "border-[#B89248] bg-[#FFF8E6] text-[#171312]" : "border-[#E5D9C7] bg-white text-[#4B403A]",
+              onlySelected ? "cursor-default" : "hover:border-[#B89248]",
+            ].join(" ")}
+          >
+            <Checkbox
+              id={checkboxId}
+              checked={checked}
+              disabled={onlySelected}
+              onCheckedChange={(nextChecked) => onChange(nextThemePlans(value, option.value, nextChecked === true))}
+              className="size-5"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">{option.label}</span>
+              <span className="block text-xs text-muted-foreground">{option.price}</span>
+            </span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function themePlanLabel(plan: AssignableThemePlan) {
+  return THEME_PLAN_OPTIONS.find((option) => option.value === plan)?.label ?? plan;
 }
 
 function themeVideoSource(theme: ThemeConfig) {
@@ -180,6 +266,7 @@ export default function AdminConsole() {
   const [expandedThemeSlug, setExpandedThemeSlug] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const colorSaveTimers = useRef<Record<string, number>>({});
 
   const stats = useMemo(() => {
     const active = events.filter((event) => event.isActive).length;
@@ -191,6 +278,10 @@ export default function AdminConsole() {
   }, [events, themes]);
 
   const visibleThemeCount = useMemo(() => themes.filter((theme) => theme.isActive !== false).length, [themes]);
+  const availableClientThemes = useMemo(
+    () => themes.filter((theme) => theme.isActive !== false && canUseTheme(form.planType, theme.slug, theme.allowedPlans)),
+    [form.planType, themes],
+  );
 
   async function loadAdminData() {
     const [themesResult, eventsResult] = await Promise.allSettled([
@@ -216,6 +307,18 @@ export default function AdminConsole() {
       loadAdminData().catch(() => toast.error("Impossible de charger l'administration."));
     });
   }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(colorSaveTimers.current).forEach((timer) => window.clearTimeout(timer));
+    };
+  }, []);
+
+  useEffect(() => {
+    if (availableClientThemes.length === 0) return;
+    if (availableClientThemes.some((theme) => theme.slug === form.template)) return;
+    setForm((prev) => ({ ...prev, template: availableClientThemes[0].slug }));
+  }, [availableClientThemes, form.template]);
 
   async function copyText(text: string) {
     try {
@@ -397,6 +500,34 @@ export default function AdminConsole() {
     } finally {
       setSavingTheme(null);
     }
+  }
+
+  function updateThemeColor(slug: string, key: ThemeColorField, value: string) {
+    const patch = themeColorUpdate(key, value);
+    setThemes((prev) =>
+      prev.map((theme) => {
+        if (theme.slug !== slug) return theme;
+        const nextTheme = { ...theme, ...patch };
+        return { ...nextTheme, previewGradient: previewGradientFromTheme(nextTheme) };
+      }),
+    );
+
+    const timerKey = `${slug}:${key}`;
+    const previousTimer = colorSaveTimers.current[timerKey];
+    if (previousTimer) window.clearTimeout(previousTimer);
+
+    colorSaveTimers.current[timerKey] = window.setTimeout(() => {
+      delete colorSaveTimers.current[timerKey];
+      void updateTheme(slug, patch, "Couleur sauvegardee.");
+    }, THEME_COLOR_SAVE_DELAY);
+  }
+
+  function updateThemeAllowedPlans(theme: ThemeConfig, allowedPlans: AssignableThemePlan[]) {
+    const category = categoryForAllowedPlans(allowedPlans);
+    setThemes((prev) =>
+      prev.map((item) => (item.slug === theme.slug ? { ...item, allowedPlans, category } : item)),
+    );
+    void updateTheme(theme.slug, { allowedPlans, category }, "Formules compatibles sauvegardees.");
   }
 
   async function saveThemeName(theme: ThemeConfig) {
@@ -595,8 +726,8 @@ export default function AdminConsole() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F7F2EA] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen overflow-x-hidden bg-[#F7F2EA] px-4 py-6 sm:px-6 lg:px-8 [&_[data-slot=button]]:min-h-12 [&_[data-slot=button]]:min-w-12 [&_[data-slot=input]]:min-h-12 [&_[data-slot=select-trigger]]:min-h-12 [&_[data-slot=select-trigger]]:w-full [&_[data-slot=tabs-trigger]]:min-h-12">
+      <div className="mx-auto w-full max-w-7xl">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="font-script text-3xl text-[#B89248]">Elegance</p>
@@ -684,9 +815,12 @@ export default function AdminConsole() {
                     <Select value={form.template} onValueChange={(template) => setForm({ ...form, template })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {themes.map((theme) => <SelectItem key={theme.slug} value={theme.slug}>{theme.name}</SelectItem>)}
+                        {availableClientThemes.map((theme) => <SelectItem key={theme.slug} value={theme.slug}>{theme.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {availableClientThemes.length === 0 && (
+                      <p className="text-xs text-red-700">Aucun modele actif n'est disponible pour cette formule.</p>
+                    )}
                   </div>
                   <div className="lg:col-span-5">
                     <Button type="submit" disabled={creating} className="bg-[#171312] text-white hover:bg-[#2A2320]">
@@ -791,7 +925,7 @@ export default function AdminConsole() {
                 if (!open && !creatingTheme) setCreateThemeVideo(null);
               }}
             >
-              <DialogContent className="max-h-[92dvh] overflow-y-auto border-[#D7C4A3] bg-[#FDFBF7] sm:max-w-3xl">
+              <DialogContent className="mx-auto max-h-[90dvh] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto border-[#D7C4A3] bg-[#FDFBF7] px-4 py-6 pb-20 sm:px-6">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Plus className="size-5 text-[#B89248]" />
@@ -810,7 +944,7 @@ export default function AdminConsole() {
                     }}
                   />
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Nom du modele</Label>
                       <Input
@@ -820,19 +954,19 @@ export default function AdminConsole() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Categorie</Label>
-                      <Select
-                        value={createThemeForm.category}
-                        onValueChange={(category) => setCreateThemeForm((prev) => ({ ...prev, category }))}
-                      >
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Essentielle">Essentielle</SelectItem>
-                          <SelectItem value="Prestige">Prestige</SelectItem>
-                          <SelectItem value="Privilege">Privilege</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Formules compatibles</Label>
+                      <ThemePlanCheckboxGroup
+                        idPrefix="new-theme-plan"
+                        value={createThemeForm.allowedPlans}
+                        onChange={(allowedPlans) =>
+                          setCreateThemeForm((prev) => ({
+                            ...prev,
+                            allowedPlans,
+                            category: categoryForAllowedPlans(allowedPlans),
+                          }))
+                        }
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Apparition au scroll</Label>
@@ -903,26 +1037,15 @@ export default function AdminConsole() {
                       <Palette className="size-4 text-[#B89248]" />
                       Palette du modele
                     </p>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {COLOR_FIELDS.map(({ key, label, input }) => (
-                        <div key={key} className="space-y-2">
-                          <Label>{label}</Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type={input}
-                              value={createThemeForm[key]}
-                              onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, [key]: event.target.value }))}
-                              className={input === "color" ? "h-10 w-14 shrink-0 p-1" : ""}
-                              placeholder={key === "cardBg" ? "rgba(255,255,255,0.85)" : undefined}
-                              required
-                            />
-                            {input === "color" && (
-                              <span className="truncate rounded bg-[#F7F2EA] px-2 py-2 text-xs text-muted-foreground">
-                                {createThemeForm[key]}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      {COLOR_FIELDS.map(({ key, label, fallback }) => (
+                        <ColorPicker
+                          key={key}
+                          label={label}
+                          value={createThemeForm[key]}
+                          fallback={fallback}
+                          onChange={(color) => setCreateThemeForm((prev) => ({ ...prev, [key]: color }))}
+                        />
                       ))}
                     </div>
                   </div>
@@ -946,6 +1069,7 @@ export default function AdminConsole() {
                 const isVisible = theme.isActive !== false;
                 const videoSrc = themeVideoSource(theme);
                 const progress = uploadProgress[theme.slug] ?? 1;
+                const themeAllowedPlans = assignablePlansForTheme(theme);
 
                 return (
                   <Collapsible
@@ -997,9 +1121,11 @@ export default function AdminConsole() {
                                 )}
                                 {isVisible ? "Visible" : "Masque"}
                               </Badge>
-                              <Badge variant="outline" className="border-[#E5D9C7] bg-[#FDFBF7] text-[#5C1D24]">
-                                {theme.category}
-                              </Badge>
+                              {themeAllowedPlans.map((plan) => (
+                                <Badge key={plan} variant="outline" className="border-[#E5D9C7] bg-[#FDFBF7] text-[#5C1D24]">
+                                  {themePlanLabel(plan)}
+                                </Badge>
+                              ))}
                               <span className="text-xs text-muted-foreground">
                                 {theme.scrollAnimation ?? "fade-up"} · {videoSrc ? "video connectee" : "sans video"}
                               </span>
@@ -1030,7 +1156,7 @@ export default function AdminConsole() {
                         <CollapsibleContent className="overflow-hidden border-t border-[#EFE4D2] bg-[#FDFBF7] transition-all duration-300 ease-in-out">
                           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
                             <div className="space-y-4">
-                              <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                   <Label>Nom du modele</Label>
                                   <Input
@@ -1046,16 +1172,13 @@ export default function AdminConsole() {
                                     }}
                                   />
                                 </div>
-                                <div className="space-y-2">
-                                  <Label>Categorie</Label>
-                                  <Select value={theme.category} onValueChange={(category) => void updateTheme(theme.slug, { category })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Essentielle">Essentielle</SelectItem>
-                                      <SelectItem value="Prestige">Prestige</SelectItem>
-                                      <SelectItem value="Privilege">Privilege</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                <div className="space-y-2 md:col-span-2">
+                                  <Label>Formules compatibles</Label>
+                                  <ThemePlanCheckboxGroup
+                                    idPrefix={`theme-plan-${theme.slug}`}
+                                    value={themeAllowedPlans}
+                                    onChange={(allowedPlans) => updateThemeAllowedPlans(theme, allowedPlans)}
+                                  />
                                 </div>
                                 <div className="space-y-2">
                                   <Label>Apparition au scroll</Label>
@@ -1106,33 +1229,15 @@ export default function AdminConsole() {
                                   </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="mt-3 space-y-3 rounded-lg border border-[#E5D9C7] bg-white p-3 transition-all duration-300 ease-in-out">
-                                  <div className="grid gap-3 sm:grid-cols-2">
-                                    {COLOR_FIELDS.map(({ key, label, input }) => (
-                                      <div key={key} className="space-y-2">
-                                        <Label>{label}</Label>
-                                        <div className="flex items-center gap-2">
-                                          {input === "color" ? (
-                                            <Input
-                                              type="color"
-                                              value={themeColorValue(theme, key)}
-                                              onChange={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
-                                              className="h-10 w-14 shrink-0 p-1"
-                                            />
-                                          ) : (
-                                            <Input
-                                              type="text"
-                                              defaultValue={themeColorValue(theme, key)}
-                                              onBlur={(event) => void updateTheme(theme.slug, themeColorUpdate(key, event.target.value))}
-                                              placeholder="rgba(255,255,255,0.85)"
-                                            />
-                                          )}
-                                          {input === "color" && (
-                                            <span className="truncate rounded bg-[#F7F2EA] px-2 py-2 text-xs text-muted-foreground">
-                                              {themeColorValue(theme, key)}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
+                                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {COLOR_FIELDS.map(({ key, label, fallback }) => (
+                                      <ColorPicker
+                                        key={key}
+                                        label={label}
+                                        value={themeColorValue(theme, key)}
+                                        fallback={fallback}
+                                        onChange={(color) => updateThemeColor(theme.slug, key, color)}
+                                      />
                                     ))}
                                   </div>
                                 </CollapsibleContent>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ThemeConfig } from "@/types/database.types";
-import { requiredPlanForTheme, withThemeAccess } from "@/lib/plan-gating";
+import { withThemeAccess } from "@/lib/plan-gating";
 import { LockedThemeCard } from "@/components/dashboard/LockedThemeCard";
 import { cn } from "@/lib/utils";
 
@@ -107,7 +107,7 @@ export function ThemeSelector({
               theme={theme}
               active={theme.slug === selectedSlug}
               locked={access.locked}
-              requiredPlan={requiredPlanForTheme(theme.slug)}
+              requiredPlan={access.requiredPlan}
               onSelect={() => onSelect(theme.slug)}
             />
           );

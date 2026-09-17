@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ensureDefaultThemes, serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { requireApiRole } from "@/lib/server-auth";
+import { categoryForAllowedPlans, normalizeAllowedPlans, storeAllowedPlans } from "@/lib/plan-gating";
 import { AUTH_ROLES, SCROLL_ANIMATION_VALUES } from "@/types/database.types";
 import { DEFAULT_THEMES } from "@/lib/theme-presets";
 import { slugify, uniqueSlug } from "@/lib/slug";
@@ -11,6 +12,11 @@ import { slugify, uniqueSlug } from "@/lib/slug";
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const cssColorSchema = z.string().min(3).max(90).regex(/^(#[0-9a-fA-F]{6}|rgba?\([^)]+\)|hsla?\([^)]+\))$/);
 const scrollAnimationSchema = z.enum(SCROLL_ANIMATION_VALUES);
+const allowedPlansSchema = z
+  .array(z.string())
+  .min(1)
+  .transform((plans) => normalizeAllowedPlans(plans, []))
+  .refine((plans) => plans.length > 0, { message: "Selectionnez au moins une formule." });
 const nullableUrlSchema = z.preprocess(
   (value) => (value === "" ? null : value),
   z.string().min(1).nullable().optional(),
@@ -28,6 +34,7 @@ const themePayloadSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().min(2).optional(),
   category: z.string().min(2).optional(),
+  allowedPlans: allowedPlansSchema.optional(),
   primaryColor: hexColorSchema.optional(),
   secondaryColor: cssColorSchema.optional(),
   accentColor: hexColorSchema.optional(),
@@ -100,6 +107,7 @@ function normalizeThemeWriteData(data: z.infer<typeof themePayloadSchema>) {
   const bgPrimary = data.bgPrimary ?? data.primaryColor;
   const cardBg = data.cardBg ?? data.secondaryColor;
   const accentGold = data.accentGold ?? data.goldColor;
+  const allowedPlans = data.allowedPlans ? storeAllowedPlans(data.allowedPlans) : undefined;
   const openingVideoUrl = payload.openingVideoUrl ?? videoUrl;
   const demoVideoUrl = payload.demoVideoUrl ?? videoUrl ?? openingVideoUrl;
   const animationType = payload.animationType ?? openingStyle;
@@ -107,7 +115,8 @@ function normalizeThemeWriteData(data: z.infer<typeof themePayloadSchema>) {
 
   return {
     ...(payload.name ? { name: payload.name.trim() } : {}),
-    ...(payload.category ? { category: payload.category.trim() } : {}),
+    ...(payload.category || allowedPlans ? { category: (payload.category ?? categoryForAllowedPlans(allowedPlans)).trim() } : {}),
+    ...(allowedPlans ? { allowedPlans } : {}),
     ...(bgPrimary ? { bgPrimary, primaryColor: bgPrimary } : {}),
     ...(cardBg ? { cardBg, secondaryColor: cardBg } : {}),
     ...(accentGold ? { accentGold, accentColor: accentGold, goldColor: accentGold } : {}),
@@ -157,12 +166,14 @@ function themeResponseOverlay(data: z.infer<typeof themePayloadSchema>) {
   const writeData = normalizeThemeWriteData(data);
   const openingVideoUrl = "openingVideoUrl" in writeData ? writeData.openingVideoUrl : undefined;
   const demoVideoUrl = "demoVideoUrl" in writeData ? writeData.demoVideoUrl : undefined;
+  const allowedPlans = "allowedPlans" in writeData ? writeData.allowedPlans : undefined;
   const animationType = "animationType" in writeData ? writeData.animationType : undefined;
   const isActive = "isActive" in writeData ? writeData.isActive : undefined;
 
   return {
     ...(writeData as Partial<ReturnType<typeof serializeTheme>>),
     ...(openingVideoUrl !== undefined ? { videoUrl: openingVideoUrl } : {}),
+    ...(allowedPlans !== undefined ? { allowedPlans } : {}),
     ...(animationType !== undefined ? { openingStyle: animationType } : {}),
     ...(isActive !== undefined ? { isVisible: isActive } : {}),
     ...(demoVideoUrl !== undefined ? { demoVideoUrl } : {}),
@@ -243,7 +254,8 @@ export async function POST(request: NextRequest) {
         data: {
           slug: nextSlug,
           name: payload.name,
-          category: payload.category,
+          category: data.category ?? payload.category,
+          allowedPlans: data.allowedPlans ?? storeAllowedPlans(payload.allowedPlans),
           primaryColor: data.primaryColor ?? payload.bgPrimary,
           secondaryColor: data.secondaryColor ?? payload.cardBg,
           accentColor: data.accentColor ?? payload.accentGold,
@@ -270,7 +282,7 @@ export async function POST(request: NextRequest) {
         data: {
           slug: nextSlug,
           name: payload.name,
-          category: payload.category,
+          category: data.category ?? payload.category,
           primaryColor: data.primaryColor ?? payload.bgPrimary,
           secondaryColor: data.secondaryColor ?? payload.cardBg,
           accentColor: data.accentColor ?? payload.accentGold,

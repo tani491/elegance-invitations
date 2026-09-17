@@ -51,6 +51,7 @@ model Theme {
   slug            String   @unique
   name            String
   category        String
+  allowedPlans    String[] @default(["PRESTIGE", "PRIVILEGE"])
   primaryColor    String   @default("#5C1D24")
   secondaryColor  String   @default("#FAF7F2")
   accentColor     String   @default("#C5A880")

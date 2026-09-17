@@ -6,6 +6,7 @@ export const AUTH_ROLES = {
 export type AuthRole = (typeof AUTH_ROLES)[keyof typeof AUTH_ROLES];
 
 export type PlanType = "essentielle" | "prestige" | "privilege" | "imperiale";
+export type AssignableThemePlan = Exclude<PlanType, "essentielle">;
 export type OpeningAnimationType =
   | "wax_seal_burst"
   | "botanical_envelope"
@@ -71,6 +72,7 @@ export interface ThemeConfig {
   slug: string;
   name: string;
   category: string;
+  allowedPlans?: PlanType[];
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;

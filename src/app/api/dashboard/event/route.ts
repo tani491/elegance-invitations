@@ -144,11 +144,15 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (themeSlug) {
-    if (!canUseTheme(currentEvent.planType, themeSlug)) {
+    const theme = await getThemeOrDefault(themeSlug);
+    const allowedPlans = theme && "allowedPlans" in theme
+      ? (theme as { allowedPlans?: string[] | null }).allowedPlans
+      : undefined;
+
+    if (theme && !canUseTheme(currentEvent.planType, themeSlug, allowedPlans)) {
       return NextResponse.json({ success: false, error: "Theme verrouille pour votre formule." }, { status: 403 });
     }
 
-    const theme = await getThemeOrDefault(themeSlug);
     if (theme) {
       updateData.themeId = theme.id;
       updateData.template = theme.slug;

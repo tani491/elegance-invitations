@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { allowedPlansForCategory, normalizeAllowedPlans } from "@/lib/plan-gating";
 import type { DressCodeColor, ProgramStep, ThemeConfig } from "@/types/database.types";
 
 export const DEFAULT_PROGRAM: ProgramStep[] = [
@@ -158,6 +159,7 @@ const SAFE_THEME_FALLBACK = {
   slug: "medina-orientale",
   name: "Medina Orientale",
   category: "Privilege",
+  allowedPlans: ["prestige", "privilege"],
   primaryColor: "#FAF6F0",
   secondaryColor: "rgba(255, 255, 255, 0.85)",
   accentColor: "#D4AF37",
@@ -205,6 +207,7 @@ type ThemeConfigInput = {
 
 export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined): ThemeConfig {
   const fallback = theme?.slug ? getDefaultTheme(theme.slug) : SAFE_THEME_FALLBACK;
+  const category = theme?.category || fallback.category || SAFE_THEME_FALLBACK.category;
   const primaryColor = theme?.primaryColor || theme?.bgPrimary || fallback.primaryColor || SAFE_THEME_FALLBACK.primaryColor;
   const secondaryColor = theme?.secondaryColor || theme?.cardBg || fallback.secondaryColor || SAFE_THEME_FALLBACK.secondaryColor;
   const accentColor = theme?.accentColor || theme?.accentGold || fallback.accentColor || SAFE_THEME_FALLBACK.accentColor;
@@ -217,7 +220,8 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
     id: theme?.id,
     slug: theme?.slug || fallback.slug || SAFE_THEME_FALLBACK.slug,
     name: theme?.name || fallback.name || SAFE_THEME_FALLBACK.name,
-    category: theme?.category || fallback.category || SAFE_THEME_FALLBACK.category,
+    category,
+    allowedPlans: normalizeAllowedPlans(theme?.allowedPlans, fallback.allowedPlans ?? allowedPlansForCategory(category)),
     primaryColor,
     secondaryColor,
     accentColor,
