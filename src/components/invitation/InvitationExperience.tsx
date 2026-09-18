@@ -51,8 +51,8 @@ type VideoTheme = PublicEventPayload["theme"] & {
 };
 
 const FIELD_CLASS =
-  "min-h-12 rounded-xl border-[#E9DDC9] bg-white px-4 text-base text-[#211916] placeholder:text-stone-400 focus-visible:ring-[#D4AF37]";
-const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-stone-500";
+  "min-h-12 rounded-xl border border-white/25 bg-white/15 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
+const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#F3E5AB] drop-shadow-sm";
 
 function firstName(value: string | null | undefined, fallback: string) {
   return value?.trim().split(/\s+/)[0] || fallback;
@@ -112,13 +112,13 @@ function InfoCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[#E9DDC9] bg-white p-5 shadow-[0_14px_40px_rgba(31,25,18,.06)]">
+    <section className="rounded-2xl border border-white/15 bg-black/30 p-6 text-white shadow-lg backdrop-blur-lg drop-shadow-md">
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F7F0E4] text-[#A47A29]">{icon}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/30 bg-white/10 text-[#F3E5AB]">{icon}</span>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{label}</p>
-          <h2 className="mt-1 font-serif text-2xl italic leading-tight text-[#211916]">{title}</h2>
-          {children && <div className="mt-3 text-sm leading-6 text-stone-600">{children}</div>}
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#F3E5AB] drop-shadow-sm">{label}</p>
+          <h2 className="mt-1 font-serif text-2xl italic leading-tight text-white drop-shadow-md">{title}</h2>
+          {children && <div className="mt-3 text-sm leading-6 text-white/82 drop-shadow-sm">{children}</div>}
         </div>
       </div>
     </section>
@@ -219,10 +219,10 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
               value={dietaryNotes}
               onChange={(inputEvent) => setDietaryNotes(inputEvent.target.value)}
               placeholder="Allergies, menu végétarien, contraintes..."
-              className="min-h-24 rounded-xl border-[#E9DDC9] bg-white text-base text-[#211916] placeholder:text-stone-400 focus-visible:ring-[#D4AF37]"
+              className="min-h-24 rounded-xl border border-white/25 bg-white/15 text-base text-white placeholder:text-white/60 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0"
             />
           </div>
-          <Button type="submit" disabled={submitting} className="min-h-12 rounded-full bg-[#211916] text-white hover:bg-[#332621]">
+          <Button type="submit" disabled={submitting} className="min-h-12 rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
             <Send className="size-4" />
             {submitting ? "Enregistrement..." : "Envoyer ma réponse"}
           </Button>
@@ -237,13 +237,15 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
 
   return (
     <InfoCard icon={<Ticket className="size-5" />} label={guest.isVip ? "Pass VIP" : "Pass invité"} title={guest.fullName}>
-      <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-[#E9DDC9] bg-[#FDFBF7] p-4 text-center">
-        <PassQrCode value={guest.qrToken} size={176} />
-        <p className="text-xs uppercase tracking-[0.18em] text-stone-500">
+      <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-white/20 bg-white/15 p-4 text-center backdrop-blur-md">
+        <div className="rounded-xl border border-white/50 bg-white/95 p-3 shadow-inner">
+          <PassQrCode value={guest.qrToken} size={176} />
+        </div>
+        <p className="text-xs uppercase tracking-[0.18em] text-white/75">
           {guest.table ? `Table ${guest.table}` : "Table à confirmer"} · {guest.maxGuests > 1 ? `${guest.maxGuests} accès` : "Accès nominatif"}
         </p>
       </div>
-      <Button asChild className="mt-4 min-h-12 w-full rounded-full bg-[#D4AF37] text-[#211916] hover:bg-[#C6A030]">
+      <Button asChild className="mt-4 min-h-12 w-full rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
         <a href={passUrl} target="_blank" rel="noreferrer">
           <Download className="size-4" />
           Enregistrer mon Pass
@@ -266,7 +268,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
       <InfoCard icon={<MapPin className="size-5" />} label="Itinéraire" title={event.venueName ?? "Lieu à confirmer"}>
         {event.venueAddress && <p>{event.venueAddress}</p>}
         {mapsHref && (
-          <Button asChild variant="outline" className="mt-4 min-h-12 w-full rounded-full border-[#D4AF37] text-[#211916]">
+          <Button asChild variant="outline" className="mt-4 min-h-12 w-full rounded-full border-[#D4AF37]/40 bg-white/10 text-[#F3E5AB] backdrop-blur-md hover:bg-white/20 hover:text-white">
             <a href={mapsHref} target="_blank" rel="noreferrer">
               <MapPin className="size-4" />
               Ouvrir dans Google Maps
@@ -280,10 +282,10 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
           <div className="mt-5 space-y-4">
             {event.program.map((step, index) => (
               <div key={`${step.time}-${step.title}-${index}`} className="grid grid-cols-[64px_1fr] gap-4">
-                <time className="font-serif text-base italic text-[#A47A29]">{step.time}</time>
-                <div className="border-l border-[#E9DDC9] pl-4">
-                  <p className="font-serif text-lg leading-6 text-[#211916]">{step.title}</p>
-                  {step.location && <p className="mt-1 text-xs uppercase tracking-[0.14em] text-stone-500">{step.location}</p>}
+                <time className="font-serif text-base italic text-[#F3E5AB]">{step.time}</time>
+                <div className="border-l border-white/20 pl-4">
+                  <p className="font-serif text-lg leading-6 text-white">{step.title}</p>
+                  {step.location && <p className="mt-1 text-xs uppercase tracking-[0.14em] text-white/62">{step.location}</p>}
                 </div>
               </div>
             ))}
@@ -297,7 +299,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
           {event.dressCodeColors.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {event.dressCodeColors.map((color) => (
-                <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#E9DDC9] bg-[#FDFBF7] px-3 text-xs uppercase tracking-[0.12em] text-stone-600">
+                <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 text-xs uppercase tracking-[0.12em] text-white/75 backdrop-blur-md">
                   <span className="size-5 rounded-full border border-white shadow-inner" style={{ backgroundColor: color.color }} />
                   {color.label}
                 </span>
@@ -311,7 +313,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
         <InfoCard icon={<MessageCircle className="size-5" />} label="Contact" title="Besoin d'aide ?">
           <div className="mt-4 grid gap-3">
             {contactHref && (
-              <Button asChild variant="outline" className="min-h-12 rounded-full border-[#D4AF37] text-[#211916]">
+              <Button asChild variant="outline" className="min-h-12 rounded-full border-[#D4AF37]/40 bg-white/10 text-[#F3E5AB] backdrop-blur-md hover:bg-white/20 hover:text-white">
                 <a href={contactHref} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4" />
                   Contacter les mariés
@@ -319,7 +321,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
               </Button>
             )}
             {event.whatsappGroupUrl && (
-              <Button asChild className="min-h-12 rounded-full bg-[#211916] text-white hover:bg-[#332621]">
+              <Button asChild className="min-h-12 rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
                 <a href={event.whatsappGroupUrl} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4" />
                   Rejoindre le groupe WhatsApp
@@ -537,20 +539,20 @@ export function InvitationExperience({
 
             <main
               ref={detailsRef}
-              className="w-full bg-[#FDFBF7] text-[#1a1a1a] rounded-t-[36px] shadow-2xl border-t border-[#d4af37]/40 px-6 pt-10 pb-24 space-y-8 pointer-events-auto"
+              className="w-full bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-t-[36px] shadow-[0_-10px_30px_rgba(0,0,0,0.3)] px-5 pt-8 pb-24 space-y-6 pointer-events-auto"
             >
-              <div className="space-y-2 border-b border-stone-200 pb-6 text-center">
-                <p className="text-xs uppercase tracking-widest text-[#8c733e]">Avec la bénédiction de nos familles</p>
-                <h1 className="font-serif text-3xl text-stone-900">{names}</h1>
-                <p className="text-sm italic text-stone-500">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
-                <p className="pt-2 text-sm font-medium text-[#8c733e]">{formatEventDate(event.eventDate)}</p>
+              <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
+                <p className="text-xs uppercase tracking-widest text-[#F3E5AB]">Avec la bénédiction de nos familles</p>
+                <h1 className="font-serif text-3xl text-white">{names}</h1>
+                <p className="text-sm italic text-white/75">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
+                <p className="pt-2 text-sm font-medium text-[#F3E5AB]">{formatEventDate(event.eventDate)}</p>
               </div>
 
               <GuestPassCard guest={guest} passUrl={passUrl} />
               <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
               <EventDetails event={event} />
 
-              <footer className="pt-4 text-center text-xs uppercase tracking-widest text-stone-400">
+              <footer className="pt-4 text-center text-xs uppercase tracking-widest text-white/60 drop-shadow-sm">
                 Élégance Invitations — Maison de Prestige
               </footer>
             </main>
