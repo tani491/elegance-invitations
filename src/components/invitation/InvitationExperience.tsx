@@ -8,7 +8,6 @@ import {
   Download,
   MapPin,
   MessageCircle,
-  Play,
   QrCode,
   Send,
   Shirt,
@@ -369,6 +368,7 @@ export function InvitationExperience({
     const video = videoRef.current;
     if (!video || !videoSrc) {
       setPlaybackFailed(true);
+      setHasStarted(true);
       return;
     }
 
@@ -391,6 +391,7 @@ export function InvitationExperience({
       } catch (mutedError) {
         console.error("Cinematic video playback failed:", mutedError);
         setPlaybackFailed(true);
+        setHasStarted(true);
         toast.error("Lecture vidéo impossible sur ce navigateur.");
       }
     }
@@ -490,7 +491,7 @@ export function InvitationExperience({
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" />
       </div>
 
-      {videoSrc && (
+      {hasStarted && videoSrc && (
         <button
           type="button"
           onClick={toggleSound}
@@ -502,54 +503,59 @@ export function InvitationExperience({
       )}
 
       <div className="relative z-10 w-full max-w-md mx-auto flex flex-col">
-        <div className="h-[82dvh] w-full flex flex-col justify-end items-center px-4 pb-8 pointer-events-auto">
-          {!hasStarted && (
+        {!hasStarted ? (
+          <div className="h-[100dvh] w-full flex flex-col items-center justify-center p-6 text-center">
             <button
               type="button"
               onClick={() => void handleStart()}
-              disabled={!videoSrc}
-              className="mb-auto mt-auto flex min-h-12 items-center gap-2 rounded-full bg-[#d4af37] px-6 py-3 font-medium tracking-wide text-black shadow-xl animate-pulse disabled:cursor-default disabled:opacity-80"
+              className="min-h-12 rounded-full bg-[#d4af37] px-8 py-4 font-serif text-lg tracking-wider text-black shadow-2xl transition-transform animate-pulse active:scale-95"
             >
-              <Play className="size-4 fill-current" />
-              <span>{videoSrc ? "Toucher pour ouvrir" : "Vidéo bientôt disponible"}</span>
+              Ouvrir l&apos;Invitation
             </button>
-          )}
-
-          {playbackFailed && (
-            <p className="mb-4 rounded-full border border-white/15 bg-black/55 px-4 py-2 text-center text-xs text-white/85 backdrop-blur">
-              La vidéo ne peut pas être lancée ici, mais les détails restent accessibles.
-            </p>
-          )}
-
-          <button
-            type="button"
-            onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className={`flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/30 bg-black/60 px-5 py-2.5 text-white backdrop-blur-md transition-opacity duration-300 ${
-              hasScrolled ? "pointer-events-none opacity-0" : "opacity-100 animate-bounce"
-            }`}
-            aria-label="Glisser vers le haut pour découvrir les détails"
-          >
-            <span className="text-xs font-medium uppercase tracking-[0.16em] text-[#d4af37]">Glisser vers le haut pour découvrir</span>
-            <ChevronDown className="size-4 text-[#d4af37]" />
-          </button>
-        </div>
-
-        <main
-          ref={detailsRef}
-          className="w-full bg-[#FDFBF7] rounded-t-[32px] px-5 pt-8 pb-20 shadow-2xl space-y-6 border-t border-[#d4af37]/40"
-        >
-          <div className="text-center space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#A47A29]">Élégance Invitations</p>
-            <h1 className="mt-3 font-serif text-4xl italic leading-none">{names}</h1>
-            <p className="text-sm italic leading-6 text-stone-500">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
           </div>
+        ) : (
+          <>
+            <div className="h-[80dvh] w-full flex flex-col justify-end items-center pb-8 pointer-events-none">
+              {playbackFailed && (
+                <p className="mb-4 rounded-full border border-white/15 bg-black/55 px-4 py-2 text-center text-xs text-white/85 backdrop-blur">
+                  La vidéo ne peut pas être lancée ici, mais les détails restent accessibles.
+                </p>
+              )}
 
-          <div className="grid gap-4">
-            <GuestPassCard guest={guest} passUrl={passUrl} />
-            <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
-            <EventDetails event={event} />
-          </div>
-        </main>
+              <button
+                type="button"
+                onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/30 bg-black/60 px-5 py-2.5 text-white backdrop-blur-md transition-opacity duration-300 ${
+                  hasScrolled ? "opacity-0" : "opacity-100 animate-bounce"
+                }`}
+                aria-label="Faire défiler vers le haut"
+              >
+                <span className="text-xs uppercase tracking-widest text-[#d4af37]">Faire défiler vers le haut</span>
+                <ChevronDown className="size-4 text-[#d4af37]" />
+              </button>
+            </div>
+
+            <main
+              ref={detailsRef}
+              className="w-full bg-[#FDFBF7] text-[#1a1a1a] rounded-t-[36px] shadow-2xl border-t border-[#d4af37]/40 px-6 pt-10 pb-24 space-y-8 pointer-events-auto"
+            >
+              <div className="space-y-2 border-b border-stone-200 pb-6 text-center">
+                <p className="text-xs uppercase tracking-widest text-[#8c733e]">Avec la bénédiction de nos familles</p>
+                <h1 className="font-serif text-3xl text-stone-900">{names}</h1>
+                <p className="text-sm italic text-stone-500">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
+                <p className="pt-2 text-sm font-medium text-[#8c733e]">{formatEventDate(event.eventDate)}</p>
+              </div>
+
+              <GuestPassCard guest={guest} passUrl={passUrl} />
+              <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
+              <EventDetails event={event} />
+
+              <footer className="pt-4 text-center text-xs uppercase tracking-widest text-stone-400">
+                Élégance Invitations — Maison de Prestige
+              </footer>
+            </main>
+          </>
+        )}
       </div>
     </div>
   );
