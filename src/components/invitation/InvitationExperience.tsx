@@ -51,7 +51,7 @@ type VideoTheme = PublicEventPayload["theme"] & {
 };
 
 const FIELD_CLASS =
-  "min-h-12 rounded-xl border border-white/25 bg-white/15 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
+  "min-h-12 rounded-xl border border-white/10 bg-black/10 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
 const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#F3E5AB] drop-shadow-sm";
 
 function firstName(value: string | null | undefined, fallback: string) {
@@ -112,9 +112,9 @@ function InfoCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/15 bg-black/30 p-6 text-white shadow-lg backdrop-blur-lg drop-shadow-md">
+    <section className="rounded-2xl border border-white/10 bg-black/20 p-6 text-white shadow-lg backdrop-blur-sm drop-shadow-md">
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/30 bg-white/10 text-[#F3E5AB]">{icon}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/20 bg-black/20 text-[#F3E5AB]">{icon}</span>
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#F3E5AB] drop-shadow-sm">{label}</p>
           <h2 className="mt-1 font-serif text-2xl italic leading-tight text-white drop-shadow-md">{title}</h2>
@@ -196,7 +196,7 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
               <SelectTrigger className={FIELD_CLASS}>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="border-white/10 bg-black/20 text-white backdrop-blur-sm">
                 <SelectItem value="confirmed">Présent(e)</SelectItem>
                 <SelectItem value="declined">Absent(e)</SelectItem>
               </SelectContent>
@@ -219,7 +219,7 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
               value={dietaryNotes}
               onChange={(inputEvent) => setDietaryNotes(inputEvent.target.value)}
               placeholder="Allergies, menu végétarien, contraintes..."
-              className="min-h-24 rounded-xl border border-white/25 bg-white/15 text-base text-white placeholder:text-white/60 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0"
+              className="min-h-24 rounded-xl border border-white/10 bg-black/10 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0"
             />
           </div>
           <Button type="submit" disabled={submitting} className="min-h-12 rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
@@ -237,8 +237,8 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
 
   return (
     <InfoCard icon={<Ticket className="size-5" />} label={guest.isVip ? "Pass VIP" : "Pass invité"} title={guest.fullName}>
-      <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-white/20 bg-white/15 p-4 text-center backdrop-blur-md">
-        <div className="rounded-xl border border-white/50 bg-white/95 p-3 shadow-inner">
+      <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-center backdrop-blur-sm">
+        <div className="rounded-xl border border-white/10 bg-[#FDFBF7]/20 p-3 shadow-[0_0_30px_rgba(255,255,255,0.12)] backdrop-blur-sm">
           <PassQrCode value={guest.qrToken} size={176} />
         </div>
         <p className="text-xs uppercase tracking-[0.18em] text-white/75">
@@ -268,7 +268,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
       <InfoCard icon={<MapPin className="size-5" />} label="Itinéraire" title={event.venueName ?? "Lieu à confirmer"}>
         {event.venueAddress && <p>{event.venueAddress}</p>}
         {mapsHref && (
-          <Button asChild variant="outline" className="mt-4 min-h-12 w-full rounded-full border-[#D4AF37]/40 bg-white/10 text-[#F3E5AB] backdrop-blur-md hover:bg-white/20 hover:text-white">
+          <Button asChild variant="outline" className="mt-4 min-h-12 w-full rounded-full border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
             <a href={mapsHref} target="_blank" rel="noreferrer">
               <MapPin className="size-4" />
               Ouvrir dans Google Maps
@@ -299,7 +299,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
           {event.dressCodeColors.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {event.dressCodeColors.map((color) => (
-                <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 text-xs uppercase tracking-[0.12em] text-white/75 backdrop-blur-md">
+                <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 text-xs uppercase tracking-[0.12em] text-white/75 backdrop-blur-sm">
                   <span className="size-5 rounded-full border border-white shadow-inner" style={{ backgroundColor: color.color }} />
                   {color.label}
                 </span>
@@ -313,7 +313,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
         <InfoCard icon={<MessageCircle className="size-5" />} label="Contact" title="Besoin d'aide ?">
           <div className="mt-4 grid gap-3">
             {contactHref && (
-              <Button asChild variant="outline" className="min-h-12 rounded-full border-[#D4AF37]/40 bg-white/10 text-[#F3E5AB] backdrop-blur-md hover:bg-white/20 hover:text-white">
+              <Button asChild variant="outline" className="min-h-12 rounded-full border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
                 <a href={contactHref} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4" />
                   Contacter les mariés
@@ -483,21 +483,24 @@ export function InvitationExperience({
             controls={false}
             loop={false}
             muted={isMuted}
-            onEnded={() => setHasStarted(true)}
+            onEnded={(e) => {
+              e.currentTarget.pause();
+            }}
             className="h-full w-full object-cover"
+            style={{ objectFit: "cover" }}
           />
         ) : (
           <div className="h-full w-full" style={{ background: event.theme.previewGradient }} />
         )}
         <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
 
       {hasStarted && videoSrc && (
         <button
           type="button"
           onClick={toggleSound}
-          className="fixed top-4 right-4 z-50 min-h-12 min-w-12 rounded-full bg-black/60 border border-[#d4af37]/40 p-3 text-[#d4af37] backdrop-blur-md"
+          className="fixed top-4 right-4 z-50 min-h-12 min-w-12 rounded-full bg-black/20 border border-[#d4af37]/20 p-3 text-[#d4af37] backdrop-blur-sm"
           aria-label={isMuted ? "Activer le son" : "Couper le son"}
         >
           {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
@@ -519,7 +522,7 @@ export function InvitationExperience({
           <>
             <div className="h-[80dvh] w-full flex flex-col justify-end items-center pb-8 pointer-events-none">
               {playbackFailed && (
-                <p className="mb-4 rounded-full border border-white/15 bg-black/55 px-4 py-2 text-center text-xs text-white/85 backdrop-blur">
+                <p className="mb-4 rounded-full border border-white/10 bg-black/20 px-4 py-2 text-center text-xs text-white/85 backdrop-blur-sm">
                   La vidéo ne peut pas être lancée ici, mais les détails restent accessibles.
                 </p>
               )}
@@ -527,7 +530,7 @@ export function InvitationExperience({
               <button
                 type="button"
                 onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/30 bg-black/60 px-5 py-2.5 text-white backdrop-blur-md transition-opacity duration-300 ${
+                className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/20 bg-black/20 px-5 py-2.5 text-white backdrop-blur-sm transition-opacity duration-300 ${
                   hasScrolled ? "opacity-0" : "opacity-100 animate-bounce"
                 }`}
                 aria-label="Faire défiler vers le haut"
@@ -539,7 +542,7 @@ export function InvitationExperience({
 
             <main
               ref={detailsRef}
-              className="w-full bg-white/10 backdrop-blur-xl border-t border-white/20 rounded-t-[36px] shadow-[0_-10px_30px_rgba(0,0,0,0.3)] px-5 pt-8 pb-24 space-y-6 pointer-events-auto"
+              className="w-full bg-black/10 backdrop-blur-sm border-t border-white/20 rounded-t-[36px] shadow-[0_-10px_30px_rgba(0,0,0,0.3)] px-5 pt-8 pb-24 space-y-6 pointer-events-auto"
             >
               <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
                 <p className="text-xs uppercase tracking-widest text-[#F3E5AB]">Avec la bénédiction de nos familles</p>
