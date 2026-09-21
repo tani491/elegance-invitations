@@ -18,12 +18,10 @@ import {
   VolumeX,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PassQrCode } from "@/components/invitation/PassQrCode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { normalizeThemeConfig, themeToCssVars } from "@/lib/theme-presets";
 import type { PublicEventPayload } from "@/types/database.types";
 
@@ -136,7 +134,6 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
   const [guestName, setGuestName] = useState(guest?.fullName ?? "");
   const [status, setStatus] = useState(guest?.rsvpStatus === "declined" ? "declined" : "confirmed");
   const [plusOnes, setPlusOnes] = useState(String(guest?.plusOnes ?? 0));
-  const [dietaryNotes, setDietaryNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -167,7 +164,6 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
           status,
           plusOnes: Number(plusOnes),
           guestName,
-          dietaryNotes,
         }),
       });
       const json = await response.json();
@@ -194,7 +190,7 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
       ) : (
         <form onSubmit={submit} className="mt-5 grid gap-4">
           <div className="space-y-2">
-            <Label className={LABEL_CLASS}>Nom</Label>
+            <Label className={LABEL_CLASS}>Nom / Prénom</Label>
             <Input value={guestName} onChange={(inputEvent) => setGuestName(inputEvent.target.value)} placeholder="Votre nom complet" className={FIELD_CLASS} />
           </div>
           <div className="space-y-2">
@@ -220,15 +216,6 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
               className={FIELD_CLASS}
             />
           </div>
-          <div className="space-y-2">
-            <Label className={LABEL_CLASS}>Régime ou note alimentaire</Label>
-            <Textarea
-              value={dietaryNotes}
-              onChange={(inputEvent) => setDietaryNotes(inputEvent.target.value)}
-              placeholder="Allergies, menu végétarien, contraintes..."
-              className="min-h-24 rounded-xl border border-white/10 bg-black/10 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0"
-            />
-          </div>
           <Button type="submit" disabled={submitting} className="h-11 rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
             <Send className="size-4" />
             {submitting ? "Enregistrement..." : "Envoyer ma réponse"}
@@ -243,15 +230,10 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
   if (!guest || !passUrl) return null;
 
   return (
-    <InfoCard icon={<Ticket className="size-5" />} label={guest.isVip ? "Pass VIP" : "Pass invité"} title={guest.fullName}>
-      <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-center backdrop-blur-sm">
-        <div className="rounded-xl border border-white/10 bg-[#FDFBF7]/20 p-3 shadow-[0_0_30px_rgba(255,255,255,0.12)] backdrop-blur-sm">
-          <PassQrCode value={guest.qrToken} size={176} />
-        </div>
-        <p className="text-xs uppercase tracking-[0.18em] text-white/75">
-          {guest.table ? `Table ${guest.table}` : "Table à confirmer"} · {guest.maxGuests > 1 ? `${guest.maxGuests} accès` : "Accès nominatif"}
-        </p>
-      </div>
+    <InfoCard icon={<Ticket className="size-5" />} label="Pass invité" title={guest.fullName}>
+      <p className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-center text-xs uppercase tracking-[0.18em] text-white/75 backdrop-blur-sm">
+        Accès nominatif • Table à confirmer
+      </p>
       <Button asChild className="mt-4 h-11 w-full rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
         <a href={passUrl} target="_blank" rel="noreferrer">
           <Download className="size-4" />
