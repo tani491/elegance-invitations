@@ -8,7 +8,7 @@ const CLIENT_ROUTES = ["/dashboard"];
 const ADMIN_API_ROUTES = ["/api/admin", "/api/events"];
 const CLIENT_API_ROUTES = ["/api/dashboard", "/api/guests", "/api/checkin"];
 const SHARED_CHECKIN_API_ROUTES = ["/api/guests/check-in"];
-const SHARED_UPLOAD_API_ROUTES = ["/api/uploads"];
+const SHARED_UPLOAD_API_ROUTES = ["/api/uploads", "/api/upload"];
 const SHARED_CHECKIN_ROLES: AuthRole[] = [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT];
 const PUBLIC_ROUTES = [
   "/",

@@ -202,7 +202,12 @@ export default function DashboardPage() {
     formData.append("kind", kind);
     formData.append("file", file);
 
-    const upload = await fetch("/api/uploads", { method: "POST", body: formData });
+    const upload = await fetch("/api/upload", {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      body: formData,
+    });
     const uploadJson = await upload.json();
 
     if (!upload.ok || !uploadJson.success) {

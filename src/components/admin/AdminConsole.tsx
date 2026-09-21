@@ -20,7 +20,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
-import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import {
   allowedPlansForCategory,
   assignablePlansFromAllowedPlans,
@@ -96,16 +95,11 @@ const COLOR_FIELDS: { key: ThemeColorField; label: string; fallback: string }[] 
   { key: "textColor", label: "Textes", fallback: "#1B0F12" },
 ] as const;
 
-const THEME_VIDEO_BUCKET = "theme-videos";
 const NEW_THEME_UPLOAD_KEY = "__new_theme__";
 const MAX_THEME_VIDEO_SIZE = 50 * 1024 * 1024;
 const THEME_VIDEO_ACCEPT = "video/mp4,video/quicktime,video/webm,video/mov";
 const THEME_VIDEO_MIME_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/mov"]);
 const THEME_VIDEO_EXTENSIONS = new Set(["mp4", "mov", "webm"]);
-
-function sanitizeStorageFilename(filename: string) {
-  return filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-}
 
 function isSupportedThemeVideo(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase();
@@ -559,44 +553,33 @@ export default function AdminConsole() {
         return null;
       }
 
-      const filePath = `${Date.now()}_${sanitizeStorageFilename(file.name)}`;
-      const signatureResponse = await fetch("/api/admin/themes/upload-url", {
+      const formData = new FormData();
+      formData.append("kind", "theme-video");
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filePath }),
+        body: formData,
       });
-      const signatureJson = await signatureResponse.json();
+      const uploadJson = await uploadResponse.json();
 
-      if (!signatureResponse.ok || !signatureJson.success) {
-        toast.error(signatureJson.error ?? "Signature Supabase impossible.");
+      if (!uploadResponse.ok || !uploadJson.success) {
+        toast.error(uploadJson.error ?? "Upload R2 impossible.");
         return null;
       }
 
-      const supabase = createBrowserSupabaseClient();
-      const { error } = await supabase.storage.from(THEME_VIDEO_BUCKET).uploadToSignedUrl(
-        signatureJson.data.path,
-        signatureJson.data.token,
-        file,
-        {
-          contentType: file.type || "video/mp4",
-          cacheControl: "3600",
-          upsert: true,
-        },
-      );
-
-      if (error) {
-        console.error("Erreur upload Supabase:", error);
-        toast.error(error.message);
+      const publicUrl = (uploadJson.data?.url ?? uploadJson.url) as string | undefined;
+      if (!publicUrl) {
+        toast.error("URL R2 manquante.");
         return null;
       }
 
       setUploadProgress((prev) => ({ ...prev, [progressKey]: 100 }));
-      const { data } = supabase.storage.from(THEME_VIDEO_BUCKET).getPublicUrl(signatureJson.data.path);
-      return data.publicUrl;
+      return publicUrl;
     } catch (error) {
-      console.error("Erreur upload Supabase:", error);
+      console.error("Erreur upload R2:", error);
       toast.error(error instanceof Error ? error.message : "Upload video impossible.");
       return null;
     } finally {
@@ -1247,7 +1230,7 @@ export default function AdminConsole() {
                               <div className="flex items-center justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold text-[#171312]">Media du modele</p>
-                                  <p className="text-xs text-muted-foreground">Video d'ouverture synchronisee avec Supabase.</p>
+                                  <p className="text-xs text-muted-foreground">Video d'ouverture synchronisee avec Cloudflare R2.</p>
                                 </div>
                                 {videoSrc && <Badge variant="outline" className="border-emerald-200 text-emerald-700">Synchronisee</Badge>}
                               </div>

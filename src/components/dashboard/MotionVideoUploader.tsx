@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 
 const MAX_MOTION_VIDEO_SIZE = 50 * 1024 * 1024;
 const MOTION_VIDEO_ACCEPT = "video/mp4";
@@ -59,39 +58,28 @@ export function MotionVideoUploader({
     }, 550);
 
     try {
-      const signatureResponse = await fetch("/api/motion-videos/upload-url", {
+      const formData = new FormData();
+      formData.append("kind", "video");
+      formData.append("file", file);
+      if (eventId) formData.append("eventId", eventId);
+
+      const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName: file.name, eventId }),
+        body: formData,
       });
-      const signatureJson = await signatureResponse.json();
+      const uploadJson = await uploadResponse.json();
 
-      if (!signatureResponse.ok || !signatureJson.success) {
-        throw new Error(signatureJson.error ?? "Signature Supabase impossible.");
+      if (!uploadResponse.ok || !uploadJson.success) {
+        throw new Error(uploadJson.error ?? "Upload R2 impossible.");
       }
 
-      const supabase = createBrowserSupabaseClient();
-      const uploadData = signatureJson.data as { bucket: string; path: string; token: string };
-      const { error } = await supabase.storage.from(uploadData.bucket).uploadToSignedUrl(
-        uploadData.path,
-        uploadData.token,
-        file,
-        {
-          contentType: "video/mp4",
-          cacheControl: "3600",
-          upsert: true,
-        },
-      );
+      const publicUrl = (uploadJson.data?.url ?? uploadJson.url) as string | undefined;
+      if (!publicUrl) throw new Error("URL R2 manquante.");
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const { data } = supabase.storage.from(uploadData.bucket).getPublicUrl(uploadData.path);
       setProgress(100);
-      await onChange(data.publicUrl);
+      await onChange(publicUrl);
       toast.success("Video cinematique synchronisee.");
     } catch (error) {
       console.error("Motion video upload failed:", error);
@@ -191,7 +179,7 @@ export function MotionVideoUploader({
             Video Cinematique Personnalisee (MP4 vertical 9:16)
           </Label>
           <p className="text-sm text-muted-foreground">
-            Film motion reel de 60 secondes, stocke dans Supabase Storage sous motion-videos/.
+            Film motion reel de 60 secondes, stocke dans Cloudflare R2 sous motion-videos/.
           </p>
         </div>
         <Badge className="w-fit rounded-full border border-[#C5A059]/45 bg-[#C5A059]/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#8A6A2F]">
