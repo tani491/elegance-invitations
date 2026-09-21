@@ -53,6 +53,10 @@ type VideoTheme = PublicEventPayload["theme"] & {
 const FIELD_CLASS =
   "min-h-12 rounded-xl border border-white/10 bg-black/10 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
 const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#F3E5AB] drop-shadow-sm";
+const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-col sm:flex-row gap-3 px-2 overflow-hidden";
+const ACTION_BUTTON_CLASS =
+  "w-full flex-1 min-w-0 min-h-[44px] rounded-xl px-4 text-xs font-medium sm:text-sm truncate flex items-center justify-center gap-2";
+const CONTENT_REVEAL_TIME = 5;
 const OPENING_END_TIME = 10;
 
 function firstName(value: string | null | undefined, fallback: string) {
@@ -269,12 +273,18 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
       <InfoCard icon={<MapPin className="size-5" />} label="Itinéraire" title={event.venueName ?? "Lieu à confirmer"}>
         {event.venueAddress && <p>{event.venueAddress}</p>}
         {mapsHref && (
-          <Button asChild variant="outline" className="mt-4 h-11 w-full rounded-full border-[#D4AF37]/20 bg-black/10 px-5 text-sm text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
-            <a href={mapsHref} target="_blank" rel="noreferrer">
-              <MapPin className="size-4" />
-              Ouvrir dans Google Maps
-            </a>
-          </Button>
+          <div className={`mt-4 ${ACTION_BUTTON_GROUP_CLASS}`}>
+            <Button
+              asChild
+              variant="outline"
+              className={`${ACTION_BUTTON_CLASS} border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white`}
+            >
+              <a href={mapsHref} target="_blank" rel="noreferrer">
+                <MapPin className="size-4 shrink-0" />
+                <span className="min-w-0 truncate">Ouvrir dans Google Maps</span>
+              </a>
+            </Button>
+          </div>
         )}
       </InfoCard>
 
@@ -312,20 +322,24 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
 
       {(contactHref || event.whatsappGroupUrl) && (
         <InfoCard icon={<MessageCircle className="size-5" />} label="Contact" title="Besoin d'aide ?">
-          <div className="mt-4 grid gap-3">
+          <div className={`mt-4 ${ACTION_BUTTON_GROUP_CLASS}`}>
             {contactHref && (
-              <Button asChild variant="outline" className="h-11 rounded-full border-[#D4AF37]/20 bg-black/10 px-5 text-sm text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
+              <Button
+                asChild
+                variant="outline"
+                className={`${ACTION_BUTTON_CLASS} border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white`}
+              >
                 <a href={contactHref} target="_blank" rel="noreferrer">
-                  <MessageCircle className="size-4" />
-                  Contacter les mariés
+                  <MessageCircle className="size-4 shrink-0" />
+                  <span className="min-w-0 truncate">Contacter les mariés</span>
                 </a>
               </Button>
             )}
             {event.whatsappGroupUrl && (
-              <Button asChild className="h-11 rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
+              <Button asChild className={`${ACTION_BUTTON_CLASS} bg-[#D4AF37] text-black hover:bg-[#F3E5AB]`}>
                 <a href={event.whatsappGroupUrl} target="_blank" rel="noreferrer">
-                  <MessageCircle className="size-4" />
-                  Rejoindre le groupe WhatsApp
+                  <MessageCircle className="size-4 shrink-0" />
+                  <span className="min-w-0 truncate">Rejoindre le groupe WhatsApp</span>
                 </a>
               </Button>
             )}
@@ -358,6 +372,7 @@ export function InvitationExperience({
   const [guest, setGuest] = useState<GuestPassPayload | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackFailed, setPlaybackFailed] = useState(false);
   const names = coupleNames(event);
@@ -372,6 +387,7 @@ export function InvitationExperience({
     if (!video || !videoSrc) {
       setPlaybackFailed(true);
       setHasStarted(true);
+      setShowContent(true);
       return;
     }
 
@@ -395,6 +411,7 @@ export function InvitationExperience({
         console.error("Cinematic video playback failed:", mutedError);
         setPlaybackFailed(true);
         setHasStarted(true);
+        setShowContent(true);
         toast.error("Lecture vidéo impossible sur ce navigateur.");
       }
     }
@@ -421,7 +438,13 @@ export function InvitationExperience({
 
   function handleTimeUpdate() {
     const video = videoRef.current;
-    if (!video || !Number.isFinite(video.duration) || video.duration <= OPENING_END_TIME + 0.5) return;
+    if (!video) return;
+
+    if (!showContent && video.currentTime >= CONTENT_REVEAL_TIME) {
+      setShowContent(true);
+    }
+
+    if (!Number.isFinite(video.duration) || video.duration <= OPENING_END_TIME + 0.5) return;
 
     if (video.currentTime >= video.duration - 0.5) {
       video.currentTime = OPENING_END_TIME;
@@ -441,6 +464,16 @@ export function InvitationExperience({
 
     return () => window.removeEventListener("scroll", updateScrollState);
   }, []);
+
+  useEffect(() => {
+    if (!hasStarted || showContent) return;
+
+    const timeout = window.setTimeout(() => {
+      setShowContent(true);
+    }, CONTENT_REVEAL_TIME * 1000);
+
+    return () => window.clearTimeout(timeout);
+  }, [hasStarted, showContent]);
 
   useEffect(() => {
     if (!autoOpen || !videoSrc || hasStarted) return;
@@ -530,6 +563,8 @@ export function InvitationExperience({
               Toucher pour ouvrir
             </button>
           </div>
+        ) : !showContent ? (
+          <div className="h-[100dvh] w-full" aria-hidden="true" />
         ) : (
           <>
             <div className="h-[80dvh] w-full flex flex-col justify-end items-center pb-8 pointer-events-none">
@@ -545,9 +580,9 @@ export function InvitationExperience({
                 className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/20 bg-black/20 px-5 py-2.5 text-white backdrop-blur-sm transition-opacity duration-300 ${
                   hasScrolled ? "opacity-0" : "opacity-100 animate-bounce"
                 }`}
-                aria-label="Faire défiler vers le haut"
+                aria-label="Glisser vers le haut"
               >
-                <span className="text-xs uppercase tracking-widest text-[#d4af37]">Faire défiler vers le haut</span>
+                <span className="text-xs uppercase tracking-widest text-[#d4af37]">Glisser vers le haut</span>
                 <ChevronDown className="size-4 text-[#d4af37]" />
               </button>
             </div>
