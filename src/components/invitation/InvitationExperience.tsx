@@ -1,14 +1,16 @@
 "use client";
 
 import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import {
   CalendarDays,
   ChevronDown,
   Clock,
   Download,
+  Gift,
+  Images,
   MapPin,
   MessageCircle,
-  QrCode,
   Send,
   Shirt,
   Ticket,
@@ -53,10 +55,10 @@ type VideoTheme = PublicEventPayload["theme"] & {
 const FIELD_CLASS =
   "min-h-12 rounded-xl border border-white/10 bg-black/10 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
 const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#F3E5AB] drop-shadow-sm";
-const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-col sm:flex-row gap-3 px-2 overflow-hidden";
+const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-wrap sm:flex-nowrap gap-2 px-2 overflow-hidden";
 const ACTION_BUTTON_CLASS =
   "w-full flex-1 min-w-0 min-h-[44px] rounded-xl px-4 text-xs font-medium sm:text-sm truncate flex items-center justify-center gap-2";
-const CONTENT_REVEAL_TIME = 5;
+const CONTENT_REVEAL_TIME = 4.5;
 const OPENING_END_TIME = 10;
 
 function firstName(value: string | null | undefined, fallback: string) {
@@ -260,6 +262,30 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
   );
 }
 
+function PhotoGallery({ images }: { images: string[] }) {
+  const galleryImages = Array.from(new Set(images.filter(Boolean))).slice(0, 4);
+
+  if (galleryImages.length === 0) return null;
+
+  return (
+    <InfoCard icon={<Images className="size-5" />} label="Galerie" title="Nos plus beaux instants">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {galleryImages.map((src, index) => (
+          <div key={`${src}-${index}`} className="relative h-48 w-full overflow-hidden rounded-2xl border border-white/20 shadow-md">
+            <Image
+              src={src}
+              alt={`Photo du couple ${index + 1}`}
+              fill
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+        ))}
+      </div>
+    </InfoCard>
+  );
+}
+
 function EventDetails({ event }: { event: PublicEventPayload }) {
   const mapsHref = buildMapsHref(event);
   const contactHref = buildWhatsAppHref(event.organizerPhone, `Bonjour, j'ai une question au sujet de ${event.name}.`);
@@ -348,7 +374,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
       )}
 
       {(event.giftIban || event.giftWave) && (
-        <InfoCard icon={<QrCode className="size-5" />} label="Cadeau" title="Liste & contribution">
+        <InfoCard icon={<Gift className="size-5" />} label="Cadeau" title="Liste & contribution">
           {event.giftIban && <p className="break-all">IBAN : {event.giftIban}</p>}
           {event.giftWave && <p className="break-all">Wave : {event.giftWave}</p>}
         </InfoCard>
@@ -554,14 +580,20 @@ export function InvitationExperience({
 
       <div className="relative z-10 w-full max-w-md mx-auto flex flex-col">
         {!hasStarted ? (
-          <div className="h-[100dvh] w-full flex flex-col items-center justify-center p-6 text-center">
-            <button
-              type="button"
-              onClick={() => void handleStart()}
-              className="rounded-full bg-[#d4af37] px-6 py-3 text-sm font-medium tracking-wide text-black shadow-2xl transition-transform animate-pulse active:scale-95"
-            >
-              Toucher pour ouvrir
-            </button>
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Lancer l'invitation"
+            onClick={() => void handleStart()}
+            onKeyDown={(keyboardEvent) => {
+              if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+                keyboardEvent.preventDefault();
+                void handleStart();
+              }
+            }}
+            className="h-[100dvh] w-full cursor-pointer"
+          >
+            <span className="sr-only">Lancer l&apos;invitation</span>
           </div>
         ) : !showContent ? (
           <div className="h-[100dvh] w-full" aria-hidden="true" />
@@ -599,6 +631,7 @@ export function InvitationExperience({
               </div>
 
               <GuestPassCard guest={guest} passUrl={passUrl} />
+              <PhotoGallery images={event.galleryImages} />
               <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
               <EventDetails event={event} />
 

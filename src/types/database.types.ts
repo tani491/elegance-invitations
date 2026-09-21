@@ -134,6 +134,7 @@ export interface PublicEventPayload {
   coupleStory: string | null;
   coverPhotoUrl: string | null;
   officialPhotoUrls: string[];
+  galleryImages: string[];
   musicUrl: string | null;
   motionVideoUrl: string | null;
   whatsappGroupUrl: string | null;
