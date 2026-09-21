@@ -53,6 +53,7 @@ type VideoTheme = PublicEventPayload["theme"] & {
 const FIELD_CLASS =
   "min-h-12 rounded-xl border border-white/10 bg-black/10 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
 const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#F3E5AB] drop-shadow-sm";
+const OPENING_END_TIME = 10;
 
 function firstName(value: string | null | undefined, fallback: string) {
   return value?.trim().split(/\s+/)[0] || fallback;
@@ -222,7 +223,7 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
               className="min-h-24 rounded-xl border border-white/10 bg-black/10 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0"
             />
           </div>
-          <Button type="submit" disabled={submitting} className="min-h-12 rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
+          <Button type="submit" disabled={submitting} className="h-11 rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
             <Send className="size-4" />
             {submitting ? "Enregistrement..." : "Envoyer ma réponse"}
           </Button>
@@ -245,7 +246,7 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
           {guest.table ? `Table ${guest.table}` : "Table à confirmer"} · {guest.maxGuests > 1 ? `${guest.maxGuests} accès` : "Accès nominatif"}
         </p>
       </div>
-      <Button asChild className="mt-4 min-h-12 w-full rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
+      <Button asChild className="mt-4 h-11 w-full rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
         <a href={passUrl} target="_blank" rel="noreferrer">
           <Download className="size-4" />
           Enregistrer mon Pass
@@ -268,7 +269,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
       <InfoCard icon={<MapPin className="size-5" />} label="Itinéraire" title={event.venueName ?? "Lieu à confirmer"}>
         {event.venueAddress && <p>{event.venueAddress}</p>}
         {mapsHref && (
-          <Button asChild variant="outline" className="mt-4 min-h-12 w-full rounded-full border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
+          <Button asChild variant="outline" className="mt-4 h-11 w-full rounded-full border-[#D4AF37]/20 bg-black/10 px-5 text-sm text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
             <a href={mapsHref} target="_blank" rel="noreferrer">
               <MapPin className="size-4" />
               Ouvrir dans Google Maps
@@ -313,7 +314,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
         <InfoCard icon={<MessageCircle className="size-5" />} label="Contact" title="Besoin d'aide ?">
           <div className="mt-4 grid gap-3">
             {contactHref && (
-              <Button asChild variant="outline" className="min-h-12 rounded-full border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
+              <Button asChild variant="outline" className="h-11 rounded-full border-[#D4AF37]/20 bg-black/10 px-5 text-sm text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white">
                 <a href={contactHref} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4" />
                   Contacter les mariés
@@ -321,7 +322,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
               </Button>
             )}
             {event.whatsappGroupUrl && (
-              <Button asChild className="min-h-12 rounded-full bg-[#D4AF37] text-black hover:bg-[#F3E5AB]">
+              <Button asChild className="h-11 rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
                 <a href={event.whatsappGroupUrl} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4" />
                   Rejoindre le groupe WhatsApp
@@ -418,6 +419,16 @@ export function InvitationExperience({
     }
   }
 
+  function handleTimeUpdate() {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.duration) || video.duration <= OPENING_END_TIME + 0.5) return;
+
+    if (video.currentTime >= video.duration - 0.5) {
+      video.currentTime = OPENING_END_TIME;
+      void video.play().catch(() => undefined);
+    }
+  }
+
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
@@ -483,6 +494,7 @@ export function InvitationExperience({
             controls={false}
             loop={false}
             muted={isMuted}
+            onTimeUpdate={handleTimeUpdate}
             onEnded={(e) => {
               e.currentTarget.pause();
             }}
@@ -513,9 +525,9 @@ export function InvitationExperience({
             <button
               type="button"
               onClick={() => void handleStart()}
-              className="min-h-12 rounded-full bg-[#d4af37] px-8 py-4 font-serif text-lg tracking-wider text-black shadow-2xl transition-transform animate-pulse active:scale-95"
+              className="rounded-full bg-[#d4af37] px-6 py-3 text-sm font-medium tracking-wide text-black shadow-2xl transition-transform animate-pulse active:scale-95"
             >
-              Ouvrir l&apos;Invitation
+              Toucher pour ouvrir
             </button>
           </div>
         ) : (
