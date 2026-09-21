@@ -23,7 +23,7 @@ const createClientSchema = z.object({
   planType: z
     .preprocess(
       (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
-      z.enum(["prestige", "privilege", "imperiale", "motion"]),
+      z.enum(["privilege", "imperiale", "motion"]),
     )
     .transform((planType) => normalizePlan(planType)),
   template: z.string().min(2).default("medina-orientale"),

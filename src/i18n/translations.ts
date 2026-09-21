@@ -131,7 +131,7 @@ const fr: Translations = {
     paper: "Papier Traditionnel",
     digital: "Élégance Numérique",
     rows: [
-      { label: "Coût moyen (100 invités)", paper: "150 000 – 300 000 FCFA", digital: "10 000 – 25 000 FCFA" },
+      { label: "Coût moyen (100 invités)", paper: "150 000 – 300 000 FCFA", digital: "15 000 – 25 000 FCFA" },
       { label: "Délai de production", paper: "2 – 4 semaines", digital: "Quelques heures" },
       { label: "Suivi RSVP", paper: "Manuel (appels, SMS)", digital: "Automatique en temps réel" },
       { label: "Mise à jour dernière minute", paper: "Impossible", digital: "Instantanée" },
@@ -159,15 +159,6 @@ const fr: Translations = {
     order: "Commander",
     tiers: [
       {
-        name: "Formule Prestige",
-        priceFcfa: 10000,
-        features: [
-          "Design haut de gamme pour invitation interactive",
-          "RSVP WhatsApp pour confirmations simplifiées",
-          "Pass invités nominatifs avec QR Code",
-        ],
-      },
-      {
         name: "Formule Privilège",
         priceFcfa: 15000,
         features: [
@@ -178,7 +169,7 @@ const fr: Translations = {
         ],
       },
       {
-        name: "Formule Impériale — Cinématique Motion",
+        name: "Formule Impérial Cinematic Motion",
         priceFcfa: 25000,
         recommended: true,
         badge: "L'Expérience Ultime",
@@ -280,7 +271,7 @@ const en: Translations = {
     paper: "Traditional Paper",
     digital: "Élégance Digital",
     rows: [
-      { label: "Average cost (100 guests)", paper: "150 000 – 300 000 FCFA", digital: "10 000 – 25 000 FCFA" },
+      { label: "Average cost (100 guests)", paper: "150 000 – 300 000 FCFA", digital: "15 000 – 25 000 FCFA" },
       { label: "Production time", paper: "2 – 4 weeks", digital: "A few hours" },
       { label: "RSVP tracking", paper: "Manual (calls, SMS)", digital: "Automatic real-time" },
       { label: "Last-minute updates", paper: "Impossible", digital: "Instant" },
@@ -307,15 +298,6 @@ const en: Translations = {
     popular: "Popular",
     order: "Order Now",
     tiers: [
-      {
-        name: "Prestige Formula",
-        priceFcfa: 10000,
-        features: [
-          "High-end design for the interactive invitation",
-          "WhatsApp RSVP for simplified confirmations",
-          "Named guest passes with QR Code",
-        ],
-      },
       {
         name: "Privilege Formula",
         priceFcfa: 15000,
@@ -429,7 +411,7 @@ const es: Translations = {
     paper: "Papel Tradicional",
     digital: "Élégance Digital",
     rows: [
-      { label: "Coste medio (100 invitados)", paper: "150 000 – 300 000 FCFA", digital: "10 000 – 25 000 FCFA" },
+      { label: "Coste medio (100 invitados)", paper: "150 000 – 300 000 FCFA", digital: "15 000 – 25 000 FCFA" },
       { label: "Tiempo de producción", paper: "2 – 4 semanas", digital: "Unas horas" },
       { label: "Seguimiento RSVP", paper: "Manual (llamadas, SMS)", digital: "Automático en tiempo real" },
       { label: "Cambios de última hora", paper: "Imposible", digital: "Instantáneo" },
@@ -456,15 +438,6 @@ const es: Translations = {
     popular: "Popular",
     order: "Pedir Ahora",
     tiers: [
-      {
-        name: "Fórmula Prestigio",
-        priceFcfa: 10000,
-        features: [
-          "Diseño de alta gama para invitación interactiva",
-          "RSVP WhatsApp para confirmaciones simplificadas",
-          "Pases nominativos con QR Code",
-        ],
-      },
       {
         name: "Fórmula Privilegio",
         priceFcfa: 15000,
@@ -578,7 +551,7 @@ const ar: Translations = {
     paper: "الورق التقليدي",
     digital: "Élégance الرقمية",
     rows: [
-      { label: "التكلفة المتوسطة (100 ضيف)", paper: "150 000 – 300 000 فرانك", digital: "10 000 – 25 000 فرانك" },
+      { label: "التكلفة المتوسطة (100 ضيف)", paper: "150 000 – 300 000 فرانك", digital: "15 000 – 25 000 فرانك" },
       { label: "مدة الإنتاج", paper: "2 – 4 أسابيع", digital: "بضع ساعات" },
       { label: "متابعة الردود", paper: "يدوية (مكالمات، رسائل)", digital: "تلقائية في الوقت الفعلي" },
       { label: "تعديلات اللحظة الأخيرة", paper: "مستحيل", digital: "فورية" },
@@ -605,15 +578,6 @@ const ar: Translations = {
     popular: "الأكثر شعبية",
     order: "اطلب الآن",
     tiers: [
-      {
-        name: "باقة البريستيج",
-        priceFcfa: 10000,
-        features: [
-          "تصميم فاخر للدعوة التفاعلية",
-          "تأكيدات RSVP عبر WhatsApp",
-          "بطاقات ضيوف بالاسم مع QR Code",
-        ],
-      },
       {
         name: "باقة الامتياز",
         priceFcfa: 15000,

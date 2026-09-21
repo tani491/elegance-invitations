@@ -1170,7 +1170,7 @@ export default function HomePage() {
             <SectionSubheading className="mt-4">{t.pricing.subheading}</SectionSubheading>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 md:grid-cols-2 lg:gap-8">
             {t.pricing.tiers.map((tier, i) => (
               <motion.div
                 key={tier.name}

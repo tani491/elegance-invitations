@@ -20,7 +20,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "enveloppe-de-cire",
     name: "Enveloppe de Cire Standard",
-    category: "Essentielle",
+    category: "Privilege",
     primaryColor: "#6B1F2A",
     secondaryColor: "#FFF8ED",
     accentColor: "#B8894D",
@@ -32,7 +32,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "ivoire-minimal",
     name: "Minimaliste Epure",
-    category: "Essentielle",
+    category: "Privilege",
     primaryColor: "#2C2A28",
     secondaryColor: "#FAF7F2",
     accentColor: "#C7A45A",
@@ -44,7 +44,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "roseraie-nude",
     name: "Roseraie Nude",
-    category: "Essentielle",
+    category: "Privilege",
     primaryColor: "#8A5968",
     secondaryColor: "#FFF7F4",
     accentColor: "#D8A4A9",
@@ -56,7 +56,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "rideau-de-theatre",
     name: "Rideaux de Theatre en Velours",
-    category: "Prestige",
+    category: "Privilege",
     primaryColor: "#54101A",
     secondaryColor: "#FFF6EA",
     accentColor: "#A01E30",
@@ -68,7 +68,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "ruban-de-soie",
     name: "Ruban de Soie Satine",
-    category: "Prestige",
+    category: "Privilege",
     primaryColor: "#442B3A",
     secondaryColor: "#FFF4EA",
     accentColor: "#B87C8A",
@@ -80,7 +80,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "fleur-ficelle-botanique",
     name: "Fleur & Ficelle Botanique",
-    category: "Prestige",
+    category: "Privilege",
     primaryColor: "#365143",
     secondaryColor: "#FAF6EC",
     accentColor: "#B89B72",
@@ -92,7 +92,7 @@ export const DEFAULT_THEMES: ThemeConfig[] = [
   {
     slug: "roseraie-boheme",
     name: "Roseraie Boheme",
-    category: "Prestige",
+    category: "Privilege",
     primaryColor: "#7B4F5F",
     secondaryColor: "#FFF7F4",
     accentColor: "#C47B78",
@@ -159,7 +159,7 @@ const SAFE_THEME_FALLBACK = {
   slug: "medina-orientale",
   name: "Medina Orientale",
   category: "Privilege",
-  allowedPlans: ["prestige", "privilege"],
+  allowedPlans: ["privilege", "imperiale"],
   primaryColor: "#FAF6F0",
   secondaryColor: "rgba(255, 255, 255, 0.85)",
   accentColor: "#D4AF37",

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         receptionTime: body.receptionTime,
         dressCode: body.dressCode,
         coupleStory: body.coupleStory,
-        planType: body.planType ?? 'essentielle',
+        planType: body.planType ?? 'privilege',
         isActive: body.isActive ?? true,
         isPaid: body.isPaid ?? false,
       },

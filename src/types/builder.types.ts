@@ -31,7 +31,7 @@ export type BuilderExtraId =
   | "custom-domain";
 
 export type BuilderBundleId = "signature-bundle" | "story-bundle";
-export type BuilderFormulaId = "essentielle" | "prestige" | "privilege";
+export type BuilderFormulaId = "privilege" | "imperiale";
 
 export interface BuilderTemplate {
   id: TemplateId;
@@ -196,28 +196,22 @@ export const BUILDER_BUNDLES: BuilderBundle[] = [
 
 export const BUILDER_FORMULAS: BuilderFormula[] = [
   {
-    id: "essentielle",
-    label: "Essentielle",
-    description: "Invitation elegante avec sections de base et une photo officielle.",
+    id: "privilege",
+    label: "Privilège",
+    description: "Catalogue complet, animations signature et accompagnement prioritaire.",
     price: 0,
   },
   {
-    id: "prestige",
-    label: "Prestige",
-    description: "Experience enrichie avec options premium et jusqu'a deux photos.",
-    price: 80,
-  },
-  {
-    id: "privilege",
-    label: "Privilege",
-    description: "Catalogue complet, animations signature et accompagnement prioritaire.",
-    price: 180,
+    id: "imperiale",
+    label: "Impérial Cinematic Motion",
+    description: "Experience cinematique motion avec video verticale et accompagnement premium.",
+    price: 100,
   },
 ];
 
 export const DEFAULT_BUILDER_CONFIG: BuilderConfig = {
   templateId: "dolce-vita",
-  formulaId: "prestige",
+  formulaId: "privilege",
   sectionIds: ["date-location", "welcome-message", "rsvp"],
   extraIds: [],
   bundleIds: [],
@@ -233,7 +227,7 @@ export const DEFAULT_BUILDER_CONFIG: BuilderConfig = {
 
 export function calculateBuilderPricing(config: BuilderConfig): BuilderPricing {
   const template = BUILDER_TEMPLATES.find((item) => item.id === config.templateId) ?? BUILDER_TEMPLATES[0];
-  const formula = BUILDER_FORMULAS.find((item) => item.id === config.formulaId) ?? BUILDER_FORMULAS[1];
+  const formula = BUILDER_FORMULAS.find((item) => item.id === config.formulaId) ?? BUILDER_FORMULAS[0];
   const selectedBundles = BUILDER_BUNDLES.filter((bundle) => config.bundleIds.includes(bundle.id));
   const bundledExtras = new Set(selectedBundles.flatMap((bundle) => bundle.includedExtras));
   const bundledSections = new Set(selectedBundles.flatMap((bundle) => bundle.includedSections));

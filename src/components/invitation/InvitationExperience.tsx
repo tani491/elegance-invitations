@@ -612,16 +612,16 @@ export function InvitationExperience({
                 className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/20 bg-black/20 px-5 py-2.5 text-white backdrop-blur-sm transition-opacity duration-300 ${
                   hasScrolled ? "opacity-0" : "opacity-100 animate-bounce"
                 }`}
-                aria-label="Glisser vers le haut"
+                aria-label="Glisser vers le haut pour découvrir"
               >
-                <span className="text-xs uppercase tracking-widest text-[#d4af37]">Glisser vers le haut</span>
+                <span className="text-xs uppercase tracking-widest text-[#d4af37]">Glisser vers le haut pour découvrir</span>
                 <ChevronDown className="size-4 text-[#d4af37]" />
               </button>
             </div>
 
             <main
               ref={detailsRef}
-              className="w-full bg-black/10 backdrop-blur-sm border-t border-white/20 rounded-t-[36px] shadow-[0_-10px_30px_rgba(0,0,0,0.3)] px-5 pt-8 pb-24 space-y-6 pointer-events-auto"
+              className="w-full rounded-t-[36px] border border-white/15 bg-black/20 px-5 pt-8 pb-24 shadow-[0_-10px_30px_rgba(0,0,0,0.3)] backdrop-blur-md space-y-6 pointer-events-auto"
             >
               <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
                 <p className="text-xs uppercase tracking-widest text-[#F3E5AB]">Avec la bénédiction de nos familles</p>

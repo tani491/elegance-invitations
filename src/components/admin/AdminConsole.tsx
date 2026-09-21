@@ -86,7 +86,7 @@ type ThemeModelForm = {
 
 type ThemeColorField = "bgPrimary" | "cardBg" | "accentGold" | "textColor";
 
-const DEFAULT_THEME_ALLOWED_PLANS: AssignableThemePlan[] = ["prestige", "privilege"];
+const DEFAULT_THEME_ALLOWED_PLANS: AssignableThemePlan[] = ["privilege", "imperiale"];
 const THEME_COLOR_SAVE_DELAY = 650;
 
 const COLOR_FIELDS: { key: ThemeColorField; label: string; fallback: string }[] = [
@@ -173,7 +173,7 @@ function ThemePlanCheckboxGroup({
   onChange: (value: AssignableThemePlan[]) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-3" role="group" aria-label="Formules compatibles">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="Formules compatibles">
       {THEME_PLAN_OPTIONS.map((option) => {
         const checked = value.includes(option.value);
         const onlySelected = checked && value.length === 1;
@@ -249,7 +249,7 @@ export default function AdminConsole() {
     email: "",
     whatsapp: "",
     password: "",
-    planType: "prestige",
+    planType: "privilege",
     template: "medina-orientale",
   });
   const [lastMessage, setLastMessage] = useState("");
@@ -395,7 +395,7 @@ export default function AdminConsole() {
         pendingWhatsAppWindow?.close();
       }
       toast.success("Compte client cree.");
-      setForm({ coupleName: "", email: "", whatsapp: "", password: "", planType: "prestige", template: form.template });
+      setForm({ coupleName: "", email: "", whatsapp: "", password: "", planType: "privilege", template: form.template });
       await loadAdminData();
     } catch {
       pendingWhatsAppWindow?.close();
@@ -804,9 +804,8 @@ export default function AdminConsole() {
                     <Select value={form.planType} onValueChange={(planType) => setForm({ ...form, planType })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="prestige">Prestige</SelectItem>
                         <SelectItem value="privilege">Privilège</SelectItem>
-                        <SelectItem value="imperiale">Impériale Motion</SelectItem>
+                        <SelectItem value="imperiale">Impérial Cinematic Motion</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

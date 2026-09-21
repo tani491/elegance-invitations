@@ -1,6 +1,6 @@
 import type { ThemeConfig } from "@/types/database.types";
 
-export type PlanTier = "essentielle" | "prestige" | "privilege" | "imperiale";
+export type PlanTier = "privilege" | "imperiale";
 
 export type OpeningAnimationType =
   | "wax_seal_burst"

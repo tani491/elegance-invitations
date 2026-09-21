@@ -51,7 +51,7 @@ model Theme {
   slug            String   @unique
   name            String
   category        String
-  allowedPlans    String[] @default(["PRESTIGE", "PRIVILEGE"])
+  allowedPlans    String[] @default(["PRIVILEGE", "IMPERIALE"])
   primaryColor    String   @default("#5C1D24")
   secondaryColor  String   @default("#FAF7F2")
   accentColor     String   @default("#C5A880")
@@ -122,7 +122,7 @@ model Event {
   dressCodeColors        Json?
   program                Json?
   coupleStory            String?
-  planType               String       @default("essentielle")
+  planType               String       @default("privilege")
   isActive               Boolean      @default(true)
   isPaid                 Boolean      @default(false)
   createdAt              DateTime     @default(now())

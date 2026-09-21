@@ -9,7 +9,7 @@ import { AUTH_ROLES } from "@/types/database.types";
 const planTypeSchema = z
   .preprocess(
     (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
-    z.enum(["essentielle", "prestige", "privilege", "imperiale", "motion"]),
+    z.enum(["privilege", "imperiale", "motion"]),
   )
   .transform((planType) => normalizePlan(planType));
 

@@ -74,7 +74,7 @@ export interface EventData {
   guests: Guest[];
 }
 
-export type PlanKey = 'prestige' | 'privilege' | 'imperiale';
+export type PlanKey = 'privilege' | 'imperiale';
 
 export interface PricingPlan {
   key: PlanKey;
@@ -115,7 +115,7 @@ const MOCK_EVENT: EventData = {
   dressCode: 'Tenue de cérémonie — Couleurs chaudes recommandées',
   coupleStory:
     'Amira et Karim se sont rencontrés lors d\'un festival de musique à Saint-Louis, en juin 2022. Leur connexion immédiate et leur amour commun pour la culture sénégalaise ont scellé leur destin. Après trois années de complicité et de voyages ensemble à travers l\'Afrique de l\'Ouest, Karim a demandé la main d\'Amira au coucher de soleil sur la plage de N\'Gor. Aujourd\'hui, ils célèbrent l\'union de deux familles et de deux cœurs, entourés de leurs proches les plus chers.',
-  planType: 'prestige',
+  planType: 'privilege',
   isActive: true,
   isPaid: true,
   guests: [
@@ -239,18 +239,6 @@ const MOCK_EVENT: EventData = {
 /* --- Pricing plans --- */
 export const PRICING_PLANS: PricingPlan[] = [
   {
-    key: 'prestige',
-    name: 'Formule Prestige',
-    price: 10000,
-    priceLabel: '10 000 F CFA',
-    features: [
-      'Design haut de gamme',
-      'RSVP WhatsApp',
-      'Pass QR Code',
-    ],
-    highlighted: false,
-  },
-  {
     key: 'privilege',
     name: 'Formule Privilège',
     price: 15000,
@@ -265,7 +253,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   },
   {
     key: 'imperiale',
-    name: 'Formule Impériale — Cinématique Motion',
+    name: 'Formule Impérial Cinematic Motion',
     price: 25000,
     priceLabel: '25 000 F CFA',
     features: [

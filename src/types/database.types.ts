@@ -5,8 +5,8 @@ export const AUTH_ROLES = {
 
 export type AuthRole = (typeof AUTH_ROLES)[keyof typeof AUTH_ROLES];
 
-export type PlanType = "essentielle" | "prestige" | "privilege" | "imperiale";
-export type AssignableThemePlan = Exclude<PlanType, "essentielle">;
+export type PlanType = "privilege" | "imperiale";
+export type AssignableThemePlan = PlanType;
 export type OpeningAnimationType =
   | "wax_seal_burst"
   | "botanical_envelope"

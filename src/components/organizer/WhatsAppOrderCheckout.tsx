@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore, PRICING_PLANS, type PlanKey } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
-import { Check, MessageCircle, Sparkles, Crown, Gem } from 'lucide-react';
+import { Check, MessageCircle, Sparkles, Gem } from 'lucide-react';
 import { ELEGANCE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 /* ============================================================
@@ -12,14 +12,13 @@ import { ELEGANCE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
    ============================================================ */
 
 const PLAN_ICONS = {
-  prestige: Crown,
   privilege: Sparkles,
   imperiale: Gem,
 };
 
 export default function WhatsAppOrderCheckout() {
   const { event } = useAppStore();
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey>('prestige');
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>('privilege');
 
   const plan = PRICING_PLANS.find((p) => p.key === selectedPlan)!;
 
@@ -64,7 +63,7 @@ export default function WhatsAppOrderCheckout() {
       </motion.div>
 
       {/* Plans grid */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         {PRICING_PLANS.map((p, idx) => {
           const Icon = PLAN_ICONS[p.key];
           const isSelected = selectedPlan === p.key;

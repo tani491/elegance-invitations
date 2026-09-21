@@ -1,44 +1,37 @@
 import type { PlanTier } from "@/types/wedding";
 import type { ThemeConfig } from "@/types/database.types";
 
-export const ASSIGNABLE_THEME_PLANS = ["prestige", "privilege", "imperiale"] as const;
+export const ASSIGNABLE_THEME_PLANS = ["privilege", "imperiale"] as const;
 export type AssignableThemePlan = (typeof ASSIGNABLE_THEME_PLANS)[number];
 
 export const THEME_PLAN_OPTIONS: { value: AssignableThemePlan; label: string; price: string }[] = [
-  { value: "prestige", label: "Prestige", price: "10 000 FCFA" },
   { value: "privilege", label: "Privilège", price: "15 000 FCFA" },
-  { value: "imperiale", label: "Impériale Motion", price: "25 000 FCFA" },
+  { value: "imperiale", label: "Impérial Cinematic Motion", price: "25 000 FCFA" },
 ];
 
 export const PLAN_LABELS: Record<PlanTier, string> = {
-  essentielle: "Essentielle",
-  prestige: "Formule Prestige",
   privilege: "Formule Privilège",
-  imperiale: "Formule Impériale — Cinématique Motion",
+  imperiale: "Formule Impérial Cinematic Motion",
 };
 
 export const PLAN_ORDER: Record<PlanTier, number> = {
-  essentielle: 1,
-  prestige: 2,
-  privilege: 3,
-  imperiale: 4,
+  privilege: 1,
+  imperiale: 2,
 };
 
 export const PLAN_PHOTO_LIMITS: Record<PlanTier, number> = {
-  essentielle: 1,
-  prestige: 2,
   privilege: 3,
   imperiale: 5,
 };
 
 export const THEME_PLAN_REQUIREMENTS: Record<string, PlanTier> = {
-  "enveloppe-de-cire": "essentielle",
-  "ivoire-minimal": "essentielle",
-  "roseraie-nude": "essentielle",
-  "roseraie-boheme": "prestige",
-  "rideau-de-theatre": "prestige",
-  "ruban-de-soie": "prestige",
-  "fleur-ficelle-botanique": "prestige",
+  "enveloppe-de-cire": "privilege",
+  "ivoire-minimal": "privilege",
+  "roseraie-nude": "privilege",
+  "roseraie-boheme": "privilege",
+  "rideau-de-theatre": "privilege",
+  "ruban-de-soie": "privilege",
+  "fleur-ficelle-botanique": "privilege",
   "medina-orientale": "privilege",
   "portes-royales-dorees": "privilege",
   "defile-scenique": "privilege",
@@ -50,9 +43,9 @@ function normalizePlanKey(plan?: string | null) {
 }
 
 const PLAN_ALIASES: Record<string, PlanTier> = {
-  essentielle: "essentielle",
-  essential: "essentielle",
-  prestige: "prestige",
+  essentielle: "privilege",
+  essential: "privilege",
+  prestige: "privilege",
   privilege: "privilege",
   privilegee: "privilege",
   privilegie: "privilege",
@@ -71,7 +64,7 @@ function normalizeKnownPlan(plan?: string | null) {
 }
 
 export function normalizePlan(plan?: string | null): PlanTier {
-  return normalizeKnownPlan(plan) ?? "essentielle";
+  return normalizeKnownPlan(plan) ?? "privilege";
 }
 
 export function planLabelForPlan(plan: string | null | undefined) {
@@ -89,15 +82,18 @@ export function requiredPlanForTheme(slug: string): PlanTier {
 export function allowedPlansForCategory(category?: string | null): PlanTier[] {
   const normalized = category?.trim().toLowerCase();
 
-  if (normalized === "essentielle") return ["essentielle", "prestige", "privilege", "imperiale"];
-  if (normalized === "prestige") return ["prestige", "privilege", "imperiale"];
-  if (normalized === "imperiale" || normalized === "imperiale motion" || normalized === "impériale motion") return ["imperiale"];
+  if (
+    normalized === "imperiale" ||
+    normalized === "imperial cinematic motion" ||
+    normalized === "imperiale motion" ||
+    normalized === "impériale motion"
+  ) return ["imperiale"];
   return ["privilege", "imperiale"];
 }
 
 export function normalizeAllowedPlans(
   plans: readonly (string | null | undefined)[] | null | undefined,
-  fallback: readonly PlanTier[] = ["prestige", "privilege"],
+  fallback: readonly PlanTier[] = ["privilege", "imperiale"],
 ): PlanTier[] {
   const normalized = (plans ?? [])
     .map((plan) => normalizeKnownPlan(plan))
@@ -109,13 +105,13 @@ export function normalizeAllowedPlans(
 
 export function assignablePlansFromAllowedPlans(
   plans: readonly (string | null | undefined)[] | null | undefined,
-  fallback: readonly PlanTier[] = ["prestige", "privilege"],
+  fallback: readonly PlanTier[] = ["privilege", "imperiale"],
 ): AssignableThemePlan[] {
   const normalized = normalizeAllowedPlans(plans, fallback).filter((plan): plan is AssignableThemePlan =>
     ASSIGNABLE_THEME_PLANS.includes(plan as AssignableThemePlan),
   );
 
-  return normalized.length > 0 ? normalized : ["prestige", "privilege"];
+  return normalized.length > 0 ? normalized : ["privilege", "imperiale"];
 }
 
 export function storeAllowedPlans(plans: readonly (string | null | undefined)[] | null | undefined) {
@@ -124,9 +120,8 @@ export function storeAllowedPlans(plans: readonly (string | null | undefined)[] 
 
 export function categoryForAllowedPlans(plans: readonly (string | null | undefined)[] | null | undefined) {
   const normalized = assignablePlansFromAllowedPlans(plans);
-  if (normalized.includes("privilege")) return "Privilege";
-  if (normalized.includes("imperiale")) return "Imperiale Motion";
-  return "Prestige";
+  if (!normalized.includes("privilege") && normalized.includes("imperiale")) return "Imperiale Motion";
+  return "Privilege";
 }
 
 export function requiredPlanForAllowedPlans(plans: readonly (string | null | undefined)[] | null | undefined) {

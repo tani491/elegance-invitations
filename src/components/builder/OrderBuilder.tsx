@@ -241,7 +241,7 @@ export function OrderBuilder() {
                       <div className="grid gap-4">
                         <div className="space-y-2">
                           <Label>Formule selectionnee</Label>
-                          <div className="grid gap-3 md:grid-cols-3">
+                          <div className="grid gap-3 md:grid-cols-2">
                             {BUILDER_FORMULAS.map((formula) => (
                               <button
                                 key={formula.id}
