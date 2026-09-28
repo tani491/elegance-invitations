@@ -43,7 +43,7 @@ export function DressCodeSection({ event }: { event: PublicEventPayload }) {
             className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[color:var(--invitation-sheet-border)] bg-white/60 px-4 py-2 font-serif text-xs uppercase tracking-[0.16em] text-[var(--invitation-sheet-muted)] shadow-[0_10px_26px_rgba(0,0,0,.1)]"
           >
             <span className="size-5 rounded-full border border-[#FFFDF9]/30 shadow-[inset_0_0_0_1px_rgba(255,255,255,.55)]" style={{ backgroundColor: color.color }} />
-            {normalizeDressCodeLabel(color.label)}
+            {normalizeDressCodeLabel(color.label).toLocaleUpperCase("fr-FR")}
           </span>
         ))}
       </div>

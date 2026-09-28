@@ -15,11 +15,54 @@ const programStepSchema = z.object({
   location: z.string(),
 });
 
-const dressCodeColorSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-});
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+function normalizeColorId(label: string, color: string) {
+  const safeLabel = label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${safeLabel || "couleur"}-${color.slice(1).toLowerCase()}`;
+}
+
+const dressCodeColorSchema = z
+  .object({
+    id: z.string().optional(),
+    label: z.string().optional(),
+    color: z.string().optional(),
+    name: z.string().optional(),
+    hex: z.string().optional(),
+  })
+  .transform((value, context) => {
+    const label = (value.label ?? value.name ?? "").trim();
+    const color = (value.color ?? value.hex ?? "").trim();
+    const normalizedColor = color.startsWith("#") ? color : `#${color}`;
+
+    if (!label) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nom de couleur requis.",
+        path: ["label"],
+      });
+    }
+
+    if (!HEX_COLOR_PATTERN.test(normalizedColor)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Code couleur hexadecimal invalide.",
+        path: ["color"],
+      });
+    }
+
+    return {
+      id: value.id?.trim() || normalizeColorId(label || "couleur", normalizedColor),
+      label,
+      color: normalizedColor.toUpperCase(),
+    };
+  });
 
 const updateEventSchema = z.object({
   themeSlug: z.string().optional(),
@@ -32,7 +75,7 @@ const updateEventSchema = z.object({
   venueMapUrl: z.string().nullable().optional(),
   wazeUrl: z.string().nullable().optional(),
   dressCode: z.string().nullable().optional(),
-  dressCodeColors: z.array(dressCodeColorSchema).optional(),
+  dressCodeColors: z.array(dressCodeColorSchema).max(4).optional(),
   program: z.array(programStepSchema).optional(),
   coupleStory: z.string().nullable().optional(),
   coverPhotoUrl: z.string().nullable().optional(),

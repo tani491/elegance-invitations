@@ -11,7 +11,7 @@ import {
 } from "@/lib/server-auth";
 import { canUseTheme, normalizePlan } from "@/lib/plan-gating";
 import { uniqueSlug } from "@/lib/slug";
-import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme } from "@/lib/theme-presets";
+import { DEFAULT_PROGRAM, getDefaultTheme } from "@/lib/theme-presets";
 import { AUTH_ROLES } from "@/types/database.types";
 import { requireApiRole } from "@/lib/server-auth";
 
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       planType: parsed.data.planType,
       isActive: true,
       isPaid: true,
-      dressCodeColors: DEFAULT_DRESS_CODE_COLORS as unknown as Prisma.InputJsonValue,
+      dressCodeColors: [] as Prisma.InputJsonValue,
       program: DEFAULT_PROGRAM as unknown as Prisma.InputJsonValue,
     },
   });

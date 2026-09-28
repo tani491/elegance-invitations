@@ -33,7 +33,7 @@ import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader"
 import { ThemeSelector } from "@/components/dashboard/ThemeSelector";
 import { canUseMotionVideo, photoLimitForPlan, planLabelForPlan } from "@/lib/plan-gating";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
-import type { PublicEventPayload, ThemeConfig } from "@/types/database.types";
+import type { DressCodeColor, PublicEventPayload, ThemeConfig } from "@/types/database.types";
 
 interface Guest {
   id: string;
@@ -57,6 +57,66 @@ const MUSIC_PRESETS = [
 
 const NO_MUSIC_VALUE = "__none__";
 const CUSTOM_MUSIC_VALUE = "__custom__";
+const MAX_DRESS_CODE_COLORS = 4;
+const DEFAULT_DRESS_CODE_HEX = "#000000";
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+function dressCodeColorId(label: string, color: string) {
+  const safeLabel = label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${safeLabel || "couleur"}-${color.slice(1).toLowerCase()}`;
+}
+
+function createDressCodeColor(): DressCodeColor {
+  const id = typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `color-${Date.now()}`;
+
+  return { id, label: "", color: DEFAULT_DRESS_CODE_HEX };
+}
+
+function normalizeHexValue(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+}
+
+function colorPickerValue(value: string) {
+  const normalized = normalizeHexValue(value);
+  return HEX_COLOR_PATTERN.test(normalized) ? normalized : DEFAULT_DRESS_CODE_HEX;
+}
+
+function prepareDressCodeColors(colors: DressCodeColor[]) {
+  let hasInvalid = false;
+  const prepared: DressCodeColor[] = [];
+
+  colors.forEach((color) => {
+    const label = color.label.trim();
+    const rawColor = color.color.trim();
+    const normalizedColor = normalizeHexValue(rawColor).toUpperCase();
+    const isEmptyDraft = !label && (!rawColor || normalizedColor === DEFAULT_DRESS_CODE_HEX);
+
+    if (isEmptyDraft) return;
+
+    if (!label || !HEX_COLOR_PATTERN.test(normalizedColor)) {
+      hasInvalid = true;
+      return;
+    }
+
+    prepared.push({
+      id: color.id?.trim() || dressCodeColorId(label, normalizedColor),
+      label,
+      color: normalizedColor,
+    });
+  });
+
+  return { colors: prepared.slice(0, MAX_DRESS_CODE_COLORS), hasInvalid };
+}
 
 function normalizePhotoList(photos: Array<string | null | undefined>, limit: number) {
   return Array.from(new Set(photos.filter(Boolean) as string[])).slice(0, limit);
@@ -143,6 +203,13 @@ export default function DashboardPage() {
 
   async function saveEssentialEvent() {
     if (!event) return;
+    const dressCodePalette = prepareDressCodeColors(event.dressCodeColors);
+
+    if (dressCodePalette.hasInvalid) {
+      toast.error("Chaque couleur doit avoir un nom et un code hexadécimal valide.");
+      return;
+    }
+
     await updateEvent({
       brideName: event.brideName,
       groomName: event.groomName,
@@ -152,6 +219,7 @@ export default function DashboardPage() {
       venueAddress: event.venueAddress,
       venueMapUrl: event.venueMapUrl,
       dressCode: event.dressCode,
+      dressCodeColors: dressCodePalette.colors,
       coupleStory: event.coupleStory,
       invitationQuote: event.invitationQuote,
       musicUrl: event.musicUrl,
@@ -353,6 +421,32 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
   }
 
+  function addDressCodeColor() {
+    if (!event || event.dressCodeColors.length >= MAX_DRESS_CODE_COLORS) return;
+    setEvent({
+      ...event,
+      dressCodeColors: [...event.dressCodeColors, createDressCodeColor()],
+    });
+  }
+
+  function updateDressCodeColor(index: number, data: Partial<DressCodeColor>) {
+    if (!event) return;
+    setEvent({
+      ...event,
+      dressCodeColors: event.dressCodeColors.map((color, colorIndex) => (
+        colorIndex === index ? { ...color, ...data } : color
+      )),
+    });
+  }
+
+  function removeDressCodeColor(index: number) {
+    if (!event) return;
+    setEvent({
+      ...event,
+      dressCodeColors: event.dressCodeColors.filter((_, colorIndex) => colorIndex !== index),
+    });
+  }
+
   if (!event) {
     return <main className="flex min-h-screen items-center justify-center bg-[#FAF7F2]">Chargement...</main>;
   }
@@ -506,7 +600,6 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                   ["venueName", "Lieu"],
                   ["venueAddress", "Adresse"],
                   ["venueMapUrl", "Lien Maps"],
-                  ["dressCode", "Dress Code"],
                 ] as const).map(([key, label]) => (
                   <div key={key} className="space-y-2">
                     <Label>{label}</Label>
@@ -516,6 +609,82 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                 <div className="space-y-2">
                   <Label>Date</Label>
                   <Input type="date" value={event.eventDate?.slice(0, 10) ?? ""} onChange={(e) => setEvent({ ...event, eventDate: e.target.value })} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Dress Code</Label>
+                  <Textarea
+                    placeholder="Tenue de cérémonie, robe longue, costume..."
+                    value={event.dressCode ?? ""}
+                    onChange={(e) => setEvent({ ...event, dressCode: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-3 rounded-lg border border-[#E5D9C7] bg-[#FDFBF7] p-4 md:col-span-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <Label>Palette souhaitée</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">{event.dressCodeColors.length}/{MAX_DRESS_CODE_COLORS} couleurs</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={saving || event.dressCodeColors.length >= MAX_DRESS_CODE_COLORS}
+                      onClick={addDressCodeColor}
+                      className="w-full border-[#D4AF37]/35 sm:w-auto"
+                    >
+                      <Plus className="mr-2 size-4" />
+                      Ajouter une couleur
+                    </Button>
+                  </div>
+                  {event.dressCodeColors.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-[#D6C5A8] bg-white/70 px-4 py-3 text-sm text-muted-foreground">
+                      Aucune couleur ajoutée.
+                    </p>
+                  ) : (
+                    <div className="grid gap-3">
+                      {event.dressCodeColors.map((color, index) => (
+                        <div
+                          key={color.id || index}
+                          className="grid gap-3 rounded-lg border border-[#E5D9C7] bg-white p-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end"
+                        >
+                          <div className="space-y-2">
+                            <Label>Nom de la couleur</Label>
+                            <Input
+                              placeholder="Rouge"
+                              value={color.label}
+                              onChange={(e) => updateDressCodeColor(index, { label: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Code hexadécimal</Label>
+                            <div className="grid grid-cols-[52px_minmax(0,1fr)] gap-2">
+                              <Input
+                                type="color"
+                                aria-label={`Sélecteur couleur ${color.label || index + 1}`}
+                                value={colorPickerValue(color.color)}
+                                onChange={(e) => updateDressCodeColor(index, { color: e.target.value.toUpperCase() })}
+                                className="h-12 w-[52px] cursor-pointer rounded-lg p-1"
+                              />
+                              <Input
+                                placeholder="#FF0000"
+                                value={color.color}
+                                onChange={(e) => updateDressCodeColor(index, { color: e.target.value.toUpperCase() })}
+                              />
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Supprimer la couleur ${color.label || index + 1}`}
+                            onClick={() => removeDressCodeColor(index)}
+                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Histoire du couple</Label>

@@ -1,8 +1,8 @@
-import { DEFAULT_DRESS_CODE_COLORS, DEFAULT_PROGRAM, getDefaultTheme, parseJsonArray } from "@/lib/theme-presets";
+import { DEFAULT_PROGRAM, getDefaultTheme, normalizeDressCodeColors, parseJsonArray } from "@/lib/theme-presets";
 import { canUseMotionVideo, normalizePlan, photoLimitForPlan } from "@/lib/plan-gating";
 import { serializeTheme, type SerializableThemeInput } from "@/lib/theme-store";
 import type { Event } from "@prisma/client";
-import type { DressCodeColor, OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
+import type { OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
 
 type PublicEventRecord = Event & { theme?: SerializableThemeInput | null };
 
@@ -44,7 +44,7 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     venueMapUrl: event.venueMapUrl,
     wazeUrl: event.wazeUrl,
     dressCode: event.dressCode,
-    dressCodeColors: parseJsonArray<DressCodeColor>(event.dressCodeColors, DEFAULT_DRESS_CODE_COLORS),
+    dressCodeColors: normalizeDressCodeColors(event.dressCodeColors),
     program: parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM),
     coupleStory: event.coupleStory,
     coverPhotoUrl: event.coverPhotoUrl,

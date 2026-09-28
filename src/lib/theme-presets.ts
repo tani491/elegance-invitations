@@ -10,11 +10,52 @@ export const DEFAULT_PROGRAM: ProgramStep[] = [
   { id: "soiree", time: "22h30", title: "Soiree", location: "Piste de danse" },
 ];
 
-export const DEFAULT_DRESS_CODE_COLORS: DressCodeColor[] = [
-  { id: "ivoire", label: "Ivoire", color: "#FAF7F2" },
-  { id: "or", label: "Or", color: "#D4AF37" },
-  { id: "bordeaux", label: "Bordeaux", color: "#5C1D24" },
-];
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+function normalizeColorId(label: string, color: string) {
+  const safeLabel = label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${safeLabel || "couleur"}-${color.slice(1).toLowerCase()}`;
+}
+
+export function normalizeDressCodeColors(value: unknown, maxColors = 4): DressCodeColor[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+
+      const colorInput = item as {
+        id?: unknown;
+        label?: unknown;
+        color?: unknown;
+        name?: unknown;
+        hex?: unknown;
+      };
+      const label = (typeof colorInput.label === "string" ? colorInput.label : typeof colorInput.name === "string" ? colorInput.name : "").trim();
+      const color = (typeof colorInput.color === "string" ? colorInput.color : typeof colorInput.hex === "string" ? colorInput.hex : "").trim();
+      const normalizedColor = color.startsWith("#") ? color : `#${color}`;
+
+      if (!label || !HEX_COLOR_PATTERN.test(normalizedColor)) return null;
+
+      const id = typeof colorInput.id === "string" && colorInput.id.trim()
+        ? colorInput.id.trim()
+        : normalizeColorId(label, normalizedColor);
+
+      return {
+        id,
+        label,
+        color: normalizedColor.toUpperCase(),
+      };
+    })
+    .filter((color): color is DressCodeColor => Boolean(color))
+    .slice(0, maxColors);
+}
 
 export const DEFAULT_THEMES: ThemeConfig[] = [
   {

@@ -320,7 +320,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
               {event.dressCodeColors.map((color) => (
                 <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 text-xs uppercase tracking-[0.12em] text-white/75 backdrop-blur-sm">
                   <span className="size-5 rounded-full border border-white shadow-inner" style={{ backgroundColor: color.color }} />
-                  {color.label}
+                  {color.label.toLocaleUpperCase("fr-FR")}
                 </span>
               ))}
             </div>
