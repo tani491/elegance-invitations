@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
-    const { guestToken, status, plusOnes, guestName, dietaryNotes } = parsed.data
+    const { guestToken, status, plusOnes, dietaryNotes } = parsed.data
 
     // Build the update payload with only provided optional fields
     const updateData: Record<string, unknown> = { rsvpStatus: status }
@@ -37,15 +37,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (plusOnes > existingGuest.maxGuests) {
+    const maxAccompanying = Math.max(existingGuest.maxGuests - 1, 0)
+    const requestedPlusOnes = status === 'declined' ? 0 : plusOnes
+
+    if (requestedPlusOnes > maxAccompanying) {
       return NextResponse.json(
         { success: false, error: 'Le nombre d\'accompagnateurs depasse le maximum autorise.' },
         { status: 400 },
       )
     }
 
-    updateData.plusOnes = plusOnes
-    if (guestName) updateData.fullName = guestName
+    updateData.plusOnes = requestedPlusOnes
     if (dietaryNotes !== undefined) updateData.dietaryNotes = dietaryNotes
 
     const updatedGuest = await db.eventGuest.update({

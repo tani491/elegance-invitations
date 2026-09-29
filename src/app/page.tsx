@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
-import { ELEGANCE_ORDER_WHATSAPP_URL } from "@/lib/whatsapp";
+import { buildEleganceWhatsAppUrl, ELEGANCE_ORDER_WHATSAPP_URL } from "@/lib/whatsapp";
 import type { HomepageSettings, ThemeConfig } from "@/types/database.types";
 
 /* -------------------------------------------------------------------------- */
@@ -33,6 +33,16 @@ const SECONDARY_CTA_CLASS =
   "h-12 rounded-full border border-[#C5A059]/40 bg-transparent px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-[#FAF7F2] shadow-none transition-all hover:bg-white/5 hover:text-[#FAF7F2] active:scale-95 sm:px-8 sm:text-sm";
 
 const WHATSAPP_URL = ELEGANCE_ORDER_WHATSAPP_URL;
+
+function buildFormulaWhatsAppUrl(formula: string, modelName?: string | null) {
+  return buildEleganceWhatsAppUrl(
+    [
+      "Bonjour Élégance Invitations, je souhaite commander une invitation digitale.",
+      `Formule souhaitée : ${formula}.`,
+      `Modèle choisi : ${modelName || "à définir ensemble"}.`,
+    ].join("\n"),
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Template data with categories                                              */
@@ -576,6 +586,20 @@ export default function HomePage() {
     featuredTemplate;
   const heroPhone1Src = homepageSettings.heroPhone1 || templateMediaSource(featuredTemplate) || DEFAULT_HERO_PHONE_MEDIA[0];
   const heroPhone2Src = homepageSettings.heroPhone2 || templateMediaSource(secondaryTemplate) || DEFAULT_HERO_PHONE_MEDIA[1];
+  const demoExperiences = [
+    {
+      title: "Modèle B · Page Interactive",
+      formula: "Formule Privilège",
+      description: "Invitation interactive lisible, RSVP nominatif, galerie, itinéraire et pass QR.",
+      template: featuredTemplate,
+    },
+    {
+      title: "Modèle A · Cinématique 9:16",
+      formula: "Formule Impérial Cinematic Motion",
+      description: "Ouverture vidéo verticale, boucle décorative fluide et accès rapide aux informations pratiques.",
+      template: secondaryTemplate,
+    },
+  ];
 
   /* FAQ accordion state */
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -1170,6 +1194,44 @@ export default function HomePage() {
             <SectionSubheading className="mt-4">{t.pricing.subheading}</SectionSubheading>
           </div>
 
+          <div className="mb-12 grid gap-5 md:grid-cols-2">
+            {demoExperiences.map((demo) => (
+              <div key={demo.title} className={`${DEEP_SURFACE} rounded-lg p-5 shadow-[0_22px_70px_rgba(0,0,0,.25)] sm:p-6`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C5A059]">{demo.formula}</p>
+                    <h3 className="mt-2 font-[var(--font-cormorant)] text-2xl font-semibold text-[#FAF7F2]">{demo.title}</h3>
+                  </div>
+                  <Badge className="shrink-0 rounded-full border border-[#C5A059]/30 bg-[#C5A059]/10 text-[#E6CA65]">
+                    Démo
+                  </Badge>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-[#D8D2C7]">{demo.description}</p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`${SECONDARY_CTA_CLASS} w-full sm:w-auto`}
+                    onClick={() => demo.template && setPreviewTemplate(demo.template)}
+                    disabled={!demo.template}
+                  >
+                    <Play className="mr-2 size-4" />
+                    Voir la démo
+                  </Button>
+                  <a
+                    href={buildFormulaWhatsAppUrl(demo.formula, demo.template?.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${PRIMARY_CTA_CLASS} inline-flex w-full items-center justify-center sm:w-auto`}
+                  >
+                    <MessageCircle className="mr-2 size-4" />
+                    Choisir ce modèle
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 md:grid-cols-2 lg:gap-8">
             {t.pricing.tiers.map((tier, i) => (
               <motion.div
@@ -1242,7 +1304,7 @@ export default function HomePage() {
                     </ul>
 
                     <a
-                      href={WHATSAPP_URL}
+                      href={buildFormulaWhatsAppUrl(tier.name, tier.recommended ? secondaryTemplate?.name : featuredTemplate?.name)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={
@@ -1518,7 +1580,8 @@ export default function HomePage() {
             <nav className="flex flex-wrap gap-4">
               <a href="#confidentialite" className="transition hover:text-[#FAF7F2]">Confidentialité</a>
               <a href="#conditions" className="transition hover:text-[#FAF7F2]">Conditions Générales</a>
-              <Link href="/admin" className="transition hover:text-[#FAF7F2]">Espace Admin</Link>
+              <Link href="/login" className="font-semibold text-[#C5A059] transition hover:text-[#FAF7F2]">Espace Client</Link>
+              <Link href="/admin/login" className="text-[#D8D2C7]/35 transition hover:text-[#D8D2C7]/70">Administration</Link>
             </nav>
           </div>
         </div>

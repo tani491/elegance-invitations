@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { SITE_URL } from "@/lib/constants";
 import { getCachedInvitation, type CachedInvitationEvent } from "@/lib/cached-invitation";
 import { serializePublicEvent } from "@/lib/public-event";
@@ -60,19 +61,6 @@ function shouldOpenDirectly(searchParams: Awaited<InvitationPageProps["searchPar
   return open === "1" || open === "true" || Boolean(firstSearchParam(searchParams.guest));
 }
 
-function InvitationFallbackScreen({ slug }: { slug: string }) {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D0B0A] p-6 text-center text-white">
-      <h1 className="mb-4 font-serif text-2xl text-[#D4AF37]">Élégance Invitations</h1>
-      <p className="mb-2 text-stone-400">Impossible de trouver l'événement demandé.</p>
-      <code className="mb-6 rounded bg-black/50 p-2 text-xs text-stone-500">Slug recherché : {slug}</code>
-      <a href="/" className="rounded-full bg-[#D4AF37] px-6 py-2 text-sm font-semibold text-black">
-        Retour à l'accueil
-      </a>
-    </div>
-  );
-}
-
 export async function generateMetadata({ params }: Pick<InvitationPageProps, "params">): Promise<Metadata> {
   const { slug: rawSlug } = await params;
   const slug = decodeSlug(rawSlug);
@@ -127,13 +115,13 @@ export default async function InvitationPage({
 
   if (!event) {
     console.error("Mariage introuvable pour le slug:", slug);
-    return <InvitationFallbackScreen slug={slug} />;
+    notFound();
   }
 
   try {
     return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} autoOpen={shouldOpenDirectly(resolvedSearchParams)} />;
   } catch (error) {
     console.error("Invitation serialization failed:", error);
-    return <InvitationFallbackScreen slug={slug} />;
+    notFound();
   }
 }

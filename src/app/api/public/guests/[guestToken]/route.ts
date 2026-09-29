@@ -4,15 +4,18 @@ import { serializePublicEvent } from "@/lib/public-event";
 import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ guestToken: string }> },
 ) {
   const { guestToken } = await params;
+  const eventId = request.nextUrl.searchParams.get("eventId");
+  const eventScope = eventId ? { eventId } : {};
   let guest;
 
   try {
     guest = await db.eventGuest.findFirst({
       where: {
+        ...eventScope,
         OR: [
           { qrToken: guestToken },
           { id: guestToken },
@@ -26,6 +29,7 @@ export async function GET(
     try {
       guest = await db.eventGuest.findFirst({
         where: {
+          ...eventScope,
           OR: [
             { qrToken: guestToken },
             { id: guestToken },
@@ -45,6 +49,7 @@ export async function GET(
       try {
         guest = await db.eventGuest.findFirst({
           where: {
+            ...eventScope,
             OR: [
               { qrToken: guestToken },
               { id: guestToken },

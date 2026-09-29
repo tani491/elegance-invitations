@@ -231,6 +231,7 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
               <div className="mx-auto mt-5 inline-flex rounded-[22px] border border-amber-300/45 bg-white/65 p-3">
                 <PassQrCode value={guest.qrToken} />
               </div>
+              <p className="mt-4 font-serif text-sm font-semibold text-amber-950">Présentez ce QR Code à l&apos;entrée.</p>
               <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">{guest.accessCode}</p>
             </div>
 
@@ -286,7 +287,7 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
                     {guest.table ? `Table ${guest.table}` : "Table à confirmer"}
                   </p>
                   <p className="text-xs text-stone-500">
-                    {guest.maxGuests > 1 ? `${guest.maxGuests} personnes autorisées` : "Accès nominatif"}
+                    {guest.maxGuests > 1 ? `${guest.maxGuests} personnes autorisées avec ce pass` : "Accès nominatif"}
                   </p>
                 </div>
               </div>

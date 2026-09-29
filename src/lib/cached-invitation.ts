@@ -42,13 +42,11 @@ function withoutGeneratedSuffix(slug: string) {
 
 export function invitationSlugCandidates(slug: string) {
   const decodedSlug = decodeSlug(slug);
-  const parts = decodedSlug.split("-").filter(Boolean);
   const baseSlug = withoutGeneratedSuffix(decodedSlug);
-  const firstThreeParts = parts.length >= 3 ? parts.slice(0, 3).join("-") : null;
 
   return Array.from(
     new Set(
-      [decodedSlug, baseSlug, firstThreeParts].filter((value): value is string =>
+      [decodedSlug, baseSlug].filter((value): value is string =>
         Boolean(value?.trim()),
       ),
     ),
@@ -71,21 +69,11 @@ function exactWhereForSlug(slug: string): EventWhereInput {
   };
 }
 
-function prefixWhereForSlug(slug: string): EventWhereInput | null {
-  const slugCandidates = invitationSlugCandidates(slug).filter((candidate) => candidate.length >= 3);
-  if (!slugCandidates.length) return null;
-
-  return {
-    OR: slugCandidates.map((candidate) => ({ slug: { startsWith: candidate } })),
-  };
-}
-
 async function findInvitationEvent(
   slug: string,
   themeLookup: "full" | "compat" | "none",
 ): Promise<CachedInvitationEvent | null> {
   const exactWhere = exactWhereForSlug(slug);
-  const prefixWhere = prefixWhereForSlug(slug);
 
   if (themeLookup === "full") {
     const exactEvent = await eventReader.findFirst({
@@ -94,25 +82,7 @@ async function findInvitationEvent(
         theme: true,
       },
     });
-    if (exactEvent) return exactEvent as CachedInvitationEvent;
-
-    const prefixedEvent = prefixWhere
-      ? await eventReader.findFirst({
-          where: prefixWhere,
-          include: {
-            theme: true,
-          },
-        })
-      : null;
-    if (prefixedEvent) return prefixedEvent as CachedInvitationEvent;
-
-    const latestEvent = await eventReader.findFirst({
-      orderBy: { createdAt: "desc" },
-      include: {
-        theme: true,
-      },
-    });
-    return latestEvent as CachedInvitationEvent | null;
+    return exactEvent as CachedInvitationEvent | null;
   }
 
   if (themeLookup === "compat") {
@@ -122,43 +92,13 @@ async function findInvitationEvent(
         theme: { select: THEME_COMPAT_SELECT },
       },
     });
-    if (exactEvent) return exactEvent as CachedInvitationEvent;
-
-    const prefixedEvent = prefixWhere
-      ? await eventReader.findFirst({
-          where: prefixWhere,
-          include: {
-            theme: { select: THEME_COMPAT_SELECT },
-          },
-        })
-      : null;
-    if (prefixedEvent) return prefixedEvent as CachedInvitationEvent;
-
-    const latestEvent = await eventReader.findFirst({
-      orderBy: { createdAt: "desc" },
-      include: {
-        theme: { select: THEME_COMPAT_SELECT },
-      },
-    });
-    return latestEvent as CachedInvitationEvent | null;
+    return exactEvent as CachedInvitationEvent | null;
   }
 
   const exactEvent = await eventReader.findFirst({
     where: exactWhere,
   });
-  if (exactEvent) return exactEvent as CachedInvitationEvent;
-
-  const prefixedEvent = prefixWhere
-    ? await eventReader.findFirst({
-        where: prefixWhere,
-      })
-    : null;
-  if (prefixedEvent) return prefixedEvent as CachedInvitationEvent;
-
-  const latestEvent = await eventReader.findFirst({
-    orderBy: { createdAt: "desc" },
-  });
-  return latestEvent as CachedInvitationEvent | null;
+  return exactEvent as CachedInvitationEvent | null;
 }
 
 async function fetchInvitationEvent(slug: string): Promise<CachedInvitationEvent | null> {

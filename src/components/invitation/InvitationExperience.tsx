@@ -3,6 +3,7 @@
 import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
+  AlertTriangle,
   CalendarDays,
   ChevronDown,
   Clock,
@@ -51,20 +52,17 @@ type VideoTheme = PublicEventPayload["theme"] & {
 };
 
 const FIELD_CLASS =
-  "min-h-12 rounded-xl border border-white/10 bg-black/10 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0";
-const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#F3E5AB] drop-shadow-sm";
+  "min-h-12 rounded-xl border border-white/20 bg-black/35 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0 disabled:opacity-70";
+const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#FFE7A3] drop-shadow-sm";
 const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-wrap sm:flex-nowrap gap-2 px-2 overflow-hidden";
 const ACTION_BUTTON_CLASS =
   "w-full flex-1 min-w-0 min-h-[44px] rounded-xl px-4 text-xs font-medium sm:text-sm truncate flex items-center justify-center gap-2";
 const CONTENT_REVEAL_TIME = 4.5;
 const OPENING_END_TIME = 10;
-
-function firstName(value: string | null | undefined, fallback: string) {
-  return value?.trim().split(/\s+/)[0] || fallback;
-}
+const RSVP_STATUS_UNSET = "__unset__";
 
 function coupleNames(event: PublicEventPayload) {
-  return `${firstName(event.brideName, "La Mariée")} & ${firstName(event.groomName, "Le Marié")}`;
+  return `${event.brideName?.trim() || "La Mariée"} & ${event.groomName?.trim() || "Le Marié"}`;
 }
 
 function formatEventDate(value: string | null) {
@@ -89,11 +87,20 @@ function buildWhatsAppHref(phone: string | null | undefined, text: string) {
   return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(text)}` : null;
 }
 
-function buildMapsHref(event: PublicEventPayload) {
-  const directMapsUrl = event.venueMapUrl?.trim();
-  if (directMapsUrl) return directMapsUrl;
+function isValidExternalUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
 
-  const query = [event.venueName, event.venueAddress]
+function buildMapsHref(event: PublicEventPayload) {
+  const mapsInput = event.venueMapUrl?.trim();
+  if (mapsInput && isValidExternalUrl(mapsInput)) return mapsInput;
+
+  const query = [event.venueName, event.venueAddress, mapsInput, "Sénégal"]
     .map((part) => part?.trim())
     .filter(Boolean)
     .join(", ");
@@ -117,13 +124,13 @@ function InfoCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-black/20 p-6 text-white shadow-lg backdrop-blur-sm drop-shadow-md">
+    <section className="rounded-2xl border border-white/20 bg-black/45 p-6 text-white shadow-lg backdrop-blur-md drop-shadow-md">
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/20 bg-black/20 text-[#F3E5AB]">{icon}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/30 bg-black/35 text-[#FFE7A3]">{icon}</span>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#F3E5AB] drop-shadow-sm">{label}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#FFE7A3] drop-shadow-sm">{label}</p>
           <h2 className="mt-1 font-serif text-2xl italic leading-tight text-white drop-shadow-md">{title}</h2>
-          {children && <div className="mt-3 text-sm leading-6 text-white/82 drop-shadow-sm">{children}</div>}
+          {children && <div className="mt-3 text-sm leading-6 text-white/90 drop-shadow-sm">{children}</div>}
         </div>
       </div>
     </section>
@@ -132,25 +139,44 @@ function InfoCard({
 
 function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; guestToken?: string; guest?: GuestPassPayload | null }) {
   const [guestName, setGuestName] = useState(guest?.fullName ?? "");
-  const [status, setStatus] = useState(guest?.rsvpStatus === "declined" ? "declined" : "confirmed");
+  const [status, setStatus] = useState(guest?.rsvpStatus === "confirmed" || guest?.rsvpStatus === "declined" ? guest.rsvpStatus : RSVP_STATUS_UNSET);
   const [plusOnes, setPlusOnes] = useState(String(guest?.plusOnes ?? 0));
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
   const resolvedGuestToken = guest?.qrToken ?? guestToken;
+  const maxAccompanying = Math.max((guest?.maxGuests ?? 1) - 1, 0);
+  const isDeclined = status === "declined";
+  const canAddAccompanying = status === "confirmed" && maxAccompanying > 0;
 
   useEffect(() => {
     if (!guest) return;
     setGuestName(guest.fullName);
-    setStatus(guest.rsvpStatus === "declined" ? "declined" : "confirmed");
-    setPlusOnes(String(guest.plusOnes ?? 0));
+    setStatus(guest.rsvpStatus === "confirmed" || guest.rsvpStatus === "declined" ? guest.rsvpStatus : RSVP_STATUS_UNSET);
+    setPlusOnes(String(Math.min(guest.plusOnes ?? 0, Math.max(guest.maxGuests - 1, 0))));
   }, [guest]);
+
+  useEffect(() => {
+    if (isDeclined) setPlusOnes("0");
+  }, [isDeclined]);
 
   async function submit(eventSubmit: FormEvent) {
     eventSubmit.preventDefault();
+    if (submitting) return;
 
-    if (!resolvedGuestToken) {
+    if (!resolvedGuestToken || !guest) {
       toast.error("Ouvrez votre lien personnel pour confirmer votre RSVP.");
+      return;
+    }
+
+    if (status !== "confirmed" && status !== "declined") {
+      toast.error("Choisissez votre présence avant d'envoyer votre réponse.");
+      return;
+    }
+
+    const requestedPlusOnes = status === "declined" ? 0 : Number(plusOnes);
+    if (!Number.isFinite(requestedPlusOnes) || requestedPlusOnes < 0 || requestedPlusOnes > maxAccompanying) {
+      toast.error("Le nombre d'accompagnants dépasse le quota de ce pass.");
       return;
     }
 
@@ -162,8 +188,7 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
         body: JSON.stringify({
           guestToken: resolvedGuestToken,
           status,
-          plusOnes: Number(plusOnes),
-          guestName,
+          plusOnes: requestedPlusOnes,
         }),
       });
       const json = await response.json();
@@ -187,35 +212,44 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
     <InfoCard icon={<Send className="size-5" />} label="RSVP" title={done ? "Réponse enregistrée" : "Confirmer votre présence"}>
       {done ? (
         <p>Merci, votre réponse a bien été enregistrée pour {event.name}.</p>
+      ) : !guest ? (
+        <p>Le formulaire RSVP est réservé aux liens nominatifs. Ouvrez le lien personnel reçu avec votre Pass invité.</p>
       ) : (
         <form onSubmit={submit} className="mt-5 grid gap-4">
           <div className="space-y-2">
             <Label className={LABEL_CLASS}>Nom / Prénom</Label>
-            <Input value={guestName} onChange={(inputEvent) => setGuestName(inputEvent.target.value)} placeholder="Votre nom complet" className={FIELD_CLASS} />
+            <Input value={guestName} onChange={(inputEvent) => setGuestName(inputEvent.target.value)} readOnly className={FIELD_CLASS} />
           </div>
           <div className="space-y-2">
             <Label className={LABEL_CLASS}>Présence</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className={FIELD_CLASS}>
-                <SelectValue />
+                <SelectValue placeholder="Choisir une réponse" />
               </SelectTrigger>
               <SelectContent className="border-white/10 bg-black/20 text-white backdrop-blur-sm">
+                <SelectItem value={RSVP_STATUS_UNSET}>À confirmer</SelectItem>
                 <SelectItem value="confirmed">Présent(e)</SelectItem>
                 <SelectItem value="declined">Absent(e)</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          {status !== "declined" && (
           <div className="space-y-2">
             <Label className={LABEL_CLASS}>Nombre d&apos;accompagnants</Label>
             <Input
               type="number"
               min="0"
-              max={guest?.maxGuests ?? 10}
+              max={maxAccompanying}
               value={plusOnes}
               onChange={(inputEvent) => setPlusOnes(inputEvent.target.value)}
+              disabled={!canAddAccompanying}
               className={FIELD_CLASS}
             />
+            <p className="text-xs text-white/68">
+              {maxAccompanying > 0 ? `${maxAccompanying} accompagnant${maxAccompanying > 1 ? "s" : ""} maximum autorisé${maxAccompanying > 1 ? "s" : ""}.` : "Ce pass est nominatif, sans accompagnant."}
+            </p>
           </div>
+          )}
           <Button type="submit" disabled={submitting} className="h-11 rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
             <Send className="size-4" />
             {submitting ? "Enregistrement..." : "Envoyer ma réponse"}
@@ -240,6 +274,14 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
           Enregistrer mon Pass
         </a>
       </Button>
+    </InfoCard>
+  );
+}
+
+function GuestTokenErrorCard({ message }: { message: string }) {
+  return (
+    <InfoCard icon={<AlertTriangle className="size-5" />} label="Pass invité" title="Lien nominatif invalide">
+      <p>{message}</p>
     </InfoCard>
   );
 }
@@ -280,7 +322,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
 
       <InfoCard icon={<MapPin className="size-5" />} label="Itinéraire" title={event.venueName ?? "Lieu à confirmer"}>
         {event.venueAddress && <p>{event.venueAddress}</p>}
-        {mapsHref && (
+        {mapsHref ? (
           <div className={`mt-4 ${ACTION_BUTTON_GROUP_CLASS}`}>
             <Button
               asChild
@@ -293,6 +335,8 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
               </a>
             </Button>
           </div>
+        ) : (
+          <p className="mt-4 text-sm text-white/72">Itinéraire à venir.</p>
         )}
       </InfoCard>
 
@@ -378,6 +422,7 @@ export function InvitationExperience({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [origin, setOrigin] = useState("");
   const [guest, setGuest] = useState<GuestPassPayload | null>(null);
+  const [guestLookupError, setGuestLookupError] = useState<string | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -465,6 +510,23 @@ export function InvitationExperience({
   }, []);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mediaQuery.matches) {
+      setHasStarted(true);
+      setShowContent(true);
+    }
+
+    const handleReducedMotion = (eventMotion: MediaQueryListEvent) => {
+      if (!eventMotion.matches) return;
+      setHasStarted(true);
+      setShowContent(true);
+    };
+
+    mediaQuery.addEventListener("change", handleReducedMotion);
+    return () => mediaQuery.removeEventListener("change", handleReducedMotion);
+  }, []);
+
+  useEffect(() => {
     const updateScrollState = () => setHasScrolled(window.scrollY > 8);
 
     updateScrollState();
@@ -508,23 +570,32 @@ export function InvitationExperience({
     if (!guestToken) return;
 
     let ignore = false;
-    fetch(`/api/public/guests/${encodeURIComponent(guestToken)}`, { cache: "no-store" })
-      .then((response) => response.json() as Promise<PublicGuestResponse>)
+    setGuest(null);
+    setGuestLookupError(null);
+    fetch(`/api/public/guests/${encodeURIComponent(guestToken)}?eventId=${encodeURIComponent(event.id)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const json = (await response.json()) as PublicGuestResponse;
+        if (!response.ok || !json.success) {
+          throw new Error(json.error ?? "Pass invité introuvable.");
+        }
+        return json;
+      })
       .then((json) => {
         if (!ignore && json.success && json.data?.guest) setGuest(json.data.guest);
       })
       .catch((error) => {
         console.error("Guest pass lookup failed:", error);
+        if (!ignore) setGuestLookupError(error instanceof Error ? error.message : "Pass invité introuvable.");
       });
 
     return () => {
       ignore = true;
     };
-  }, [guestToken]);
+  }, [event.id, guestToken]);
 
   return (
     <div style={vars} className="relative w-full min-h-screen bg-[#0d0d0d] text-[#1a1a1a] overflow-x-hidden">
-      <div className="fixed inset-0 w-full h-[100dvh] max-w-md mx-auto z-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 w-full h-[100dvh] max-w-md mx-auto z-0 pointer-events-none overflow-hidden" style={{ background: event.theme.previewGradient }}>
         {videoSrc ? (
           <video
             ref={videoRef}
@@ -536,8 +607,18 @@ export function InvitationExperience({
             loop={false}
             muted={isMuted}
             onTimeUpdate={handleTimeUpdate}
+            onError={() => {
+              setPlaybackFailed(true);
+              setHasStarted(true);
+              setShowContent(true);
+            }}
             onEnded={(e) => {
-              e.currentTarget.pause();
+              const video = e.currentTarget;
+              video.currentTime = Number.isFinite(video.duration) && video.duration > OPENING_END_TIME + 0.5 ? OPENING_END_TIME : 0;
+              void video.play().catch(() => {
+                setPlaybackFailed(true);
+                setShowContent(true);
+              });
             }}
             className="h-full w-full object-cover"
             style={{ objectFit: "cover" }}
@@ -581,7 +662,7 @@ export function InvitationExperience({
           <div className="h-[100dvh] w-full" aria-hidden="true" />
         ) : (
           <>
-            <div className="h-[80dvh] w-full flex flex-col justify-end items-center pb-8 pointer-events-none">
+            <div className="h-[58dvh] w-full flex flex-col justify-end items-center pb-8 pointer-events-none">
               {playbackFailed && (
                 <p className="mb-4 rounded-full border border-white/10 bg-black/20 px-4 py-2 text-center text-xs text-white/85 backdrop-blur-sm">
                   La vidéo ne peut pas être lancée ici, mais les détails restent accessibles.
@@ -603,18 +684,23 @@ export function InvitationExperience({
 
             <main
               ref={detailsRef}
-              className="w-full rounded-t-[36px] border border-white/15 bg-black/20 px-5 pt-8 pb-24 shadow-[0_-10px_30px_rgba(0,0,0,0.3)] backdrop-blur-md space-y-6 pointer-events-auto"
+              className="w-full rounded-t-[36px] border border-white/20 bg-black/40 px-5 pt-8 pb-24 shadow-[0_-10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md space-y-6 pointer-events-auto"
             >
               <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
-                <p className="text-xs uppercase tracking-widest text-[#F3E5AB]">Avec la bénédiction de nos familles</p>
-                <h1 className="font-serif text-3xl text-white">{names}</h1>
-                <p className="text-sm italic text-white/75">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
-                <p className="pt-2 text-sm font-medium text-[#F3E5AB]">{formatEventDate(event.eventDate)}</p>
+                <p className="text-xs uppercase tracking-widest text-[#FFE7A3]">Avec la bénédiction de nos familles</p>
+                <h1 className="font-serif text-4xl leading-tight text-white">{names}</h1>
+                <p className="text-sm italic text-white/85">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
+                <div className="mx-auto grid max-w-sm gap-1 pt-3 text-sm font-medium text-[#FFE7A3]">
+                  <p>{formatEventDate(event.eventDate)}</p>
+                  {event.eventTime && <p>{event.eventTime}</p>}
+                  {event.venueName && <p className="text-white/88">{event.venueName}</p>}
+                </div>
               </div>
 
+              {guestLookupError && <GuestTokenErrorCard message={guestLookupError} />}
               <GuestPassCard guest={guest} passUrl={passUrl} />
               <PhotoGallery images={event.galleryImages} />
-              <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />
+              {!guestLookupError && <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />}
               <EventDetails event={event} />
 
               <footer className="pt-4 text-center text-xs uppercase tracking-widest text-white/60 drop-shadow-sm">

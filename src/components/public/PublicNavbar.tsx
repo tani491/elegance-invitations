@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, Globe, Banknote, ChevronDown } from "lucide-react";
+import { Menu, Globe, Banknote, ChevronDown, UserRound } from "lucide-react";
 import {
   Sheet,
   SheetTrigger,
@@ -208,6 +208,14 @@ export default function PublicNavbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <Link
+            href="/login"
+            className="ml-1 inline-flex min-h-10 items-center gap-2 rounded-full border border-[#C5A059]/35 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-[#FAF7F2] transition hover:bg-[#C5A059]/10"
+          >
+            <UserRound className="size-3.5" />
+            Espace Client
+          </Link>
+
         </div>
 
         {/* Mobile hamburger */}
@@ -306,6 +314,15 @@ export default function PublicNavbar() {
                     {link.label}
                   </button>
                 ))}
+
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#C5A059]/40 px-4 text-sm font-semibold uppercase tracking-[0.16em] text-[#FAF7F2] transition hover:bg-[#C5A059]/10"
+                >
+                  <UserRound className="size-4" />
+                  Espace Client
+                </Link>
 
               </div>
             </SheetContent>
