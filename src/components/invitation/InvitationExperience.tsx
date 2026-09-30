@@ -52,7 +52,7 @@ type VideoTheme = PublicEventPayload["theme"] & {
 };
 
 const FIELD_CLASS =
-  "min-h-12 rounded-xl border border-white/20 bg-black/35 px-4 text-base text-white placeholder:text-white/60 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0 disabled:opacity-70";
+  "min-h-12 rounded-xl border border-white/20 bg-black/10 px-4 text-base text-white shadow-2xl placeholder:text-white/65 backdrop-blur-xl focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0 disabled:opacity-70";
 const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#FFE7A3] drop-shadow-sm";
 const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-wrap sm:flex-nowrap gap-2 px-2 overflow-hidden";
 const ACTION_BUTTON_CLASS =
@@ -124,9 +124,9 @@ function InfoCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/20 bg-black/45 p-6 text-white shadow-lg backdrop-blur-md drop-shadow-md">
+    <section className="rounded-2xl border border-white/20 bg-black/10 p-6 text-white shadow-2xl backdrop-blur-2xl drop-shadow-md">
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/30 bg-black/35 text-[#FFE7A3]">{icon}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-[#FFE7A3] shadow-2xl backdrop-blur-xl">{icon}</span>
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#FFE7A3] drop-shadow-sm">{label}</p>
           <h2 className="mt-1 font-serif text-2xl italic leading-tight text-white drop-shadow-md">{title}</h2>
@@ -226,7 +226,7 @@ function RSVPForm({ event, guestToken, guest }: { event: PublicEventPayload; gue
               <SelectTrigger className={FIELD_CLASS}>
                 <SelectValue placeholder="Choisir une réponse" />
               </SelectTrigger>
-              <SelectContent className="border-white/10 bg-black/20 text-white backdrop-blur-sm">
+              <SelectContent className="border-white/20 bg-black/10 text-white shadow-2xl backdrop-blur-xl">
                 <SelectItem value={RSVP_STATUS_UNSET}>À confirmer</SelectItem>
                 <SelectItem value="confirmed">Présent(e)</SelectItem>
                 <SelectItem value="declined">Absent(e)</SelectItem>
@@ -265,7 +265,7 @@ function GuestPassCard({ guest, passUrl }: { guest: GuestPassPayload | null; pas
 
   return (
     <InfoCard icon={<Ticket className="size-5" />} label="Pass invité" title={guest.fullName}>
-      <p className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-center text-xs uppercase tracking-[0.18em] text-white/75 backdrop-blur-sm">
+      <p className="mt-5 rounded-2xl border border-white/20 bg-white/10 p-4 text-center text-xs uppercase tracking-[0.18em] text-white/80 shadow-2xl backdrop-blur-xl">
         Accès nominatif • Table à confirmer
       </p>
       <Button asChild className="mt-4 h-11 w-full rounded-full bg-[#D4AF37] px-5 text-sm text-black hover:bg-[#F3E5AB]">
@@ -327,7 +327,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
             <Button
               asChild
               variant="outline"
-              className={`${ACTION_BUTTON_CLASS} border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white`}
+              className={`${ACTION_BUTTON_CLASS} border-white/20 bg-white/10 text-[#F3E5AB] shadow-2xl backdrop-blur-xl hover:bg-white/15 hover:text-white`}
             >
               <a href={mapsHref} target="_blank" rel="noreferrer">
                 <MapPin className="size-4 shrink-0" />
@@ -362,7 +362,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
           {event.dressCodeColors.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {event.dressCodeColors.map((color) => (
-                <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 text-xs uppercase tracking-[0.12em] text-white/75 backdrop-blur-sm">
+                <span key={`${color.label}-${color.color}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs uppercase tracking-[0.12em] text-white/80 shadow-2xl backdrop-blur-xl">
                   <span className="size-5 rounded-full border border-white shadow-inner" style={{ backgroundColor: color.color }} />
                   {color.label.toLocaleUpperCase("fr-FR")}
                 </span>
@@ -379,7 +379,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
               <Button
                 asChild
                 variant="outline"
-                className={`${ACTION_BUTTON_CLASS} border-[#D4AF37]/20 bg-black/10 text-[#F3E5AB] backdrop-blur-sm hover:bg-black/20 hover:text-white`}
+                className={`${ACTION_BUTTON_CLASS} border-white/20 bg-white/10 text-[#F3E5AB] shadow-2xl backdrop-blur-xl hover:bg-white/15 hover:text-white`}
               >
                 <a href={contactHref} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4 shrink-0" />
@@ -626,15 +626,15 @@ export function InvitationExperience({
         ) : (
           <div className="h-full w-full" style={{ background: event.theme.previewGradient }} />
         )}
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/10 to-transparent" />
       </div>
 
       {hasStarted && videoSrc && (
         <button
           type="button"
           onClick={toggleSound}
-          className="fixed top-4 right-4 z-50 min-h-12 min-w-12 rounded-full bg-black/20 border border-[#d4af37]/20 p-3 text-[#d4af37] backdrop-blur-sm"
+          className="fixed top-4 right-4 z-50 min-h-12 min-w-12 rounded-full bg-white/10 border border-white/20 p-3 text-[#d4af37] shadow-2xl backdrop-blur-xl"
           aria-label={isMuted ? "Activer le son" : "Couper le son"}
         >
           {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
@@ -664,7 +664,7 @@ export function InvitationExperience({
           <>
             <div className="h-[58dvh] w-full flex flex-col justify-end items-center pb-8 pointer-events-none">
               {playbackFailed && (
-                <p className="mb-4 rounded-full border border-white/10 bg-black/20 px-4 py-2 text-center text-xs text-white/85 backdrop-blur-sm">
+                <p className="mb-4 rounded-full border border-white/20 bg-black/10 px-4 py-2 text-center text-xs text-white/90 shadow-2xl backdrop-blur-xl">
                   La vidéo ne peut pas être lancée ici, mais les détails restent accessibles.
                 </p>
               )}
@@ -672,7 +672,7 @@ export function InvitationExperience({
               <button
                 type="button"
                 onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-[#d4af37]/20 bg-black/20 px-5 py-2.5 text-white backdrop-blur-sm transition-opacity duration-300 ${
+                className={`pointer-events-auto flex min-h-12 flex-col items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-white shadow-2xl backdrop-blur-xl transition-opacity duration-300 ${
                   hasScrolled ? "opacity-0" : "opacity-100 animate-bounce"
                 }`}
                 aria-label="Glisser vers le haut pour découvrir"
@@ -684,7 +684,7 @@ export function InvitationExperience({
 
             <main
               ref={detailsRef}
-              className="w-full rounded-t-[36px] border border-white/20 bg-black/40 px-5 pt-8 pb-24 shadow-[0_-10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md space-y-6 pointer-events-auto"
+              className="w-full rounded-t-[36px] border border-white/20 bg-black/10 px-5 pt-8 pb-24 shadow-2xl backdrop-blur-2xl space-y-6 pointer-events-auto"
             >
               <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
                 <p className="text-xs uppercase tracking-widest text-[#FFE7A3]">Avec la bénédiction de nos familles</p>
