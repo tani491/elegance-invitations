@@ -1581,7 +1581,6 @@ export default function HomePage() {
               <a href="#confidentialite" className="transition hover:text-[#FAF7F2]">Confidentialité</a>
               <a href="#conditions" className="transition hover:text-[#FAF7F2]">Conditions Générales</a>
               <Link href="/login" className="font-semibold text-[#C5A059] transition hover:text-[#FAF7F2]">Espace Client</Link>
-              <Link href="/admin/login" className="text-[#D8D2C7]/35 transition hover:text-[#D8D2C7]/70">Administration</Link>
             </nav>
           </div>
         </div>
