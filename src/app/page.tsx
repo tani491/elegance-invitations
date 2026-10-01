@@ -189,6 +189,8 @@ const QR_GRID = [1,1,0,1,1,0,1, 0,1,1,1,0,1,0, 1,0,1,0,1,1,1, 1,1,1,1,0,0,1, 0,1
 const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroPhone1: null,
   heroPhone2: null,
+  privilegeDemoUrl: null,
+  imperialDemoUrl: null,
   updatedAt: null,
 };
 
@@ -592,12 +594,14 @@ export default function HomePage() {
       formula: "Formule Privilège",
       description: "Invitation interactive lisible, RSVP nominatif, galerie, itinéraire et pass QR.",
       template: featuredTemplate,
+      demoUrl: homepageSettings.privilegeDemoUrl,
     },
     {
       title: "Modèle A · Cinématique 9:16",
       formula: "Formule Impérial Cinematic Motion",
       description: "Ouverture vidéo verticale, boucle décorative fluide et accès rapide aux informations pratiques.",
       template: secondaryTemplate,
+      demoUrl: homepageSettings.imperialDemoUrl,
     },
   ];
 
@@ -1208,16 +1212,28 @@ export default function HomePage() {
                 </div>
                 <p className="mt-4 text-sm leading-7 text-[#D8D2C7]">{demo.description}</p>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={`${SECONDARY_CTA_CLASS} w-full sm:w-auto`}
-                    onClick={() => demo.template && setPreviewTemplate(demo.template)}
-                    disabled={!demo.template}
-                  >
-                    <Play className="mr-2 size-4" />
-                    Voir la démo
-                  </Button>
+                  {demo.demoUrl ? (
+                    <a
+                      href={demo.demoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${SECONDARY_CTA_CLASS} inline-flex w-full items-center justify-center sm:w-auto`}
+                    >
+                      <Play className="mr-2 size-4" />
+                      Voir la démo
+                    </a>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`${SECONDARY_CTA_CLASS} w-full sm:w-auto`}
+                      onClick={() => demo.template && setPreviewTemplate(demo.template)}
+                      disabled={!demo.template}
+                    >
+                      <Play className="mr-2 size-4" />
+                      Voir la démo
+                    </Button>
+                  )}
                   <a
                     href={buildFormulaWhatsAppUrl(demo.formula, demo.template?.name)}
                     target="_blank"

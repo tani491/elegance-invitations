@@ -764,8 +764,8 @@ export default function AdminConsole() {
           <TabsContent value="create">
             <Card className="rounded-lg border-[#E5D9C7] bg-white shadow-sm">
               <CardHeader><CardTitle>Creation Client Express</CardTitle></CardHeader>
-              <CardContent>
-                <form onSubmit={createClient} className="grid gap-4 lg:grid-cols-5">
+              <CardContent className="w-full max-w-full overflow-hidden box-border px-4 sm:px-6">
+                <form onSubmit={createClient} className="grid w-full max-w-full gap-4 overflow-hidden box-border lg:grid-cols-5">
                   <div className="space-y-2">
                     <Label>Nom du couple</Label>
                     <Input value={form.coupleName} onChange={(e) => setForm({ ...form, coupleName: e.target.value })} required />
@@ -804,10 +804,14 @@ export default function AdminConsole() {
                       <p className="text-xs text-red-700">Aucun modele actif n'est disponible pour cette formule.</p>
                     )}
                   </div>
-                  <div className="lg:col-span-5">
-                    <Button type="submit" disabled={creating} className="bg-[#171312] text-white hover:bg-[#2A2320]">
-                      <Copy className="mr-2 size-4" />
-                      {creating ? "Creation..." : "Generer et copier le message WhatsApp"}
+                  <div className="w-full max-w-full overflow-hidden box-border lg:col-span-5">
+                    <Button
+                      type="submit"
+                      disabled={creating}
+                      className="w-full max-w-full min-h-[44px] rounded-xl px-4 py-3 text-xs font-medium sm:text-sm truncate flex items-center justify-center box-border bg-[#171312] text-white hover:bg-[#2A2320] sm:w-auto"
+                    >
+                      <Copy className="mr-2 size-4 shrink-0" />
+                      <span className="min-w-0 truncate">{creating ? "Creation..." : "Generer et copier le message WhatsApp"}</span>
                     </Button>
                   </div>
                 </form>

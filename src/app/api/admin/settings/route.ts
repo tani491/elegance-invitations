@@ -9,9 +9,28 @@ const mediaUrlSchema = z.preprocess(
   z.string().url().nullable().optional(),
 );
 
+const demoUrlSchema = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.string()
+    .trim()
+    .refine((value) => {
+      if (value.startsWith("/")) return true;
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" || url.protocol === "http:";
+      } catch {
+        return false;
+      }
+    }, "URL de demo invalide.")
+    .nullable()
+    .optional(),
+);
+
 const homepageSettingsSchema = z.object({
   heroPhone1: mediaUrlSchema,
   heroPhone2: mediaUrlSchema,
+  privilegeDemoUrl: demoUrlSchema,
+  imperialDemoUrl: demoUrlSchema,
 });
 
 export async function GET(request: NextRequest) {
@@ -43,6 +62,8 @@ export async function PATCH(request: NextRequest) {
   ) as {
     heroPhone1?: string | null;
     heroPhone2?: string | null;
+    privilegeDemoUrl?: string | null;
+    imperialDemoUrl?: string | null;
   };
 
   try {

@@ -52,11 +52,11 @@ type VideoTheme = PublicEventPayload["theme"] & {
 };
 
 const FIELD_CLASS =
-  "min-h-12 rounded-xl border border-white/20 bg-black/10 px-4 text-base text-white shadow-2xl placeholder:text-white/65 backdrop-blur-xl focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0 disabled:opacity-70";
+  "min-h-12 rounded-xl border border-white/20 bg-black/10 px-4 text-base text-white shadow-2xl placeholder:text-white/65 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50 focus-visible:ring-offset-0 disabled:opacity-70";
 const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#FFE7A3] drop-shadow-sm";
-const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-wrap sm:flex-nowrap gap-2 px-2 overflow-hidden";
+const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-col gap-2 overflow-hidden box-border sm:flex-row sm:px-2";
 const ACTION_BUTTON_CLASS =
-  "w-full flex-1 min-w-0 min-h-[44px] rounded-xl px-4 text-xs font-medium sm:text-sm truncate flex items-center justify-center gap-2";
+  "w-full max-w-full min-w-0 min-h-[44px] rounded-xl px-4 py-3 text-xs font-medium sm:flex-1 sm:text-sm truncate flex items-center justify-center gap-2 box-border";
 const CONTENT_REVEAL_TIME = 4.5;
 const OPENING_END_TIME = 10;
 const RSVP_STATUS_UNSET = "__unset__";
@@ -124,7 +124,7 @@ function InfoCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/20 bg-black/10 p-6 text-white shadow-2xl backdrop-blur-2xl drop-shadow-md">
+    <section className="rounded-2xl border border-white/20 bg-black/15 p-6 text-white shadow-2xl backdrop-blur-lg drop-shadow-md">
       <div className="flex items-start gap-3">
         <span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-[#FFE7A3] shadow-2xl backdrop-blur-xl">{icon}</span>
         <div className="min-w-0">
@@ -684,7 +684,7 @@ export function InvitationExperience({
 
             <main
               ref={detailsRef}
-              className="w-full rounded-t-[36px] border border-white/20 bg-black/10 px-5 pt-8 pb-24 shadow-2xl backdrop-blur-2xl space-y-6 pointer-events-auto"
+              className="w-full max-w-full overflow-hidden box-border rounded-t-[36px] border border-white/20 bg-black/15 px-4 pt-8 pb-24 shadow-2xl backdrop-blur-lg space-y-6 pointer-events-auto sm:px-5"
             >
               <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
                 <p className="text-xs uppercase tracking-widest text-[#FFE7A3]">Avec la bénédiction de nos familles</p>

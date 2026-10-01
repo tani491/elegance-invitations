@@ -4,7 +4,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { canUseMotionVideo } from "@/lib/plan-gating";
-import { isR2Configured, R2_BUCKET_NAME, r2, r2PublicUrlForKey } from "@/lib/r2";
+import { getR2ConfigurationStatus, R2_BUCKET_NAME, r2, r2PublicUrlForKey } from "@/lib/r2";
 import { requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
@@ -144,8 +144,16 @@ export async function POST(request: NextRequest) {
   if (!session) return response;
 
   try {
-    if (!isR2Configured()) {
-      return NextResponse.json({ success: false, error: "Configuration Cloudflare R2 manquante." }, { status: 500 });
+    const r2Status = getR2ConfigurationStatus();
+    if (!r2Status.configured) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Configuration Cloudflare R2 incomplete. Variables manquantes: ${r2Status.missing.join(", ")}.`,
+          missing: r2Status.missing,
+        },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
     }
 
     const formData = await request.formData();

@@ -110,6 +110,8 @@ export interface DressCodeColor {
 export interface HomepageSettings {
   heroPhone1: string | null;
   heroPhone2: string | null;
+  privilegeDemoUrl: string | null;
+  imperialDemoUrl: string | null;
   updatedAt?: string | null;
 }
 

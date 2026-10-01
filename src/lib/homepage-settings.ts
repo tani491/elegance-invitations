@@ -5,12 +5,16 @@ import type { HomepageSettings } from "@/types/database.types";
 export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroPhone1: null,
   heroPhone2: null,
+  privilegeDemoUrl: null,
+  imperialDemoUrl: null,
   updatedAt: null,
 };
 
 function serializeHomepageSettings(settings: {
   heroPhone1: string | null;
   heroPhone2: string | null;
+  privilegeDemoUrl: string | null;
+  imperialDemoUrl: string | null;
   updatedAt?: Date | null;
 } | null): HomepageSettings {
   if (!settings) return DEFAULT_HOMEPAGE_SETTINGS;
@@ -18,6 +22,8 @@ function serializeHomepageSettings(settings: {
   return {
     heroPhone1: settings.heroPhone1,
     heroPhone2: settings.heroPhone2,
+    privilegeDemoUrl: settings.privilegeDemoUrl,
+    imperialDemoUrl: settings.imperialDemoUrl,
     updatedAt: settings.updatedAt?.toISOString() ?? null,
   };
 }
@@ -38,6 +44,8 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
 export async function updateHomepageSettings(data: {
   heroPhone1?: string | null;
   heroPhone2?: string | null;
+  privilegeDemoUrl?: string | null;
+  imperialDemoUrl?: string | null;
 }) {
   const settings = await db.siteSettings.upsert({
     where: { id: HOMEPAGE_SETTINGS_ID },
@@ -46,6 +54,8 @@ export async function updateHomepageSettings(data: {
       id: HOMEPAGE_SETTINGS_ID,
       heroPhone1: data.heroPhone1 ?? null,
       heroPhone2: data.heroPhone2 ?? null,
+      privilegeDemoUrl: data.privilegeDemoUrl ?? null,
+      imperialDemoUrl: data.imperialDemoUrl ?? null,
     },
   });
 

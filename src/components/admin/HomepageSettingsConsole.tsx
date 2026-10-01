@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Image as ImageIcon, MonitorSmartphone, Save, Trash2, Upload, Video } from "lucide-react";
+import { ArrowLeft, ExternalLink, Image as ImageIcon, MonitorSmartphone, Play, Save, Trash2, Upload, Video } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,14 @@ import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import type { HomepageSettings } from "@/types/database.types";
 
 type HomepageMediaSlot = "heroPhone1" | "heroPhone2";
+type HomepageDemoSlot = "privilegeDemoUrl" | "imperialDemoUrl";
+type HomepageSettingsSlot = HomepageMediaSlot | HomepageDemoSlot;
 
 const DEFAULT_SETTINGS: HomepageSettings = {
   heroPhone1: null,
   heroPhone2: null,
+  privilegeDemoUrl: null,
+  imperialDemoUrl: null,
   updatedAt: null,
 };
 
@@ -52,6 +56,26 @@ const MEDIA_SLOTS: {
     key: "heroPhone2",
     title: "iPhone secondaire",
     description: "Programme, compte à rebours ou vue détaillée du faire-part.",
+  },
+];
+
+const DEMO_URL_SLOTS: {
+  key: HomepageDemoSlot;
+  title: string;
+  description: string;
+  placeholder: string;
+}[] = [
+  {
+    key: "privilegeDemoUrl",
+    title: "Formule Privilège - Modèle B",
+    description: "Lien ouvert par le bouton Voir la démo de la carte Privilège.",
+    placeholder: "https://...",
+  },
+  {
+    key: "imperialDemoUrl",
+    title: "Formule Impérial Cinematic Motion - Modèle A",
+    description: "Lien ouvert par le bouton Voir la démo de la carte Impérial Cinematic Motion.",
+    placeholder: "https://...",
   },
 ];
 
@@ -100,7 +124,7 @@ export default function HomepageSettingsConsole() {
   const [settings, setSettings] = useState<HomepageSettings>(DEFAULT_SETTINGS);
   const [draft, setDraft] = useState<HomepageSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<HomepageMediaSlot | "manual" | null>(null);
+  const [saving, setSaving] = useState<HomepageSettingsSlot | "manual" | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<HomepageMediaSlot | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Record<HomepageMediaSlot, number>>({
     heroPhone1: 0,
@@ -137,7 +161,7 @@ export default function HomepageSettingsConsole() {
     });
   }, []);
 
-  async function saveSettings(data: Partial<HomepageSettings>, successMessage: string, slot: HomepageMediaSlot | "manual" = "manual") {
+  async function saveSettings(data: Partial<HomepageSettings>, successMessage: string, slot: HomepageSettingsSlot | "manual" = "manual") {
     setSaving(slot);
     try {
       const response = await fetch("/api/admin/settings", {
@@ -349,6 +373,59 @@ export default function HomepageSettingsConsole() {
             );
           })}
         </div>
+
+        <Card className="mt-6 rounded-2xl border-[#E5D9C7] bg-white/90 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#171312]">
+              <Play className="size-5 text-[#B89248]" />
+              Démos des formules
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Ces liens pilotent les boutons Voir la démo de la vitrine publique.
+            </p>
+          </CardHeader>
+          <CardContent className="grid w-full max-w-full gap-5 overflow-hidden box-border md:grid-cols-2">
+            {DEMO_URL_SLOTS.map((slot) => {
+              const value = draft[slot.key] ?? "";
+              const isSaving = saving === slot.key;
+
+              return (
+                <div key={slot.key} className="w-full max-w-full space-y-3 overflow-hidden box-border rounded-xl border border-[#E5D9C7] bg-[#FDFBF7] p-4">
+                  <div>
+                    <Label htmlFor={`${slot.key}-url`} className="text-[#171312]">{slot.title}</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">{slot.description}</p>
+                  </div>
+                  <Input
+                    id={`${slot.key}-url`}
+                    value={value}
+                    onChange={(event) => setDraft((prev) => ({ ...prev, [slot.key]: event.target.value }))}
+                    placeholder={slot.placeholder}
+                    inputMode="url"
+                  />
+                  <div className="flex w-full max-w-full flex-col gap-2 overflow-hidden box-border sm:flex-row">
+                    <Button
+                      type="button"
+                      className="w-full max-w-full min-h-[44px] rounded-xl bg-[#171312] px-4 py-3 text-xs font-medium text-white hover:bg-[#2A2320] sm:flex-1 sm:text-sm"
+                      disabled={saving !== null}
+                      onClick={() => void saveSettings({ [slot.key]: value || null }, "URL de démo sauvegardée.", slot.key)}
+                    >
+                      <Save className="mr-2 size-4 shrink-0" />
+                      <span className="min-w-0 truncate">{isSaving ? "Sauvegarde..." : "Sauver"}</span>
+                    </Button>
+                    {settings[slot.key] && (
+                      <Button asChild type="button" variant="outline" className="w-full max-w-full min-h-[44px] rounded-xl border-[#D6C5A8] px-4 py-3 text-xs font-medium sm:flex-1 sm:text-sm">
+                        <a href={settings[slot.key] ?? "#"} target="_blank" rel="noreferrer">
+                          <ExternalLink className="mr-2 size-4 shrink-0" />
+                          <span className="min-w-0 truncate">Ouvrir</span>
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

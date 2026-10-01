@@ -1,29 +1,49 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID;
-const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT
-  ?? (accountId ? `https://${accountId}.r2.cloudflarestorage.com` : "");
+const accountId = cleanEnv(process.env.CLOUDFLARE_R2_ACCOUNT_ID);
+const endpoint = normalizeR2Endpoint(cleanEnv(process.env.CLOUDFLARE_R2_ENDPOINT), accountId);
+const accessKeyId = cleanEnv(process.env.CLOUDFLARE_R2_ACCESS_KEY_ID);
+const secretAccessKey = cleanEnv(process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY);
 
-export const R2_BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME ?? "";
-export const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/+$/, "") ?? "";
+export const R2_BUCKET_NAME = cleanEnv(process.env.CLOUDFLARE_R2_BUCKET_NAME);
+export const R2_PUBLIC_URL = cleanEnv(process.env.NEXT_PUBLIC_R2_PUBLIC_URL).replace(/\/+$/, "");
 
 export const r2 = new S3Client({
   region: "auto",
   ...(endpoint ? { endpoint } : {}),
-  credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? "",
-  },
+  ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
 });
 
+function cleanEnv(value: string | undefined) {
+  return value?.trim().replace(/^["']|["']$/g, "") ?? "";
+}
+
+function normalizeR2Endpoint(explicitEndpoint: string, account: string) {
+  if (explicitEndpoint) return explicitEndpoint.replace(/\/+$/, "");
+  if (!account) return "";
+  if (/^https?:\/\//i.test(account)) return account.replace(/\/+$/, "");
+  return `https://${account}.r2.cloudflarestorage.com`;
+}
+
+export function getR2ConfigurationStatus() {
+  const missing = [
+    ["CLOUDFLARE_R2_ACCOUNT_ID", endpoint],
+    ["CLOUDFLARE_R2_ACCESS_KEY_ID", accessKeyId],
+    ["CLOUDFLARE_R2_SECRET_ACCESS_KEY", secretAccessKey],
+    ["CLOUDFLARE_R2_BUCKET_NAME", R2_BUCKET_NAME],
+    ["NEXT_PUBLIC_R2_PUBLIC_URL", R2_PUBLIC_URL],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  return {
+    configured: missing.length === 0,
+    missing,
+  };
+}
+
 export function isR2Configured() {
-  return Boolean(
-    endpoint
-    && R2_BUCKET_NAME
-    && R2_PUBLIC_URL
-    && process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
-    && process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
-  );
+  return getR2ConfigurationStatus().configured;
 }
 
 export function r2PublicUrlForKey(key: string) {
