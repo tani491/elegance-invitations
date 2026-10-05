@@ -103,18 +103,18 @@ export function MotionVideoUploader({
   if (locked) {
     if (compact) {
       return (
-        <Badge variant="outline" className="whitespace-nowrap border-[#C5A059]/35 bg-[#C5A059]/10 text-[#8A6A2F]">
-          <LockKeyhole className="mr-1.5 size-3" />
-          Réservé Motion
+        <Badge variant="outline" className="w-full max-w-full justify-center overflow-hidden box-border rounded-md border-[#C5A059]/35 bg-[#C5A059]/10 px-2 py-1 text-center text-[10px] text-[#8A6A2F] sm:text-xs">
+          <LockKeyhole className="mr-1.5 size-3 shrink-0" />
+          <span className="min-w-0 truncate">Réservé Motion</span>
         </Badge>
       );
     }
 
     return (
-      <div className="rounded-lg border border-[#D4AF37]/25 bg-[#FDFBF7]/80 p-4 shadow-sm">
-        <Badge variant="outline" className="w-fit border-[#C5A059]/35 bg-[#C5A059]/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#8A6A2F]">
-          <LockKeyhole className="mr-1.5 size-3.5" />
-          Réservé à la formule Cinématique Motion
+      <div className="w-full max-w-full overflow-hidden box-border rounded-lg border border-[#D4AF37]/25 bg-[#FDFBF7]/80 p-4 shadow-sm">
+        <Badge variant="outline" className="w-full max-w-full justify-center overflow-hidden box-border rounded-md border-[#C5A059]/35 bg-[#C5A059]/10 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-[#8A6A2F] sm:text-xs">
+          <LockKeyhole className="mr-1.5 size-3.5 shrink-0" />
+          <span className="min-w-0 truncate">Réservé à la formule Cinématique Motion</span>
         </Badge>
       </div>
     );

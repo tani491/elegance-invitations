@@ -28,6 +28,7 @@ const DEFAULT_SETTINGS: HomepageSettings = {
 };
 
 const HOMEPAGE_MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/mov";
+const HOMEPAGE_DEMO_ACCEPT = "video/*,image/*";
 const MAX_HOMEPAGE_MEDIA_SIZE = 50 * 1024 * 1024;
 const HOMEPAGE_MEDIA_MIME_TYPES = new Set([
   "image/jpeg",
@@ -125,10 +126,12 @@ export default function HomepageSettingsConsole() {
   const [draft, setDraft] = useState<HomepageSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<HomepageSettingsSlot | "manual" | null>(null);
-  const [uploadingSlot, setUploadingSlot] = useState<HomepageMediaSlot | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<Record<HomepageMediaSlot, number>>({
+  const [uploadingSlot, setUploadingSlot] = useState<HomepageSettingsSlot | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<Record<HomepageSettingsSlot, number>>({
     heroPhone1: 0,
     heroPhone2: 0,
+    privilegeDemoUrl: 0,
+    imperialDemoUrl: 0,
   });
 
   async function loadSettings() {
@@ -254,6 +257,65 @@ export default function HomepageSettingsConsole() {
       await saveSettings({ [slot]: data.publicUrl }, "Média de la page d'accueil sauvegardé.", slot);
     } catch (error) {
       console.error("Erreur upload Supabase homepage:", error);
+      toast.error(error instanceof Error ? error.message : "Upload impossible.");
+    } finally {
+      window.clearInterval(progressTimer);
+      setUploadingSlot(null);
+      setUploadProgress((prev) => ({ ...prev, [slot]: 0 }));
+    }
+  }
+
+  async function uploadDemoMedia(slot: HomepageDemoSlot, file: File) {
+    setUploadingSlot(slot);
+    setUploadProgress((prev) => ({ ...prev, [slot]: 1 }));
+
+    const progressTimer = window.setInterval(() => {
+      setUploadProgress((prev) => {
+        const current = prev[slot] ?? 1;
+        if (current >= 90) return prev;
+        return { ...prev, [slot]: Math.min(current + 8, 90) };
+      });
+    }, 550);
+
+    try {
+      if (file.size > MAX_HOMEPAGE_MEDIA_SIZE) {
+        toast.error("Demo trop volumineuse. Compressez-la avant l'upload (maximum 50 Mo).");
+        return;
+      }
+
+      if (!isSupportedHomepageMedia(file)) {
+        toast.error("Format non autorise. Utilisez une image ou une video MP4, MOV ou WEBM.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("kind", "demo-media");
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+        body: formData,
+      });
+      const uploadJson = await uploadResponse.json();
+
+      if (!uploadResponse.ok || !uploadJson.success) {
+        toast.error(uploadJson.error ?? "Upload R2 impossible.");
+        return;
+      }
+
+      const publicUrl = (uploadJson.data?.url ?? uploadJson.url) as string | undefined;
+      if (!publicUrl) {
+        toast.error("URL publique R2 manquante.");
+        return;
+      }
+
+      setUploadProgress((prev) => ({ ...prev, [slot]: 100 }));
+      setDraft((prev) => ({ ...prev, [slot]: publicUrl }));
+      await saveSettings({ [slot]: publicUrl }, "Fichier de démo sauvegardé.", slot);
+    } catch (error) {
+      console.error("Erreur upload R2 demo homepage:", error);
       toast.error(error instanceof Error ? error.message : "Upload impossible.");
     } finally {
       window.clearInterval(progressTimer);
@@ -388,6 +450,8 @@ export default function HomepageSettingsConsole() {
             {DEMO_URL_SLOTS.map((slot) => {
               const value = draft[slot.key] ?? "";
               const isSaving = saving === slot.key;
+              const isUploading = uploadingSlot === slot.key;
+              const progress = uploadProgress[slot.key] ?? 0;
 
               return (
                 <div key={slot.key} className="w-full max-w-full space-y-3 overflow-hidden box-border rounded-xl border border-[#E5D9C7] bg-[#FDFBF7] p-4">
@@ -395,6 +459,27 @@ export default function HomepageSettingsConsole() {
                     <Label htmlFor={`${slot.key}-url`} className="text-[#171312]">{slot.title}</Label>
                     <p className="mt-1 text-xs text-muted-foreground">{slot.description}</p>
                   </div>
+                  <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D6C5A8] bg-white p-4 text-center transition hover:border-[#B89248] hover:bg-[#FAF6EF] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60">
+                    <Upload className="mb-2 size-6 text-[#B89248]" />
+                    <span className="text-sm font-semibold text-[#171312]">
+                      {isUploading ? `Téléversement en cours... ${progress || 1}%` : "Uploader une démo"}
+                    </span>
+                    <span className="mt-1 text-xs text-muted-foreground">
+                      Image ou vidéo - 50 Mo max
+                    </span>
+                    {isUploading && <Progress value={progress || 1} className="mt-4 h-2" />}
+                    <Input
+                      type="file"
+                      accept={HOMEPAGE_DEMO_ACCEPT}
+                      className="hidden"
+                      disabled={uploadingSlot !== null || saving !== null}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.currentTarget.value = "";
+                        if (file) void uploadDemoMedia(slot.key, file);
+                      }}
+                    />
+                  </label>
                   <Input
                     id={`${slot.key}-url`}
                     value={value}

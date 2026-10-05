@@ -10,17 +10,30 @@ import { AUTH_ROLES } from "@/types/database.types";
 
 export const runtime = "nodejs";
 
-type UploadKind = "image" | "audio" | "video" | "theme-video";
+type UploadKind = "image" | "audio" | "video" | "theme-video" | "demo-media";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const AUDIO_TYPES = new Set(["audio/mpeg", "audio/mp3", "audio/mp4", "audio/aac", "audio/x-m4a", "audio/wav"]);
 const EVENT_VIDEO_TYPES = new Set(["video/mp4"]);
 const THEME_VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/mov"]);
+const DEMO_MEDIA_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+  "video/mov",
+]);
 
 const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "avif"]);
 const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "aac", "wav"]);
 const EVENT_VIDEO_EXTENSIONS = new Set(["mp4"]);
 const THEME_VIDEO_EXTENSIONS = new Set(["mp4", "mov", "webm"]);
+const DEMO_MEDIA_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "avif", "heic", "heif", "mp4", "mov", "webm"]);
 
 const IMAGE_MAX_SIZE = 8 * 1024 * 1024;
 const AUDIO_MAX_SIZE = 18 * 1024 * 1024;
@@ -33,6 +46,8 @@ function extensionFor(file: File) {
   if (file.type === "image/png") return "png";
   if (file.type === "image/webp") return "webp";
   if (file.type === "image/avif") return "avif";
+  if (file.type === "image/heic") return "heic";
+  if (file.type === "image/heif") return "heif";
   if (file.type === "audio/mpeg" || file.type === "audio/mp3") return "mp3";
   if (file.type === "audio/mp4" || file.type === "audio/x-m4a") return "m4a";
   if (file.type === "audio/aac") return "aac";
@@ -61,7 +76,7 @@ function inferUploadKind(file: File): UploadKind | null {
 
 function normalizeUploadKind(value: FormDataEntryValue | null, file: File): UploadKind | null {
   if (typeof value !== "string" || !value.trim()) return inferUploadKind(file);
-  if (value === "image" || value === "audio" || value === "video" || value === "theme-video") return value;
+  if (value === "image" || value === "audio" || value === "video" || value === "theme-video" || value === "demo-media") return value;
   return null;
 }
 
@@ -90,6 +105,13 @@ function validateFile(kind: UploadKind, file: File, extension: string) {
     if (file.size > VIDEO_MAX_SIZE) return "Video trop volumineuse.";
   }
 
+  if (kind === "demo-media") {
+    if (!(DEMO_MEDIA_TYPES.has(file.type) || DEMO_MEDIA_EXTENSIONS.has(extension))) {
+      return "Format demo non autorise. Utilisez une image ou une video MP4, MOV/QuickTime ou WEBM.";
+    }
+    if (file.size > VIDEO_MAX_SIZE) return "Media de demo trop volumineux.";
+  }
+
   return null;
 }
 
@@ -115,6 +137,13 @@ async function keyForUpload({
       return { error: "Acces admin requis pour cet upload.", status: 403 as const };
     }
     return { key: `theme-videos/${session.user.id}/${filename}` };
+  }
+
+  if (kind === "demo-media") {
+    if (session.user.role !== AUTH_ROLES.SUPER_ADMIN) {
+      return { error: "Acces admin requis pour cet upload.", status: 403 as const };
+    }
+    return { key: `homepage-demos/${session.user.id}/${filename}` };
   }
 
   if (kind === "video") {
