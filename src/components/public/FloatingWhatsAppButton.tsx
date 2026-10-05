@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { ELEGANCE_ASSISTANCE_WHATSAPP_URL, ELEGANCE_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
 
-const HIDDEN_PREFIXES = ["/admin", "/dashboard", "/login", "/scanner", "/invitation", "/carte"];
+const HIDDEN_PREFIXES = ["/admin", "/dashboard", "/login", "/maintenance", "/scanner", "/invitation", "/carte"];
 
 export function FloatingWhatsAppButton() {
   const pathname = usePathname();

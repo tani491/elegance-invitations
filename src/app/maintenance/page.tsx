@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Wrench } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -25,12 +24,6 @@ export default function MaintenancePage() {
         <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-white/72">
           Notre plateforme est actuellement en maintenance pour amélioration. Nous revenons très vite.
         </p>
-        <Link
-          href="/admin/login"
-          className="mt-9 inline-flex min-h-12 items-center justify-center rounded-full border border-[#D4AF37]/35 px-6 text-sm font-semibold text-[#F3D88D] transition hover:bg-white/10"
-        >
-          Accès administrateur
-        </Link>
       </section>
     </main>
   );

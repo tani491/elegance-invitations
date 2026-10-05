@@ -24,11 +24,11 @@ const PUBLIC_ROUTES = [
 ];
 const PUBLIC_PREFIXES = ["/_next", "/invitation", "/m", "/carte", "/api/auth", "/api/settings"];
 const PUBLIC_INVITATION_API_ROUTES = ["/api/public/events"];
-const MAINTENANCE_TARGET_ROUTES = ["/", "/builder", "/login"];
-const MAINTENANCE_TARGET_PREFIXES = ["/invitation", "/m", "/carte", "/api/public", "/api/rsvp"];
+const MAINTENANCE_TARGET_ROUTES = ["/", "/builder"];
+const MAINTENANCE_TARGET_PREFIXES = ["/invitation", "/demo", "/m", "/carte", "/api/public", "/api/rsvp", "/api/settings"];
 const MAINTENANCE_BYPASS_ROUTES = [
   "/maintenance",
-  "/api/settings",
+  "/login",
   "/admin/login",
   "/favicon.ico",
   "/logo.svg",
@@ -46,12 +46,20 @@ function isPublicPath(pathname: string) {
   return PUBLIC_ROUTES.includes(pathname) || startsWithAny(pathname, PUBLIC_PREFIXES);
 }
 
-function shouldBypassMaintenance(pathname: string) {
-  return MAINTENANCE_BYPASS_ROUTES.includes(pathname) || startsWithAny(pathname, MAINTENANCE_BYPASS_PREFIXES);
+function isInternalMaintenanceSettingsRequest(request: NextRequest) {
+  return request.nextUrl.pathname === "/api/settings" && request.headers.get("x-elegance-proxy") === "maintenance";
 }
 
-function isMaintenanceTarget(pathname: string) {
-  if (shouldBypassMaintenance(pathname)) return false;
+function shouldBypassMaintenance(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  return isInternalMaintenanceSettingsRequest(request)
+    || MAINTENANCE_BYPASS_ROUTES.includes(pathname)
+    || startsWithAny(pathname, MAINTENANCE_BYPASS_PREFIXES);
+}
+
+function isMaintenanceTarget(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (shouldBypassMaintenance(request)) return false;
   return MAINTENANCE_TARGET_ROUTES.includes(pathname) || startsWithAny(pathname, MAINTENANCE_TARGET_PREFIXES);
 }
 
@@ -134,7 +142,7 @@ function authenticatedLoginDestination(pathname: string, role: string | undefine
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isMaintenanceTarget(pathname) && await isMaintenanceModeEnabled(request)) {
+  if (isMaintenanceTarget(request) && await isMaintenanceModeEnabled(request)) {
     const url = request.nextUrl.clone();
     url.pathname = "/maintenance";
     url.search = "";
