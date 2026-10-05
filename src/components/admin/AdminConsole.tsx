@@ -30,6 +30,7 @@ import {
   THEME_PLAN_OPTIONS,
   type AssignableThemePlan,
 } from "@/lib/plan-gating";
+import { uploadFileToR2 } from "@/lib/r2-client-upload";
 import { notifyThemeCatalogChanged } from "@/lib/theme-sync";
 import { SCROLL_ANIMATION_OPTIONS, TITLE_FONT_OPTIONS } from "@/types/database.types";
 import type { ScrollAnimationType, ThemeConfig } from "@/types/database.types";
@@ -553,29 +554,7 @@ export default function AdminConsole() {
         return null;
       }
 
-      const formData = new FormData();
-      formData.append("kind", "theme-video");
-      formData.append("file", file);
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-        body: formData,
-      });
-      const uploadJson = await uploadResponse.json();
-
-      if (!uploadResponse.ok || !uploadJson.success) {
-        toast.error(uploadJson.error ?? "Upload R2 impossible.");
-        return null;
-      }
-
-      const publicUrl = (uploadJson.data?.url ?? uploadJson.url) as string | undefined;
-      if (!publicUrl) {
-        toast.error("URL R2 manquante.");
-        return null;
-      }
-
+      const publicUrl = await uploadFileToR2({ file, kind: "theme-video" });
       setUploadProgress((prev) => ({ ...prev, [progressKey]: 100 }));
       return publicUrl;
     } catch (error) {

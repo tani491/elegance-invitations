@@ -2,29 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getHomepageSettings, updateHomepageSettings } from "@/lib/homepage-settings";
 import { requireApiRole } from "@/lib/server-auth";
+import { relaxedNullableUrlSchema } from "@/lib/url-validation";
 import { AUTH_ROLES } from "@/types/database.types";
 
-const mediaUrlSchema = z.preprocess(
-  (value) => (value === "" ? null : value),
-  z.string().url().nullable().optional(),
-);
-
-const demoUrlSchema = z.preprocess(
-  (value) => (value === "" ? null : value),
-  z.string()
-    .trim()
-    .refine((value) => {
-      if (value.startsWith("/")) return true;
-      try {
-        const url = new URL(value);
-        return url.protocol === "https:" || url.protocol === "http:";
-      } catch {
-        return false;
-      }
-    }, "URL de demo invalide.")
-    .nullable()
-    .optional(),
-);
+const mediaUrlSchema = relaxedNullableUrlSchema({ message: "URL media invalide." });
+const demoUrlSchema = relaxedNullableUrlSchema({ allowRelative: true, message: "URL de demo invalide." });
 
 const homepageSettingsSchema = z.object({
   heroPhone1: mediaUrlSchema,

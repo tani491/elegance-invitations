@@ -32,6 +32,7 @@ import { LiveMobilePreview } from "@/components/dashboard/LiveMobilePreview";
 import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { ThemeSelector } from "@/components/dashboard/ThemeSelector";
 import { canUseMotionVideo, photoLimitForPlan, planLabelForPlan } from "@/lib/plan-gating";
+import { uploadFileToR2 } from "@/lib/r2-client-upload";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
 import type { DressCodeColor, PublicEventPayload, ThemeConfig } from "@/types/database.types";
 
@@ -266,23 +267,7 @@ export default function DashboardPage() {
   }
 
   async function uploadMediaFile(file: File, kind: "image" | "audio") {
-    const formData = new FormData();
-    formData.append("kind", kind);
-    formData.append("file", file);
-
-    const upload = await fetch("/api/upload", {
-      method: "POST",
-      credentials: "include",
-      cache: "no-store",
-      body: formData,
-    });
-    const uploadJson = await upload.json();
-
-    if (!upload.ok || !uploadJson.success) {
-      throw new Error(uploadJson.error ?? "Upload impossible.");
-    }
-
-    return uploadJson.data.url as string;
+    return uploadFileToR2({ file, kind });
   }
 
   async function persistPhotoList(displayPhotos: string[]) {

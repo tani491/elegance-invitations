@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { HOMEPAGE_MEDIA_BUCKET, HOMEPAGE_MEDIA_FOLDER } from "@/lib/homepage-settings-shared";
+import { uploadFileToR2 } from "@/lib/r2-client-upload";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import type { HomepageSettings } from "@/types/database.types";
 
@@ -291,29 +292,7 @@ export default function HomepageSettingsConsole() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("kind", "demo-media");
-      formData.append("file", file);
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-        body: formData,
-      });
-      const uploadJson = await uploadResponse.json();
-
-      if (!uploadResponse.ok || !uploadJson.success) {
-        toast.error(uploadJson.error ?? "Upload R2 impossible.");
-        return;
-      }
-
-      const publicUrl = (uploadJson.data?.url ?? uploadJson.url) as string | undefined;
-      if (!publicUrl) {
-        toast.error("URL publique R2 manquante.");
-        return;
-      }
-
+      const publicUrl = await uploadFileToR2({ file, kind: "demo-media" });
       setUploadProgress((prev) => ({ ...prev, [slot]: 100 }));
       setDraft((prev) => ({ ...prev, [slot]: publicUrl }));
       await saveSettings({ [slot]: publicUrl }, "Fichier de démo sauvegardé.", slot);

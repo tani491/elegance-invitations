@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { uploadFileToR2 } from "@/lib/r2-client-upload";
 
 const MAX_MOTION_VIDEO_SIZE = 50 * 1024 * 1024;
 const MOTION_VIDEO_ACCEPT = "video/mp4";
@@ -58,26 +59,7 @@ export function MotionVideoUploader({
     }, 550);
 
     try {
-      const formData = new FormData();
-      formData.append("kind", "video");
-      formData.append("file", file);
-      if (eventId) formData.append("eventId", eventId);
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-        body: formData,
-      });
-      const uploadJson = await uploadResponse.json();
-
-      if (!uploadResponse.ok || !uploadJson.success) {
-        throw new Error(uploadJson.error ?? "Upload R2 impossible.");
-      }
-
-      const publicUrl = (uploadJson.data?.url ?? uploadJson.url) as string | undefined;
-      if (!publicUrl) throw new Error("URL R2 manquante.");
-
+      const publicUrl = await uploadFileToR2({ file, kind: "video", eventId });
       setProgress(100);
       await onChange(publicUrl);
       toast.success("Video cinematique synchronisee.");

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { revalidateInvitation } from "@/lib/cached-invitation";
 import { canUseMotionVideo, normalizePlan } from "@/lib/plan-gating";
 import { requireApiRole } from "@/lib/server-auth";
+import { relaxedNullableUrlSchema } from "@/lib/url-validation";
 import { AUTH_ROLES } from "@/types/database.types";
 
 const planTypeSchema = z
@@ -17,7 +18,7 @@ const updateEventSchema = z.object({
   isActive: z.boolean().optional(),
   isPaid: z.boolean().optional(),
   planType: planTypeSchema.optional(),
-  motionVideoUrl: z.string().url().nullable().optional(),
+  motionVideoUrl: relaxedNullableUrlSchema({ message: "URL video motion invalide." }),
 });
 
 export async function PATCH(

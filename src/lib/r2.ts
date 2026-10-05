@@ -19,7 +19,7 @@ export const r2 = new S3Client({
 });
 
 function cleanEnv(value: string | undefined) {
-  return value?.trim().replace(/^["']|["']$/g, "") ?? "";
+  return value?.replace(/[\u200B-\u200D\uFEFF]/g, "").trim().replace(/^["']|["']$/g, "").trim() ?? "";
 }
 
 function firstCleanEnv(values: Array<string | undefined>) {
