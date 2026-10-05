@@ -106,7 +106,7 @@ export function CameraFeedScanner({
 
   return (
     <div className="space-y-4">
-      <div className="relative min-h-[320px] overflow-hidden rounded-lg border border-white/10 bg-black shadow-2xl">
+      <div className="relative min-h-[calc(100dvh-220px)] overflow-hidden rounded-lg border border-white/10 bg-black shadow-2xl lg:min-h-[640px]">
         <div id={regionId} className="absolute inset-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0,transparent_128px,rgba(0,0,0,.62)_129px)]" />
         <div className="pointer-events-none absolute left-1/2 top-1/2 size-64 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-[#2DD4BF] shadow-[0_0_30px_rgba(45,212,191,.35)]">

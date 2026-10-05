@@ -6,7 +6,11 @@ const accessKeyId = cleanEnv(process.env.CLOUDFLARE_R2_ACCESS_KEY_ID);
 const secretAccessKey = cleanEnv(process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY);
 
 export const R2_BUCKET_NAME = cleanEnv(process.env.CLOUDFLARE_R2_BUCKET_NAME);
-export const R2_PUBLIC_URL = cleanEnv(process.env.NEXT_PUBLIC_R2_PUBLIC_URL).replace(/\/+$/, "");
+export const R2_PUBLIC_URL = firstCleanEnv([
+  process.env.NEXT_PUBLIC_R2_PUBLIC_URL,
+  process.env.CLOUDFLARE_R2_PUBLIC_URL,
+  process.env.R2_PUBLIC_URL,
+]).replace(/\/+$/, "");
 
 export const r2 = new S3Client({
   region: "auto",
@@ -16,6 +20,10 @@ export const r2 = new S3Client({
 
 function cleanEnv(value: string | undefined) {
   return value?.trim().replace(/^["']|["']$/g, "") ?? "";
+}
+
+function firstCleanEnv(values: Array<string | undefined>) {
+  return values.map(cleanEnv).find(Boolean) ?? "";
 }
 
 function normalizeR2Endpoint(explicitEndpoint: string, account: string) {
@@ -31,7 +39,7 @@ export function getR2ConfigurationStatus() {
     ["CLOUDFLARE_R2_ACCESS_KEY_ID", accessKeyId],
     ["CLOUDFLARE_R2_SECRET_ACCESS_KEY", secretAccessKey],
     ["CLOUDFLARE_R2_BUCKET_NAME", R2_BUCKET_NAME],
-    ["NEXT_PUBLIC_R2_PUBLIC_URL", R2_PUBLIC_URL],
+    ["R2_PUBLIC_URL (NEXT_PUBLIC_R2_PUBLIC_URL, CLOUDFLARE_R2_PUBLIC_URL ou R2_PUBLIC_URL)", R2_PUBLIC_URL],
   ]
     .filter(([, value]) => !value)
     .map(([name]) => name);

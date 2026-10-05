@@ -124,7 +124,7 @@ function InfoCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/20 bg-black/15 p-6 text-white shadow-2xl backdrop-blur-lg drop-shadow-md">
+    <section className="rounded-2xl border border-white/20 bg-black/10 p-6 text-white shadow-2xl backdrop-blur-lg drop-shadow-md">
       <div className="flex items-start gap-3">
         <span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-[#FFE7A3] shadow-2xl backdrop-blur-xl">{icon}</span>
         <div className="min-w-0">
@@ -327,7 +327,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
             <Button
               asChild
               variant="outline"
-              className={`${ACTION_BUTTON_CLASS} border-white/20 bg-white/10 text-[#F3E5AB] shadow-2xl backdrop-blur-xl hover:bg-white/15 hover:text-white`}
+              className={`${ACTION_BUTTON_CLASS} border-white/20 bg-white/10 text-[#F3E5AB] shadow-2xl backdrop-blur-lg hover:bg-white/10 hover:text-white`}
             >
               <a href={mapsHref} target="_blank" rel="noreferrer">
                 <MapPin className="size-4 shrink-0" />
@@ -379,7 +379,7 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
               <Button
                 asChild
                 variant="outline"
-                className={`${ACTION_BUTTON_CLASS} border-white/20 bg-white/10 text-[#F3E5AB] shadow-2xl backdrop-blur-xl hover:bg-white/15 hover:text-white`}
+                className={`${ACTION_BUTTON_CLASS} border-white/20 bg-white/10 text-[#F3E5AB] shadow-2xl backdrop-blur-lg hover:bg-white/10 hover:text-white`}
               >
                 <a href={contactHref} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4 shrink-0" />
@@ -684,7 +684,7 @@ export function InvitationExperience({
 
             <main
               ref={detailsRef}
-              className="w-full max-w-full overflow-hidden box-border rounded-t-[36px] border border-white/20 bg-black/15 px-4 pt-8 pb-24 shadow-2xl backdrop-blur-lg space-y-6 pointer-events-auto sm:px-5"
+              className="w-full max-w-full overflow-hidden box-border rounded-t-[36px] border border-white/20 bg-black/10 px-4 pt-8 pb-24 shadow-2xl backdrop-blur-lg space-y-6 pointer-events-auto sm:px-5"
             >
               <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
                 <p className="text-xs uppercase tracking-widest text-[#FFE7A3]">Avec la bénédiction de nos familles</p>

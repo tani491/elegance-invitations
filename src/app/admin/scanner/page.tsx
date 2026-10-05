@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ShieldCheck, Wifi, WifiOff } from "lucide-react";
+import { ChevronDown, ShieldCheck, Wifi, WifiOff } from "lucide-react";
 import { CameraFeedScanner } from "@/components/scanner/CameraFeedScanner";
 import { LiveAttendanceBar, type AttendanceStats } from "@/components/scanner/LiveAttendanceBar";
 import { ManualCheckInInput, type ScannerGuest } from "@/components/scanner/ManualCheckInInput";
 import { ScanResultModal, type ScanResult } from "@/components/scanner/ScanResultModal";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type ScannerEvent = {
@@ -36,6 +37,7 @@ export default function AdminScannerPage() {
   const [checking, setChecking] = useState(false);
   const [online, setOnline] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
 
   const eventId = snapshot?.event.id ?? null;
 
@@ -115,7 +117,7 @@ export default function AdminScannerPage() {
     <main className="min-h-screen bg-[#090909] text-white">
       <LiveAttendanceBar stats={snapshot?.stats ?? EMPTY_STATS} />
 
-      <section className="mx-auto grid max-w-5xl gap-5 px-4 py-5 lg:grid-cols-[1fr_360px]">
+      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -130,7 +132,23 @@ export default function AdminScannerPage() {
 
           <CameraFeedScanner disabled={loading || checking || !snapshot} onDetected={handleCheckIn} />
 
-          <ManualCheckInInput guests={snapshot?.guests ?? []} disabled={loading || checking || !snapshot} onSubmit={handleCheckIn} />
+          <div className="rounded-lg border border-white/10 bg-white/[0.04]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setManualOpen((current) => !current)}
+              className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-semibold text-white/75 hover:bg-white/10 hover:text-white"
+              aria-expanded={manualOpen}
+            >
+              <span>Saisie manuelle</span>
+              <ChevronDown className={`size-4 transition-transform ${manualOpen ? "rotate-180" : ""}`} />
+            </Button>
+            {manualOpen && (
+              <div className="border-t border-white/10 p-3">
+                <ManualCheckInInput guests={snapshot?.guests ?? []} disabled={loading || checking || !snapshot} onSubmit={handleCheckIn} />
+              </div>
+            )}
+          </div>
 
           {error && <p className="rounded-lg border border-red-400/25 bg-red-500/10 p-3 text-sm text-red-100">{error}</p>}
         </div>
