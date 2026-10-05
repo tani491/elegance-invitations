@@ -191,6 +191,7 @@ const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroPhone2: null,
   privilegeDemoUrl: null,
   imperialDemoUrl: null,
+  isMaintenanceMode: false,
   updatedAt: null,
 };
 

@@ -31,6 +31,7 @@ const homepageSettingsSchema = z.object({
   heroPhone2: mediaUrlSchema,
   privilegeDemoUrl: demoUrlSchema,
   imperialDemoUrl: demoUrlSchema,
+  isMaintenanceMode: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -64,6 +65,7 @@ export async function PATCH(request: NextRequest) {
     heroPhone2?: string | null;
     privilegeDemoUrl?: string | null;
     imperialDemoUrl?: string | null;
+    isMaintenanceMode?: boolean;
   };
 
   try {

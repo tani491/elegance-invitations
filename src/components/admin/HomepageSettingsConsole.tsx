@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ExternalLink, Image as ImageIcon, MonitorSmartphone, Play, Save, Trash2, Upload, Video } from "lucide-react";
+import { ArrowLeft, ExternalLink, Image as ImageIcon, MonitorSmartphone, Play, Power, Save, Trash2, Upload, Video } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,19 +11,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { HOMEPAGE_MEDIA_BUCKET, HOMEPAGE_MEDIA_FOLDER } from "@/lib/homepage-settings-shared";
 import { createBrowserSupabaseClient } from "@/lib/supabase-client";
 import type { HomepageSettings } from "@/types/database.types";
 
 type HomepageMediaSlot = "heroPhone1" | "heroPhone2";
 type HomepageDemoSlot = "privilegeDemoUrl" | "imperialDemoUrl";
-type HomepageSettingsSlot = HomepageMediaSlot | HomepageDemoSlot;
+type HomepageUploadSlot = HomepageMediaSlot | HomepageDemoSlot;
+type HomepageSettingsSlot = HomepageUploadSlot | "isMaintenanceMode";
 
 const DEFAULT_SETTINGS: HomepageSettings = {
   heroPhone1: null,
   heroPhone2: null,
   privilegeDemoUrl: null,
   imperialDemoUrl: null,
+  isMaintenanceMode: false,
   updatedAt: null,
 };
 
@@ -126,8 +129,8 @@ export default function HomepageSettingsConsole() {
   const [draft, setDraft] = useState<HomepageSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<HomepageSettingsSlot | "manual" | null>(null);
-  const [uploadingSlot, setUploadingSlot] = useState<HomepageSettingsSlot | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<Record<HomepageSettingsSlot, number>>({
+  const [uploadingSlot, setUploadingSlot] = useState<HomepageUploadSlot | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<Record<HomepageUploadSlot, number>>({
     heroPhone1: 0,
     heroPhone2: 0,
     privilegeDemoUrl: 0,
@@ -324,6 +327,17 @@ export default function HomepageSettingsConsole() {
     }
   }
 
+  async function toggleMaintenanceMode(isMaintenanceMode: boolean) {
+    const previousDraft = draft;
+    setDraft((prev) => ({ ...prev, isMaintenanceMode }));
+    const saved = await saveSettings(
+      { isMaintenanceMode },
+      isMaintenanceMode ? "Mode maintenance activé." : "Mode maintenance désactivé.",
+      "isMaintenanceMode",
+    );
+    if (!saved) setDraft(previousDraft);
+  }
+
   return (
     <main className="min-h-screen bg-[#F7F2EA] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -347,6 +361,33 @@ export default function HomepageSettingsConsole() {
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
+          <Card className="rounded-2xl border-[#E5D9C7] bg-[#171312] text-white shadow-sm lg:col-span-2">
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/12 text-[#F3D88D]">
+                  <Power className="size-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-white">Mode Maintenance</CardTitle>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-white/65">
+                    Redirige la vitrine publique, les invitations et les pass invités vers l'écran de maintenance. L'administration reste accessible.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3">
+                <Label htmlFor="maintenance-mode" className="text-sm font-semibold text-white">
+                  Activer le Mode Maintenance
+                </Label>
+                <Switch
+                  id="maintenance-mode"
+                  checked={draft.isMaintenanceMode}
+                  disabled={loading || saving !== null}
+                  onCheckedChange={(checked) => void toggleMaintenanceMode(checked)}
+                />
+              </div>
+            </CardHeader>
+          </Card>
+
           {MEDIA_SLOTS.map((slot) => {
             const src = draft[slot.key];
             const isUploading = uploadingSlot === slot.key;

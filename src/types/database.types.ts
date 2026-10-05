@@ -112,6 +112,7 @@ export interface HomepageSettings {
   heroPhone2: string | null;
   privilegeDemoUrl: string | null;
   imperialDemoUrl: string | null;
+  isMaintenanceMode: boolean;
   updatedAt?: string | null;
 }
 

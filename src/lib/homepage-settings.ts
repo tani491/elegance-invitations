@@ -7,6 +7,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroPhone2: null,
   privilegeDemoUrl: null,
   imperialDemoUrl: null,
+  isMaintenanceMode: false,
   updatedAt: null,
 };
 
@@ -15,6 +16,7 @@ function serializeHomepageSettings(settings: {
   heroPhone2: string | null;
   privilegeDemoUrl: string | null;
   imperialDemoUrl: string | null;
+  isMaintenanceMode: boolean;
   updatedAt?: Date | null;
 } | null): HomepageSettings {
   if (!settings) return DEFAULT_HOMEPAGE_SETTINGS;
@@ -24,6 +26,7 @@ function serializeHomepageSettings(settings: {
     heroPhone2: settings.heroPhone2,
     privilegeDemoUrl: settings.privilegeDemoUrl,
     imperialDemoUrl: settings.imperialDemoUrl,
+    isMaintenanceMode: settings.isMaintenanceMode,
     updatedAt: settings.updatedAt?.toISOString() ?? null,
   };
 }
@@ -46,6 +49,7 @@ export async function updateHomepageSettings(data: {
   heroPhone2?: string | null;
   privilegeDemoUrl?: string | null;
   imperialDemoUrl?: string | null;
+  isMaintenanceMode?: boolean;
 }) {
   const settings = await db.siteSettings.upsert({
     where: { id: HOMEPAGE_SETTINGS_ID },
@@ -56,6 +60,7 @@ export async function updateHomepageSettings(data: {
       heroPhone2: data.heroPhone2 ?? null,
       privilegeDemoUrl: data.privilegeDemoUrl ?? null,
       imperialDemoUrl: data.imperialDemoUrl ?? null,
+      isMaintenanceMode: data.isMaintenanceMode ?? false,
     },
   });
 

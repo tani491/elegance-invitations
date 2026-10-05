@@ -171,13 +171,14 @@ model EventGuest {
 }
 
 model SiteSettings {
-  id               String   @id @default("homepage")
-  heroPhone1       String?
-  heroPhone2       String?
-  privilegeDemoUrl String?
-  imperialDemoUrl  String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default("homepage")
+  heroPhone1        String?
+  heroPhone2        String?
+  privilegeDemoUrl  String?
+  imperialDemoUrl   String?
+  isMaintenanceMode Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@schema("public")
 }

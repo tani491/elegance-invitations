@@ -289,7 +289,13 @@ function GuestTokenErrorCard({ message }: { message: string }) {
 function PhotoGallery({ images }: { images: string[] }) {
   const galleryImages = Array.from(new Set(images.filter(Boolean))).slice(0, 4);
 
-  if (galleryImages.length === 0) return null;
+  if (galleryImages.length === 0) {
+    return (
+      <InfoCard icon={<Images className="size-5" />} label="Galerie" title="Galerie en préparation">
+        <p>Galerie en cours de préparation par les mariés</p>
+      </InfoCard>
+    );
+  }
 
   return (
     <InfoCard icon={<Images className="size-5" />} label="Galerie" title="Nos plus beaux instants">
@@ -357,7 +363,11 @@ function EventDetails({ event }: { event: PublicEventPayload }) {
       )}
 
       {(event.dressCode || event.dressCodeColors.length > 0) && (
-        <InfoCard icon={<Shirt className="size-5" />} label="Dress code" title="Palette souhaitée">
+        <InfoCard
+          icon={<Shirt className="size-5" />}
+          label="Dress code"
+          title={event.dressCodeColors.length > 0 ? "Palette souhaitée" : "Thème vestimentaire"}
+        >
           {event.dressCode && <p>{event.dressCode}</p>}
           {event.dressCodeColors.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">

@@ -15,14 +15,28 @@ const PUBLIC_ROUTES = [
   "/login",
   "/admin/login",
   "/builder",
+  "/maintenance",
   "/favicon.ico",
   "/logo.svg",
   "/robots.txt",
   "/sitemap.xml",
   "/google0636c54d932fbe1b.html",
 ];
-const PUBLIC_PREFIXES = ["/_next", "/invitation", "/carte", "/api/auth"];
+const PUBLIC_PREFIXES = ["/_next", "/invitation", "/m", "/carte", "/api/auth", "/api/settings"];
 const PUBLIC_INVITATION_API_ROUTES = ["/api/public/events"];
+const MAINTENANCE_TARGET_ROUTES = ["/", "/builder", "/login"];
+const MAINTENANCE_TARGET_PREFIXES = ["/invitation", "/m", "/carte", "/api/public", "/api/rsvp"];
+const MAINTENANCE_BYPASS_ROUTES = [
+  "/maintenance",
+  "/api/settings",
+  "/admin/login",
+  "/favicon.ico",
+  "/logo.svg",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/google0636c54d932fbe1b.html",
+];
+const MAINTENANCE_BYPASS_PREFIXES = ["/admin", "/api/admin", "/api/auth", "/_next"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -30,6 +44,31 @@ function startsWithAny(pathname: string, prefixes: string[]) {
 
 function isPublicPath(pathname: string) {
   return PUBLIC_ROUTES.includes(pathname) || startsWithAny(pathname, PUBLIC_PREFIXES);
+}
+
+function shouldBypassMaintenance(pathname: string) {
+  return MAINTENANCE_BYPASS_ROUTES.includes(pathname) || startsWithAny(pathname, MAINTENANCE_BYPASS_PREFIXES);
+}
+
+function isMaintenanceTarget(pathname: string) {
+  if (shouldBypassMaintenance(pathname)) return false;
+  return MAINTENANCE_TARGET_ROUTES.includes(pathname) || startsWithAny(pathname, MAINTENANCE_TARGET_PREFIXES);
+}
+
+async function isMaintenanceModeEnabled(request: NextRequest) {
+  try {
+    const settingsUrl = new URL("/api/settings", request.url);
+    const response = await fetch(settingsUrl, {
+      cache: "no-store",
+      headers: { accept: "application/json", "x-elegance-proxy": "maintenance" },
+    });
+    if (!response.ok) return false;
+    const json = await response.json() as { data?: { isMaintenanceMode?: boolean } };
+    return json.data?.isMaintenanceMode === true;
+  } catch (error) {
+    console.error("Maintenance mode lookup failed:", error);
+    return false;
+  }
 }
 
 function jsonDenied(status: 401 | 403, message: string) {
@@ -94,6 +133,14 @@ function authenticatedLoginDestination(pathname: string, role: string | undefine
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isMaintenanceTarget(pathname) && await isMaintenanceModeEnabled(request)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/maintenance";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   const limitedResponse = rateLimitResponse(request);
   if (limitedResponse) return limitedResponse;
 
@@ -153,6 +200,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next|favicon.ico|logo.svg|robots.txt|sitemap.xml|google0636c54d932fbe1b.html|invitation|carte|.*\\..*).*)",
+    "/((?!_next|favicon.ico|logo.svg|robots.txt|sitemap.xml|google0636c54d932fbe1b.html|.*\\..*).*)",
   ],
 };
