@@ -1,7 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
 const accountId = cleanEnv(process.env.CLOUDFLARE_R2_ACCOUNT_ID);
-const endpoint = normalizeR2Endpoint(cleanEnv(process.env.CLOUDFLARE_R2_ENDPOINT), accountId);
+const endpoint = accountId ? `https://${accountId}.r2.cloudflarestorage.com` : "";
 const accessKeyId = cleanEnv(process.env.CLOUDFLARE_R2_ACCESS_KEY_ID);
 const secretAccessKey = cleanEnv(process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY);
 
@@ -14,6 +14,7 @@ export const R2_PUBLIC_URL = firstCleanEnv([
 
 export const r2 = new S3Client({
   region: "auto",
+  forcePathStyle: true,
   ...(endpoint ? { endpoint } : {}),
   ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
 });
@@ -26,20 +27,13 @@ function firstCleanEnv(values: Array<string | undefined>) {
   return values.map(cleanEnv).find(Boolean) ?? "";
 }
 
-function normalizeR2Endpoint(explicitEndpoint: string, account: string) {
-  if (explicitEndpoint) return explicitEndpoint.replace(/\/+$/, "");
-  if (!account) return "";
-  if (/^https?:\/\//i.test(account)) return account.replace(/\/+$/, "");
-  return `https://${account}.r2.cloudflarestorage.com`;
-}
-
 export function getR2ConfigurationStatus() {
   const missing = [
-    ["CLOUDFLARE_R2_ACCOUNT_ID", endpoint],
+    ["CLOUDFLARE_R2_ACCOUNT_ID", accountId],
     ["CLOUDFLARE_R2_ACCESS_KEY_ID", accessKeyId],
     ["CLOUDFLARE_R2_SECRET_ACCESS_KEY", secretAccessKey],
     ["CLOUDFLARE_R2_BUCKET_NAME", R2_BUCKET_NAME],
-    ["R2_PUBLIC_URL (NEXT_PUBLIC_R2_PUBLIC_URL, CLOUDFLARE_R2_PUBLIC_URL ou R2_PUBLIC_URL)", R2_PUBLIC_URL],
+    ["NEXT_PUBLIC_R2_PUBLIC_URL", R2_PUBLIC_URL],
   ]
     .filter(([, value]) => !value)
     .map(([name]) => name);
