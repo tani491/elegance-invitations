@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PassQrCode } from "@/components/invitation/PassQrCode";
 import { SITE_URL } from "@/lib/constants";
-import { DEFAULT_PROGRAM, getDefaultTheme, normalizeThemeConfig, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
+import { getDefaultTheme, normalizeThemeConfig, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
 import { serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { db } from "@/lib/db";
 import type { ProgramStep } from "@/types/database.types";
@@ -182,7 +182,8 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
   });
   const officialPhotos = parseJsonArray<string>(event.officialPhotoUrls, []);
   const heroPhoto = event.coverPhotoUrl ?? officialPhotos[0] ?? null;
-  const program = parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM).slice(0, 3);
+  const legacyProgram = parseJsonArray<ProgramStep>(event.program, []);
+  const program = parseJsonArray<ProgramStep>(event.programSteps, legacyProgram).slice(0, 3);
   const names = `${event.brideName ?? "Mariée"} & ${event.groomName ?? "Marié"}`;
   const eventDate = formatEventDate(event.eventDate);
   const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.qrToken)}&open=1`;

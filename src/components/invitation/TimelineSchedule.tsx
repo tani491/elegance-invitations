@@ -5,6 +5,8 @@ import { Clock3 } from "lucide-react";
 import type { PublicEventPayload } from "@/types/database.types";
 
 export function TimelineSchedule({ event }: { event: PublicEventPayload }) {
+  if (event.program.length === 0) return null;
+
   return (
     <section className="bg-[var(--invitation-primary)] px-4 py-20 text-white">
       <div className="mx-auto max-w-3xl">

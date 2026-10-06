@@ -1,4 +1,4 @@
-import { DEFAULT_PROGRAM, getDefaultTheme, normalizeDressCodeColors, parseJsonArray } from "@/lib/theme-presets";
+import { getDefaultTheme, normalizeDressCodeColors, parseJsonArray } from "@/lib/theme-presets";
 import { canUseMotionVideo, normalizePlan, photoLimitForPlan } from "@/lib/plan-gating";
 import { serializeTheme, type SerializableThemeInput } from "@/lib/theme-store";
 import type { Event } from "@prisma/client";
@@ -27,6 +27,8 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
   const planType = normalizePlan(event.planType);
   const officialPhotoUrls = parseJsonArray<string>(event.officialPhotoUrls, []);
   const photos = [event.coverPhotoUrl, ...officialPhotoUrls].filter(Boolean).slice(0, photoLimitForPlan(planType)) as string[];
+  const legacyProgram = parseJsonArray<ProgramStep>(event.program, []);
+  const programSteps = parseJsonArray<ProgramStep>(event.programSteps, legacyProgram);
 
   return {
     id: event.id,
@@ -45,7 +47,8 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     wazeUrl: event.wazeUrl,
     dressCode: event.dressCode,
     dressCodeColors: normalizeDressCodeColors(event.dressCodeColors),
-    program: parseJsonArray<ProgramStep>(event.program, DEFAULT_PROGRAM),
+    program: programSteps,
+    programSteps,
     coupleStory: event.coupleStory,
     coverPhotoUrl: event.coverPhotoUrl,
     officialPhotoUrls: photos,

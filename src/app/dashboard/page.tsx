@@ -3,10 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowDown,
+  ArrowUp,
+  Clock3,
   Copy,
   ExternalLink,
   FileText,
   LogOut,
+  MapPin,
   MessageCircle,
   Music2,
   Plus,
@@ -34,9 +38,10 @@ import { LiveMobilePreview } from "@/components/dashboard/LiveMobilePreview";
 import { MotionVideoUploader } from "@/components/dashboard/MotionVideoUploader";
 import { ThemeSelector } from "@/components/dashboard/ThemeSelector";
 import { canUseMotionVideo, photoLimitForPlan, planLabelForPlan } from "@/lib/plan-gating";
+import { createProgramStep, prepareProgramSteps } from "@/lib/program-steps";
 import { uploadFileToR2 } from "@/lib/r2-client-upload";
 import { subscribeThemeCatalogChanges } from "@/lib/theme-sync";
-import type { DressCodeColor, PublicEventPayload, ThemeConfig } from "@/types/database.types";
+import type { DressCodeColor, ProgramStep, PublicEventPayload, ThemeConfig } from "@/types/database.types";
 
 interface Guest {
   id: string;
@@ -235,7 +240,6 @@ export default function DashboardPage() {
       musicUrl: event.musicUrl,
       motionVideoUrl: event.motionVideoUrl,
       whatsappGroupUrl: event.whatsappGroupUrl,
-      program: event.program,
     });
   }
 
@@ -469,6 +473,87 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
       ...event,
       dressCodeColors: event.dressCodeColors.filter((_, colorIndex) => colorIndex !== index),
     });
+  }
+
+  function addProgramStep() {
+    if (!event) return;
+    const nextStep = createProgramStep();
+    const nextProgram = [...event.program, nextStep];
+    setEvent({
+      ...event,
+      program: nextProgram,
+      programSteps: nextProgram,
+    });
+  }
+
+  function updateProgramStep(index: number, data: Partial<ProgramStep>) {
+    if (!event) return;
+    const nextProgram = event.program.map((step, stepIndex) => (
+      stepIndex === index ? { ...step, ...data } : step
+    ));
+
+    setEvent({
+      ...event,
+      program: nextProgram,
+      programSteps: nextProgram,
+    });
+  }
+
+  function removeProgramStep(index: number) {
+    if (!event) return;
+    const nextProgram = event.program.filter((_, stepIndex) => stepIndex !== index);
+    setEvent({
+      ...event,
+      program: nextProgram,
+      programSteps: nextProgram,
+    });
+  }
+
+  function moveProgramStep(index: number, direction: -1 | 1) {
+    if (!event) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= event.program.length) return;
+
+    const nextProgram = [...event.program];
+    const currentStep = nextProgram[index];
+    nextProgram[index] = nextProgram[targetIndex];
+    nextProgram[targetIndex] = currentStep;
+
+    setEvent({
+      ...event,
+      program: nextProgram,
+      programSteps: nextProgram,
+    });
+  }
+
+  async function saveProgramSteps() {
+    if (!event) return;
+    const preparedProgram = prepareProgramSteps(event.program);
+
+    if (preparedProgram.hasInvalid) {
+      toast.error("Chaque étape doit contenir au minimum une heure et un titre.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch("/api/invitation/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ programSteps: preparedProgram.steps }),
+      });
+      const json = await response.json();
+      if (!response.ok || !json.success) {
+        toast.error(json.error ?? "Sauvegarde du programme impossible.");
+        return;
+      }
+
+      setEvent(json.data.event);
+      setGuests((currentGuests) => json.data.guests ?? currentGuests);
+      toast.success("Programme sauvegarde.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!event) {
@@ -713,6 +798,109 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
                       ))}
                     </div>
                   )}
+                </div>
+                <div className="space-y-4 rounded-lg border border-[#E5D9C7] bg-[#FDFBF7] p-4 md:col-span-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <Label>Déroulé de la journée (Programme)</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">{event.program.length} étape{event.program.length > 1 ? "s" : ""}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={saving}
+                      onClick={addProgramStep}
+                      className="w-full border-[#D4AF37]/35 sm:w-auto"
+                    >
+                      <Plus className="mr-2 size-4" />
+                      Ajouter une étape
+                    </Button>
+                  </div>
+                  {event.program.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-[#D6C5A8] bg-white/70 px-4 py-5 text-sm text-muted-foreground">
+                      Aucun programme ajouté pour le moment.
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {event.program.map((step, index) => (
+                        <div
+                          key={step.id || index}
+                          className="grid gap-3 rounded-lg border border-[#E5D9C7] bg-white p-3 lg:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end"
+                        >
+                          <div className="space-y-2">
+                            <Label className="inline-flex items-center gap-2">
+                              <Clock3 className="size-3.5 text-[#B89248]" />
+                              Heure
+                            </Label>
+                            <Input
+                              placeholder="16h00"
+                              value={step.time}
+                              onChange={(e) => updateProgramStep(index, { time: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Titre</Label>
+                            <Input
+                              placeholder="Réception & arrivée des mariés"
+                              value={step.title}
+                              onChange={(e) => updateProgramStep(index, { title: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="inline-flex items-center gap-2">
+                              <MapPin className="size-3.5 text-[#B89248]" />
+                              Lieu / précision
+                            </Label>
+                            <Input
+                              placeholder="Jardin de la Maison"
+                              value={step.location}
+                              onChange={(e) => updateProgramStep(index, { location: e.target.value })}
+                            />
+                          </div>
+                          <div className="flex h-10 items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Monter l'étape ${index + 1}`}
+                              disabled={index === 0}
+                              onClick={() => moveProgramStep(index, -1)}
+                              className="size-10"
+                            >
+                              <ArrowUp className="size-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Descendre l'étape ${index + 1}`}
+                              disabled={index === event.program.length - 1}
+                              onClick={() => moveProgramStep(index, 1)}
+                              className="size-10"
+                            >
+                              <ArrowDown className="size-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Supprimer l'étape ${index + 1}`}
+                              onClick={() => removeProgramStep(index)}
+                              className="size-10 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <Button type="button" disabled={saving} onClick={() => void saveProgramSteps()}>
+                      <Save className="mr-2 size-4" />
+                      {saving ? "Sauvegarde..." : "Sauvegarder le programme"}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Histoire du couple</Label>

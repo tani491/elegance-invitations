@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
       isPaid: true,
       dressCodeColors: [] as Prisma.InputJsonValue,
       program: DEFAULT_PROGRAM as unknown as Prisma.InputJsonValue,
+      programSteps: DEFAULT_PROGRAM as unknown as Prisma.InputJsonValue,
     },
   });
 

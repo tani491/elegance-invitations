@@ -76,6 +76,8 @@ export async function POST(request: NextRequest) {
         receptionDate: body.receptionDate ? new Date(body.receptionDate) : null,
         receptionTime: body.receptionTime,
         dressCode: body.dressCode,
+        program: body.programSteps ?? body.program,
+        programSteps: body.programSteps ?? body.program ?? [],
         coupleStory: body.coupleStory,
         planType: body.planType ?? 'privilege',
         isActive: body.isActive ?? true,

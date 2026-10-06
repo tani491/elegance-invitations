@@ -134,6 +134,7 @@ export interface PublicEventPayload {
   dressCode: string | null;
   dressCodeColors: DressCodeColor[];
   program: ProgramStep[];
+  programSteps: ProgramStep[];
   coupleStory: string | null;
   coverPhotoUrl: string | null;
   officialPhotoUrls: string[];

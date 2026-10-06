@@ -5,14 +5,15 @@ import { revalidateInvitation } from "@/lib/cached-invitation";
 import { getThemeOrDefault, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { serializePublicEvent } from "@/lib/public-event";
 import { canUseMotionVideo, canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
+import { MAX_PROGRAM_STEPS, prepareProgramSteps } from "@/lib/program-steps";
 import { requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
 const programStepSchema = z.object({
-  id: z.string(),
-  time: z.string(),
-  title: z.string(),
-  location: z.string(),
+  id: z.string().optional(),
+  time: z.string().optional(),
+  title: z.string().optional(),
+  location: z.string().optional(),
 });
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
@@ -76,7 +77,8 @@ const updateEventSchema = z.object({
   wazeUrl: z.string().nullable().optional(),
   dressCode: z.string().nullable().optional(),
   dressCodeColors: z.array(dressCodeColorSchema).max(4).optional(),
-  program: z.array(programStepSchema).optional(),
+  program: z.array(programStepSchema).max(MAX_PROGRAM_STEPS).optional(),
+  programSteps: z.array(programStepSchema).max(MAX_PROGRAM_STEPS).optional(),
   coupleStory: z.string().nullable().optional(),
   coverPhotoUrl: z.string().nullable().optional(),
   officialPhotoUrls: z.array(z.string()).optional(),
@@ -175,7 +177,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Evenement introuvable." }, { status: 404 });
   }
 
-  const { themeSlug, eventDate, officialPhotoUrls, ...safeData } = parsed.data;
+  const { themeSlug, eventDate, officialPhotoUrls, program, programSteps, ...safeData } = parsed.data;
   const updateData: Record<string, unknown> = { ...safeData };
 
   if (parsed.data.motionVideoUrl && !canUseMotionVideo(currentEvent.planType)) {
@@ -213,6 +215,20 @@ export async function PATCH(request: NextRequest) {
 
   if (officialPhotoUrls) {
     updateData.officialPhotoUrls = officialPhotoUrls.slice(0, photoLimitForPlan(currentEvent.planType));
+  }
+
+  const nextProgramSteps = programSteps ?? program;
+  if (nextProgramSteps) {
+    const preparedProgram = prepareProgramSteps(nextProgramSteps);
+    if (preparedProgram.hasInvalid) {
+      return NextResponse.json(
+        { success: false, error: "Chaque etape du programme doit contenir une heure et un titre." },
+        { status: 400 },
+      );
+    }
+
+    updateData.program = preparedProgram.steps;
+    updateData.programSteps = preparedProgram.steps;
   }
 
   let updated;

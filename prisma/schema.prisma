@@ -122,6 +122,7 @@ model Event {
   dressCode              String?
   dressCodeColors        Json?
   program                Json?
+  programSteps           Json?        @default("[]")
   coupleStory            String?
   planType               String       @default("privilege")
   isActive               Boolean      @default(true)
