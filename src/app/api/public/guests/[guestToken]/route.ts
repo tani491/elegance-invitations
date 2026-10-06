@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { EVENT_SELECT_WITHOUT_PROGRAM_STEPS } from "@/lib/event-safe-select";
 import { serializePublicEvent } from "@/lib/public-event";
+import { isMissingPrismaColumnError } from "@/lib/server-auth";
 import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 
 export async function GET(
@@ -25,6 +27,25 @@ export async function GET(
       include: { event: { include: { theme: true } } },
     });
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "programSteps")) {
+      console.warn("Event.programSteps is not available; loading public guest pass without that column.");
+      try {
+        guest = await db.eventGuest.findFirst({
+          where: {
+            ...eventScope,
+            OR: [
+              { qrToken: guestToken },
+              { id: guestToken },
+              { accessCode: guestToken },
+            ],
+          },
+          include: { event: { select: EVENT_SELECT_WITHOUT_PROGRAM_STEPS } },
+        });
+      } catch (programStepsRetryError) {
+        console.error("Public guest without programSteps failed:", programStepsRetryError);
+        return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 503 });
+      }
+    } else {
     console.error("Public guest theme relation failed, retrying with compatible theme columns:", error);
     try {
       guest = await db.eventGuest.findFirst({
@@ -45,6 +66,25 @@ export async function GET(
         },
       });
     } catch (compatError) {
+      if (isMissingPrismaColumnError(compatError, "programSteps")) {
+        console.warn("Event.programSteps is not available after public guest retry; loading without that column.");
+        try {
+          guest = await db.eventGuest.findFirst({
+            where: {
+              ...eventScope,
+              OR: [
+                { qrToken: guestToken },
+                { id: guestToken },
+                { accessCode: guestToken },
+              ],
+            },
+            include: { event: { select: EVENT_SELECT_WITHOUT_PROGRAM_STEPS } },
+          });
+        } catch (programStepsRetryError) {
+          console.error("Public guest without programSteps failed:", programStepsRetryError);
+          return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 503 });
+        }
+      } else {
       console.error("Public guest compatible theme relation failed, retrying without theme:", compatError);
       try {
         guest = await db.eventGuest.findFirst({
@@ -60,8 +100,10 @@ export async function GET(
         });
       } catch (retryError) {
         console.error("Public guest fallback failed:", retryError);
-        return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 500 });
+        return NextResponse.json({ success: false, error: "Pass indisponible." }, { status: 503 });
       }
+      }
+    }
     }
   }
 

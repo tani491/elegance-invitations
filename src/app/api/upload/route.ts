@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           type: file.type,
         },
       });
-      return NextResponse.json({ success: false, error: "Echec du televersement R2" }, { status: 500 });
+      return NextResponse.json({ success: false, error: "Echec du televersement R2" }, { status: 503 });
     }
 
     const url = r2PublicUrlForKey(target.key);
@@ -140,6 +140,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Erreur Upload R2:", describeR2Error(error));
-    return NextResponse.json({ success: false, error: "Echec du televersement R2" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Echec du televersement R2" }, { status: 503 });
   }
 }

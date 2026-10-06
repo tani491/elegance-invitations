@@ -8,6 +8,7 @@ import {
   isMissingPrismaColumnError,
   loginPathForRole,
   normalizeEmail,
+  readClientOnboardingSeen,
   verifyPassword,
 } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
@@ -96,6 +97,10 @@ export async function POST(request: NextRequest) {
       role: user.role,
       eventId: user.eventId,
     });
+    const hasSeenOnboarding = await readClientOnboardingSeen(user.id).catch((error) => {
+      console.warn("Login onboarding state lookup failed, defaulting to false:", error);
+      return false;
+    });
 
     db.authUser.update({
       where: { id: user.id },
@@ -113,6 +118,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         displayName: user.displayName,
         eventId: user.eventId,
+        hasSeenOnboarding,
       },
     });
 
@@ -122,7 +128,7 @@ export async function POST(request: NextRequest) {
     console.error("Login error:", error);
     return NextResponse.json(
       { success: false, error: "Impossible de traiter la connexion." },
-      { status: 500 },
+      { status: 503 },
     );
   }
 }

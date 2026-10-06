@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         contentType,
         file,
       });
-      return NextResponse.json({ success: false, error: "Signature de televersement R2 impossible." }, { status: 500 });
+      return NextResponse.json({ success: false, error: "Signature de televersement R2 impossible." }, { status: 503 });
     }
 
     const url = r2PublicUrlForKey(target.key);
@@ -151,6 +151,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Erreur Presigned Upload R2:", describeR2Error(error));
-    return NextResponse.json({ success: false, error: "Signature de televersement R2 impossible." }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Signature de televersement R2 impossible." }, { status: 503 });
   }
 }

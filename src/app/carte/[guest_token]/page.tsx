@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PassQrCode } from "@/components/invitation/PassQrCode";
 import { SITE_URL } from "@/lib/constants";
+import { EVENT_SELECT_WITHOUT_PROGRAM_STEPS } from "@/lib/event-safe-select";
 import { getDefaultTheme, normalizeThemeConfig, parseJsonArray, themeToCssVars } from "@/lib/theme-presets";
 import { serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { db } from "@/lib/db";
+import { isMissingPrismaColumnError } from "@/lib/server-auth";
 import type { ProgramStep } from "@/types/database.types";
 
 type SerializableTheme = Parameters<typeof serializeTheme>[0];
@@ -76,6 +78,27 @@ async function getGuestPass(guestToken: string) {
       },
     });
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "programSteps")) {
+      console.warn("Event.programSteps is not available; loading guest pass without that column.");
+      try {
+        return await db.eventGuest.findFirst({
+          where: {
+            OR: [
+              { qrToken: guestToken },
+              { id: guestToken },
+              { accessCode: guestToken },
+            ],
+          },
+          include: {
+            event: { select: EVENT_SELECT_WITHOUT_PROGRAM_STEPS },
+          },
+        });
+      } catch (programStepsRetryError) {
+        console.error("Guest pass without programSteps failed:", programStepsRetryError);
+        return null;
+      }
+    }
+
     console.error("Guest pass theme relation failed, retrying with compatible theme columns:", error);
     try {
       guest = await db.eventGuest.findFirst({
@@ -89,6 +112,27 @@ async function getGuestPass(guestToken: string) {
         include: { event: { include: { theme: { select: THEME_COMPAT_SELECT } } } },
       });
     } catch (compatError) {
+      if (isMissingPrismaColumnError(compatError, "programSteps")) {
+        console.warn("Event.programSteps is not available after guest pass retry; loading without that column.");
+        try {
+          return await db.eventGuest.findFirst({
+            where: {
+              OR: [
+                { qrToken: guestToken },
+                { id: guestToken },
+                { accessCode: guestToken },
+              ],
+            },
+            include: {
+              event: { select: EVENT_SELECT_WITHOUT_PROGRAM_STEPS },
+            },
+          });
+        } catch (programStepsRetryError) {
+          console.error("Guest pass without programSteps failed:", programStepsRetryError);
+          return null;
+        }
+      }
+
       console.error("Guest pass compatible theme relation failed, retrying without theme:", compatError);
       try {
         guest = await db.eventGuest.findFirst({
@@ -183,7 +227,8 @@ export default async function GuestPassPage({ params }: { params: Promise<{ gues
   const officialPhotos = parseJsonArray<string>(event.officialPhotoUrls, []);
   const heroPhoto = event.coverPhotoUrl ?? officialPhotos[0] ?? null;
   const legacyProgram = parseJsonArray<ProgramStep>(event.program, []);
-  const program = parseJsonArray<ProgramStep>(event.programSteps, legacyProgram).slice(0, 3);
+  const rawProgramSteps = "programSteps" in event ? event.programSteps : null;
+  const program = parseJsonArray<ProgramStep>(rawProgramSteps, legacyProgram).slice(0, 3);
   const names = `${event.brideName ?? "Mariée"} & ${event.groomName ?? "Marié"}`;
   const eventDate = formatEventDate(event.eventDate);
   const invitationHref = `/invitation/${encodeURIComponent(event.slug)}?guest=${encodeURIComponent(guest.qrToken)}&open=1`;

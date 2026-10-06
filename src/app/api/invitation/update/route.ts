@@ -3,9 +3,14 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { revalidateInvitation } from "@/lib/cached-invitation";
+import {
+  EVENT_WITH_GUESTS_NO_THEME_SELECT_WITHOUT_PROGRAM_STEPS,
+  EVENT_WITH_GUESTS_SELECT_WITHOUT_PROGRAM_STEPS,
+  omitProgramSteps,
+} from "@/lib/event-safe-select";
 import { serializePublicEvent } from "@/lib/public-event";
 import { MAX_PROGRAM_STEPS, prepareProgramSteps } from "@/lib/program-steps";
-import { requireApiRole } from "@/lib/server-auth";
+import { isMissingPrismaColumnError, requireApiRole } from "@/lib/server-auth";
 import { THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { AUTH_ROLES } from "@/types/database.types";
 
@@ -35,6 +40,15 @@ async function updateProgram(eventId: string, programSteps: Prisma.InputJsonValu
       },
     });
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "programSteps")) {
+      console.warn("Event.programSteps is not available; updating invitation program through legacy program column only.");
+      return db.event.update({
+        where: { id: eventId },
+        data: omitProgramSteps({ program: programSteps, programSteps }),
+        select: EVENT_WITH_GUESTS_SELECT_WITHOUT_PROGRAM_STEPS,
+      });
+    }
+
     console.error("Invitation program update with theme failed, retrying with compatible theme columns:", error);
     try {
       return await db.event.update({
@@ -49,6 +63,15 @@ async function updateProgram(eventId: string, programSteps: Prisma.InputJsonValu
         },
       });
     } catch (compatError) {
+      if (isMissingPrismaColumnError(compatError, "programSteps")) {
+        console.warn("Event.programSteps is not available after invitation update retry; saving legacy program only.");
+        return db.event.update({
+          where: { id: eventId },
+          data: omitProgramSteps({ program: programSteps, programSteps }),
+          select: EVENT_WITH_GUESTS_NO_THEME_SELECT_WITHOUT_PROGRAM_STEPS,
+        });
+      }
+
       console.error("Invitation program update with compatible theme failed, retrying without theme:", compatError);
       return db.event.update({
         where: { id: eventId },
@@ -103,6 +126,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error("Invitation program update failed:", error);
-    return NextResponse.json({ success: false, error: "Sauvegarde du programme impossible." }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Sauvegarde du programme impossible." }, { status: 503 });
   }
 }

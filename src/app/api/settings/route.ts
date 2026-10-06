@@ -13,7 +13,7 @@ export async function GET() {
     console.error("Settings API failed:", error);
     return NextResponse.json(
       { success: false, error: "Impossible de charger les parametres." },
-      { status: 500, headers: { "Cache-Control": "no-store" } },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

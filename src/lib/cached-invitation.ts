@@ -1,6 +1,8 @@
 import { revalidateTag } from "next/cache";
 import type { Event } from "@prisma/client";
 import { db } from "@/lib/db";
+import { EVENT_SELECT_WITHOUT_PROGRAM_STEPS } from "@/lib/event-safe-select";
+import { isMissingPrismaColumnError } from "@/lib/server-auth";
 import { THEME_COMPAT_SELECT, type SerializableThemeInput } from "@/lib/theme-store";
 
 export const INVITATION_CACHE_TTL_SECONDS = 300;
@@ -101,14 +103,34 @@ async function findInvitationEvent(
   return exactEvent as CachedInvitationEvent | null;
 }
 
+async function findInvitationEventWithoutProgramSteps(slug: string): Promise<CachedInvitationEvent | null> {
+  const exactWhere = exactWhereForSlug(slug);
+  const exactEvent = await eventReader.findFirst({
+    where: exactWhere,
+    select: EVENT_SELECT_WITHOUT_PROGRAM_STEPS,
+  });
+
+  return exactEvent as CachedInvitationEvent | null;
+}
+
 async function fetchInvitationEvent(slug: string): Promise<CachedInvitationEvent | null> {
   try {
     return await findInvitationEvent(slug, "full");
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "programSteps")) {
+      console.warn("Event.programSteps is not available; loading invitation without that column.");
+      return findInvitationEventWithoutProgramSteps(slug);
+    }
+
     console.error("Invitation theme relation failed, retrying with compatible theme columns:", error);
     try {
       return await findInvitationEvent(slug, "compat");
     } catch (compatError) {
+      if (isMissingPrismaColumnError(compatError, "programSteps")) {
+        console.warn("Event.programSteps is not available after invitation retry; loading without that column.");
+        return findInvitationEventWithoutProgramSteps(slug);
+      }
+
       console.error("Invitation compatible theme relation failed, retrying without theme:", compatError);
       try {
         return await findInvitationEvent(slug, "none");

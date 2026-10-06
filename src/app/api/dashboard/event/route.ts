@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { revalidateInvitation } from "@/lib/cached-invitation";
+import {
+  EVENT_WITH_GUESTS_NO_THEME_SELECT_WITHOUT_PROGRAM_STEPS,
+  EVENT_WITH_GUESTS_SELECT_WITHOUT_PROGRAM_STEPS,
+  omitProgramSteps,
+} from "@/lib/event-safe-select";
 import { getThemeOrDefault, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { serializePublicEvent } from "@/lib/public-event";
 import { canUseMotionVideo, canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
 import { MAX_PROGRAM_STEPS, prepareProgramSteps } from "@/lib/program-steps";
-import { readClientOnboardingSeen, requireApiRole } from "@/lib/server-auth";
+import { isMissingPrismaColumnError, readClientOnboardingSeen, requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
 const programStepSchema = z.object({
@@ -100,6 +105,14 @@ async function loadClientEvent(eventId: string) {
       },
     });
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "programSteps")) {
+      console.warn("Event.programSteps is not available; loading dashboard event without that column.");
+      return db.event.findUnique({
+        where: { id: eventId },
+        select: EVENT_WITH_GUESTS_SELECT_WITHOUT_PROGRAM_STEPS,
+      });
+    }
+
     console.error("Dashboard event theme relation failed, retrying with compatible theme columns:", error);
     try {
       return await db.event.findUnique({
@@ -110,6 +123,14 @@ async function loadClientEvent(eventId: string) {
         },
       });
     } catch (compatError) {
+      if (isMissingPrismaColumnError(compatError, "programSteps")) {
+        console.warn("Event.programSteps is not available after theme retry; loading dashboard event without theme/programSteps.");
+        return db.event.findUnique({
+          where: { id: eventId },
+          select: EVENT_WITH_GUESTS_NO_THEME_SELECT_WITHOUT_PROGRAM_STEPS,
+        });
+      }
+
       console.error("Dashboard event compatible theme relation failed, retrying without theme:", compatError);
       return db.event.findUnique({
         where: { id: eventId },
@@ -148,7 +169,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Dashboard event fetch failed:", error);
-    return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 503 });
   }
 }
 
@@ -171,7 +192,7 @@ export async function PATCH(request: NextRequest) {
     currentEvent = await db.event.findUnique({ where: { id: eventId }, select: { planType: true, slug: true } });
   } catch (error) {
     console.error("Dashboard event lookup failed:", error);
-    return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Impossible de charger votre espace." }, { status: 503 });
   }
   if (!currentEvent) {
     return NextResponse.json({ success: false, error: "Evenement introuvable." }, { status: 404 });
@@ -242,6 +263,19 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "programSteps")) {
+      console.warn("Event.programSteps is not available; saving dashboard event through legacy program column only.");
+      try {
+        updated = await db.event.update({
+          where: { id: eventId },
+          data: omitProgramSteps(updateData),
+          select: EVENT_WITH_GUESTS_SELECT_WITHOUT_PROGRAM_STEPS,
+        });
+      } catch (programStepsRetryError) {
+        console.error("Dashboard event legacy program fallback failed:", programStepsRetryError);
+        return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 503 });
+      }
+    } else {
     console.error("Dashboard event update with theme failed, retrying with compatible theme columns:", error);
     try {
       updated = await db.event.update({
@@ -253,6 +287,19 @@ export async function PATCH(request: NextRequest) {
         },
       });
     } catch (compatError) {
+      if (isMissingPrismaColumnError(compatError, "programSteps")) {
+        console.warn("Event.programSteps is not available after update retry; saving through legacy program column only.");
+        try {
+          updated = await db.event.update({
+            where: { id: eventId },
+            data: omitProgramSteps(updateData),
+            select: EVENT_WITH_GUESTS_NO_THEME_SELECT_WITHOUT_PROGRAM_STEPS,
+          });
+        } catch (programStepsRetryError) {
+          console.error("Dashboard event legacy program fallback failed:", programStepsRetryError);
+          return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 503 });
+        }
+      } else {
       console.error("Dashboard event update with compatible theme failed, retrying without theme:", compatError);
       try {
         updated = await db.event.update({
@@ -264,8 +311,10 @@ export async function PATCH(request: NextRequest) {
         });
       } catch (retryError) {
         console.error("Dashboard event update failed:", retryError);
-        return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 500 });
+        return NextResponse.json({ success: false, error: "Sauvegarde impossible." }, { status: 503 });
       }
+      }
+    }
     }
   }
 

@@ -217,8 +217,8 @@ export async function readClientOnboardingSeen(userId: string) {
     return user?.hasSeenOnboarding ?? true;
   } catch (error) {
     if (isMissingPrismaColumnError(error, "hasSeenOnboarding")) {
-      console.warn("AuthUser.hasSeenOnboarding is not available yet; defaulting onboarding state to seen.");
-      return true;
+      console.warn("AuthUser.hasSeenOnboarding is not available yet; defaulting onboarding state to false.");
+      return false;
     }
 
     throw error;

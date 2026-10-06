@@ -4,7 +4,10 @@ import { serializeTheme, type SerializableThemeInput } from "@/lib/theme-store";
 import type { Event } from "@prisma/client";
 import type { OpeningAnimationType, ProgramStep, PublicEventPayload } from "@/types/database.types";
 
-type PublicEventRecord = Event & { theme?: SerializableThemeInput | null };
+type PublicEventRecord = Omit<Event, "programSteps"> & {
+  programSteps?: Event["programSteps"] | null;
+  theme?: SerializableThemeInput | null;
+};
 
 const OPENING_ANIMATION_TYPES: OpeningAnimationType[] = [
   "wax_seal_burst",
@@ -28,7 +31,8 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
   const officialPhotoUrls = parseJsonArray<string>(event.officialPhotoUrls, []);
   const photos = [event.coverPhotoUrl, ...officialPhotoUrls].filter(Boolean).slice(0, photoLimitForPlan(planType)) as string[];
   const legacyProgram = parseJsonArray<ProgramStep>(event.program, []);
-  const programSteps = parseJsonArray<ProgramStep>(event.programSteps, legacyProgram);
+  const rawProgramSteps = "programSteps" in event ? event.programSteps : null;
+  const programSteps = parseJsonArray<ProgramStep>(rawProgramSteps, legacyProgram);
 
   return {
     id: event.id,
