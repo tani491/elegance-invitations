@@ -24,6 +24,9 @@ type LoginUser = {
   email: string;
   passwordHash: string;
   role: string;
+};
+
+type LoginSessionProfile = {
   displayName: string;
   eventId: string | null;
   isActive: boolean;
@@ -38,9 +41,6 @@ async function loadLoginUser(email: string): Promise<LoginUser | null> {
         email: true,
         passwordHash: true,
         role: true,
-        displayName: true,
-        eventId: true,
-        isActive: true,
       },
     });
   } catch (error) {
@@ -49,7 +49,7 @@ async function loadLoginUser(email: string): Promise<LoginUser | null> {
     console.warn("AuthUser.role is not available; falling back to CLIENT-only login semantics.");
     const rows = await db.$queryRaw<Array<Omit<LoginUser, "role">>>(
       Prisma.sql`
-        SELECT id, email, "passwordHash", "displayName", "eventId", "isActive"
+        SELECT id, email, "passwordHash"
         FROM "AuthUser"
         WHERE email = ${email}
         LIMIT 1
@@ -58,6 +58,36 @@ async function loadLoginUser(email: string): Promise<LoginUser | null> {
 
     const user = rows[0];
     return user ? { ...user, role: AUTH_ROLES.CLIENT } : null;
+  }
+}
+
+async function loadLoginSessionProfile(userId: string): Promise<LoginSessionProfile | null> {
+  try {
+    return await db.authUser.findUnique({
+      where: { id: userId },
+      select: {
+        displayName: true,
+        eventId: true,
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    console.warn("Login session profile lookup failed, retrying with raw safe query:", error);
+    try {
+      const rows = await db.$queryRaw<LoginSessionProfile[]>(
+        Prisma.sql`
+          SELECT "displayName", "eventId", "isActive"
+          FROM "AuthUser"
+          WHERE id = ${userId}
+          LIMIT 1
+        `,
+      );
+
+      return rows[0] ?? null;
+    } catch (profileRetryError) {
+      console.error("Login session profile fallback failed:", profileRetryError);
+      return null;
+    }
   }
 }
 
@@ -76,7 +106,7 @@ export async function POST(request: NextRequest) {
     const expectedRole = parsed.data.audience === "admin" ? AUTH_ROLES.SUPER_ADMIN : AUTH_ROLES.CLIENT;
     const user = await loadLoginUser(email);
 
-    if (!user || !user.isActive || user.role !== expectedRole) {
+    if (!user || user.role !== expectedRole) {
       return NextResponse.json(
         { success: false, error: "Identifiants invalides." },
         { status: 401 },
@@ -91,23 +121,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const profile = await loadLoginSessionProfile(user.id);
+    if (!profile?.isActive) {
+      return NextResponse.json(
+        { success: false, error: "Identifiants invalides." },
+        { status: 401 },
+      );
+    }
+
     const { token, expiresAt } = await createSessionForUser({
       id: user.id,
       email: user.email,
       role: user.role,
-      eventId: user.eventId,
+      eventId: profile.eventId,
     });
     const hasSeenOnboarding = await readClientOnboardingSeen(user.id).catch((error) => {
       console.warn("Login onboarding state lookup failed, defaulting to false:", error);
       return false;
     });
 
-    db.authUser.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    }).catch((error) => {
+    try {
+      await db.authUser.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+    } catch (error) {
       console.error("Login lastLoginAt update failed:", error);
-    });
+    }
 
     const response = NextResponse.json({
       success: true,
@@ -116,8 +156,8 @@ export async function POST(request: NextRequest) {
         id: user.id,
         email: user.email,
         role: user.role,
-        displayName: user.displayName,
-        eventId: user.eventId,
+        displayName: profile.displayName,
+        eventId: profile.eventId,
         hasSeenOnboarding,
       },
     });
