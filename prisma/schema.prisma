@@ -17,6 +17,7 @@ model AuthUser {
   displayName       String
   eventId           String?       @unique
   temporaryPassword Boolean       @default(true)
+  hasSeenOnboarding Boolean       @default(false)
   isActive          Boolean       @default(true)
   lastLoginAt       DateTime?
   createdAt         DateTime      @default(now())

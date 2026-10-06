@@ -139,6 +139,9 @@ export async function GET(request: NextRequest) {
       data: {
         event: serializePublicEvent(event),
         guests: event.guests,
+        client: {
+          hasSeenOnboarding: session.user.hasSeenOnboarding,
+        },
       },
     });
   } catch (error) {
