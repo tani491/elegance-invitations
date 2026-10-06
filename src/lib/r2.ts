@@ -1,6 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-const accountId = cleanEnv(process.env.CLOUDFLARE_R2_ACCOUNT_ID);
+const accountId = cleanR2AccountId(process.env.CLOUDFLARE_R2_ACCOUNT_ID);
 const endpoint = accountId ? `https://${accountId}.r2.cloudflarestorage.com` : "";
 const accessKeyId = cleanEnv(process.env.CLOUDFLARE_R2_ACCESS_KEY_ID);
 const secretAccessKey = cleanEnv(process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY);
@@ -21,6 +21,15 @@ export const r2 = new S3Client({
 
 function cleanEnv(value: string | undefined) {
   return value?.replace(/[\u200B-\u200D\uFEFF]/g, "").trim().replace(/^["']|["']$/g, "").trim() ?? "";
+}
+
+function cleanR2AccountId(value: string | undefined) {
+  return cleanEnv(value)
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/+$/, "")
+    .split("/")[0]
+    .replace(/\.r2\.cloudflarestorage\.com$/i, "")
+    .trim();
 }
 
 function firstCleanEnv(values: Array<string | undefined>) {
