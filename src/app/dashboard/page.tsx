@@ -14,7 +14,6 @@ import {
   MessageCircle,
   Music2,
   Plus,
-  HelpCircle,
   Save,
   ScanLine,
   Send,
@@ -31,7 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CameraScanner } from "@/components/dashboard/CameraScanner";
-import { ClientOnboardingModal } from "@/components/dashboard/ClientOnboardingModal";
 import { GuestTable } from "@/components/dashboard/GuestTable";
 import { ImageUploader } from "@/components/dashboard/ImageUploader";
 import { LiveMobilePreview } from "@/components/dashboard/LiveMobilePreview";
@@ -145,8 +143,6 @@ export default function DashboardPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingMusic, setUploadingMusic] = useState(false);
   const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState<number | null>(null);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
-  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [newGuest, setNewGuest] = useState({
     firstName: "",
     lastName: "",
@@ -169,11 +165,6 @@ export default function DashboardPage() {
     if (eventResult.status === "fulfilled" && eventResult.value.success) {
       setEvent(eventResult.value.data.event);
       setGuests(eventResult.value.data.guests ?? []);
-      const nextHasSeenOnboarding = eventResult.value.data.client?.hasSeenOnboarding;
-      if (typeof nextHasSeenOnboarding === "boolean") {
-        setHasSeenOnboarding(nextHasSeenOnboarding);
-        if (!nextHasSeenOnboarding) setOnboardingOpen(true);
-      }
     } else {
       console.error("Dashboard event load failed:", eventResult);
     }
@@ -281,36 +272,6 @@ export default function DashboardPage() {
 
   async function uploadMediaFile(file: File, kind: "image" | "audio") {
     return uploadFileToR2({ file, kind });
-  }
-
-  async function markOnboardingSeen() {
-    if (hasSeenOnboarding) return;
-    setHasSeenOnboarding(true);
-
-    try {
-      const response = await fetch("/api/dashboard/onboarding", {
-        method: "PATCH",
-        credentials: "include",
-        cache: "no-store",
-      });
-      const json = await response.json().catch(() => null);
-      if (!response.ok || !json?.success) {
-        throw new Error(json?.error ?? "Guide non sauvegarde.");
-      }
-    } catch (error) {
-      console.error("Client onboarding save failed:", error);
-      toast.error("Le guide restera disponible depuis le bouton Besoin d'aide.");
-    }
-  }
-
-  function handleOnboardingOpenChange(nextOpen: boolean) {
-    setOnboardingOpen(nextOpen);
-    if (!nextOpen) void markOnboardingSeen();
-  }
-
-  function completeOnboarding() {
-    setOnboardingOpen(false);
-    void markOnboardingSeen();
   }
 
   async function persistPhotoList(displayPhotos: string[]) {
@@ -576,10 +537,6 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
             <h1 className="font-display-bold text-3xl tracking-luxury">Espace Maries</h1>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={() => setOnboardingOpen(true)}>
-              <HelpCircle className="mr-2 size-4" />
-              Besoin d'aide ?
-            </Button>
             <Button asChild variant="outline"><a href={`/invitation/${encodeURIComponent(event.slug)}?open=1`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 size-4" />Invitation</a></Button>
             <Button variant="outline" onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
@@ -1005,11 +962,6 @@ Touchez le lien ci-dessous pour ouvrir votre enveloppe interactive :
 
         </Tabs>
       </div>
-      <ClientOnboardingModal
-        open={onboardingOpen}
-        onOpenChange={handleOnboardingOpenChange}
-        onComplete={completeOnboarding}
-      />
     </main>
   );
 }
