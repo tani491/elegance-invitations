@@ -7,6 +7,7 @@ import { requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type PresignedUploadRequest = {
   kind?: unknown;
@@ -72,10 +73,10 @@ function fileDescriptorFromBody(body: PresignedUploadRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { session, response } = await requireApiRole(request, [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT]);
-  if (!session) return response;
-
   try {
+    const { session, response } = await requireApiRole(request, [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT]);
+    if (!session) return response;
+
     const r2Status = getR2ConfigurationStatus();
     if (!r2Status.configured) {
       return missingR2ConfigurationResponse(r2Status.missing);

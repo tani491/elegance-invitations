@@ -1,6 +1,9 @@
 export type PresignedUploadKind = "image" | "audio" | "video" | "theme-video" | "demo-media";
 
 const SERVER_UPLOAD_FALLBACK_MAX_SIZE = 4 * 1024 * 1024;
+const SIGNATURE_TIMEOUT_MS = 20_000;
+const DIRECT_UPLOAD_TIMEOUT_MS = 180_000;
+const SERVER_UPLOAD_TIMEOUT_MS = 45_000;
 
 type PresignedUploadResponse = {
   success?: boolean;
@@ -20,6 +23,17 @@ type ServerUploadResponse = {
     url?: string;
   };
 };
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function uploadFileThroughServer({
   file,
@@ -41,12 +55,12 @@ async function uploadFileThroughServer({
   formData.append("file", file);
   if (eventId) formData.append("eventId", eventId);
 
-  const uploadResponse = await fetch("/api/upload", {
+  const uploadResponse = await fetchWithTimeout("/api/upload", {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     body: formData,
-  });
+  }, SERVER_UPLOAD_TIMEOUT_MS);
   const uploadJson = await uploadResponse.json().catch(() => null) as ServerUploadResponse | null;
 
   if (!uploadResponse.ok || !uploadJson?.success) {
@@ -70,7 +84,7 @@ export async function uploadFileToR2({
 }) {
   const contentType = file.type || "application/octet-stream";
 
-  const signatureResponse = await fetch("/api/upload/presigned", {
+  const signatureResponse = await fetchWithTimeout("/api/upload/presigned", {
     method: "POST",
     credentials: "include",
     cache: "no-store",
@@ -82,7 +96,7 @@ export async function uploadFileToR2({
       size: file.size,
       eventId,
     }),
-  });
+  }, SIGNATURE_TIMEOUT_MS);
   const signatureJson = await signatureResponse.json().catch(() => null) as PresignedUploadResponse | null;
 
   if (!signatureResponse.ok || !signatureJson?.success) {
@@ -98,12 +112,12 @@ export async function uploadFileToR2({
   const signedContentType = signatureJson.data?.headers?.["Content-Type"] ?? contentType;
 
   try {
-    const uploadResponse = await fetch(uploadUrl, {
+    const uploadResponse = await fetchWithTimeout(uploadUrl, {
       method: "PUT",
       mode: "cors",
       headers: { "Content-Type": signedContentType },
       body: file,
-    });
+    }, DIRECT_UPLOAD_TIMEOUT_MS);
 
     if (!uploadResponse.ok) {
       const errorBody = await uploadResponse.text().catch(() => "");

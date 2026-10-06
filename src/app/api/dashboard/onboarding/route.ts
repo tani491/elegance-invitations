@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { requireApiRole } from "@/lib/server-auth";
+import { isMissingPrismaColumnError, requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
 export async function PATCH(request: NextRequest) {
@@ -19,6 +19,14 @@ export async function PATCH(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
+    if (isMissingPrismaColumnError(error, "hasSeenOnboarding")) {
+      console.warn("AuthUser.hasSeenOnboarding is not available; onboarding state update skipped.");
+      return NextResponse.json(
+        { success: true, data: { hasSeenOnboarding: true, skipped: true } },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     console.error("Client onboarding update failed:", error);
     return NextResponse.json(
       { success: false, error: "Impossible de sauvegarder l'etat du guide." },

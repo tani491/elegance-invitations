@@ -7,6 +7,9 @@ import { requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const SERVER_R2_UPLOAD_TIMEOUT_MS = 45_000;
 
 function missingR2ConfigurationResponse(missing: string[]) {
   return NextResponse.json(
@@ -41,11 +44,22 @@ function describeR2Error(error: unknown) {
   };
 }
 
-export async function POST(request: NextRequest) {
-  const { session, response } = await requireApiRole(request, [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT]);
-  if (!session) return response;
+async function sendR2CommandWithTimeout(command: PutObjectCommand) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SERVER_R2_UPLOAD_TIMEOUT_MS);
 
   try {
+    return await r2.send(command, { abortSignal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { session, response } = await requireApiRole(request, [AUTH_ROLES.SUPER_ADMIN, AUTH_ROLES.CLIENT]);
+    if (!session) return response;
+
     const r2Status = getR2ConfigurationStatus();
     if (!r2Status.configured) {
       return missingR2ConfigurationResponse(r2Status.missing);
@@ -81,7 +95,7 @@ export async function POST(request: NextRequest) {
     const contentType = file.type || "application/octet-stream";
 
     try {
-      await r2.send(
+      await sendR2CommandWithTimeout(
         new PutObjectCommand({
           Bucket: R2_BUCKET_NAME,
           Key: target.key,

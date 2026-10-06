@@ -6,7 +6,7 @@ import { getThemeOrDefault, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { serializePublicEvent } from "@/lib/public-event";
 import { canUseMotionVideo, canUseTheme, photoLimitForPlan } from "@/lib/plan-gating";
 import { MAX_PROGRAM_STEPS, prepareProgramSteps } from "@/lib/program-steps";
-import { requireApiRole } from "@/lib/server-auth";
+import { readClientOnboardingSeen, requireApiRole } from "@/lib/server-auth";
 import { AUTH_ROLES } from "@/types/database.types";
 
 const programStepSchema = z.object({
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
         event: serializePublicEvent(event),
         guests: event.guests,
         client: {
-          hasSeenOnboarding: session.user.hasSeenOnboarding,
+          hasSeenOnboarding: await readClientOnboardingSeen(session.user.id),
         },
       },
     });

@@ -65,28 +65,28 @@ async function updateProgram(eventId: string, programSteps: Prisma.InputJsonValu
 }
 
 export async function PATCH(request: NextRequest) {
-  const { session, response } = await requireApiRole(request, [AUTH_ROLES.CLIENT]);
-  if (!session) return response;
-
-  const eventId = session.user.eventId;
-  if (!eventId) {
-    return NextResponse.json({ success: false, error: "Aucun evenement rattache au compte." }, { status: 404 });
-  }
-
-  const parsed = updateInvitationSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ success: false, error: "Programme invalide." }, { status: 400 });
-  }
-
-  const preparedProgram = prepareProgramSteps(parsed.data.programSteps ?? parsed.data.program ?? []);
-  if (preparedProgram.hasInvalid) {
-    return NextResponse.json(
-      { success: false, error: "Chaque etape du programme doit contenir une heure et un titre." },
-      { status: 400 },
-    );
-  }
-
   try {
+    const { session, response } = await requireApiRole(request, [AUTH_ROLES.CLIENT]);
+    if (!session) return response;
+
+    const eventId = session.user.eventId;
+    if (!eventId) {
+      return NextResponse.json({ success: false, error: "Aucun evenement rattache au compte." }, { status: 404 });
+    }
+
+    const parsed = updateInvitationSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: "Programme invalide." }, { status: 400 });
+    }
+
+    const preparedProgram = prepareProgramSteps(parsed.data.programSteps ?? parsed.data.program ?? []);
+    if (preparedProgram.hasInvalid) {
+      return NextResponse.json(
+        { success: false, error: "Chaque etape du programme doit contenir une heure et un titre." },
+        { status: 400 },
+      );
+    }
+
     const updated = await updateProgram(
       eventId,
       preparedProgram.steps as unknown as Prisma.InputJsonValue,

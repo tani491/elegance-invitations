@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
   attachAuthCookie,
   createSessionForUser,
+  isMissingPrismaColumnError,
   loginPathForRole,
   normalizeEmail,
   verifyPassword,
@@ -15,6 +17,48 @@ const loginSchema = z.object({
   password: z.string().min(8),
   audience: z.enum(["client", "admin"]),
 });
+
+type LoginUser = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  role: string;
+  displayName: string;
+  eventId: string | null;
+  isActive: boolean;
+};
+
+async function loadLoginUser(email: string): Promise<LoginUser | null> {
+  try {
+    return await db.authUser.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        role: true,
+        displayName: true,
+        eventId: true,
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    if (!isMissingPrismaColumnError(error, "role")) throw error;
+
+    console.warn("AuthUser.role is not available; falling back to CLIENT-only login semantics.");
+    const rows = await db.$queryRaw<Array<Omit<LoginUser, "role">>>(
+      Prisma.sql`
+        SELECT id, email, "passwordHash", "displayName", "eventId", "isActive"
+        FROM "AuthUser"
+        WHERE email = ${email}
+        LIMIT 1
+      `,
+    );
+
+    const user = rows[0];
+    return user ? { ...user, role: AUTH_ROLES.CLIENT } : null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const email = normalizeEmail(parsed.data.email);
     const expectedRole = parsed.data.audience === "admin" ? AUTH_ROLES.SUPER_ADMIN : AUTH_ROLES.CLIENT;
-    const user = await db.authUser.findUnique({ where: { email } });
+    const user = await loadLoginUser(email);
 
     if (!user || !user.isActive || user.role !== expectedRole) {
       return NextResponse.json(
@@ -53,9 +97,11 @@ export async function POST(request: NextRequest) {
       eventId: user.eventId,
     });
 
-    await db.authUser.update({
+    db.authUser.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
+    }).catch((error) => {
+      console.error("Login lastLoginAt update failed:", error);
     });
 
     const response = NextResponse.json({

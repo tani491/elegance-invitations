@@ -1,5 +1,6 @@
 import { createHash, pbkdf2 as pbkdf2Callback, randomBytes, randomUUID } from "node:crypto";
 import { promisify } from "node:util";
+import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -15,6 +16,92 @@ const pbkdf2 = promisify(pbkdf2Callback);
 const PASSWORD_ITERATIONS = 210_000;
 const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = "sha256";
+const AUTH_USER_SESSION_SELECT = {
+  id: true,
+  email: true,
+  role: true,
+  displayName: true,
+  eventId: true,
+  isActive: true,
+} as const;
+
+type AuthenticatedSession = {
+  revokedAt: Date | null;
+  expiresAt: Date;
+  tokenHash: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    displayName: string;
+    eventId: string | null;
+    isActive: boolean;
+  };
+};
+
+export function isMissingPrismaColumnError(error: unknown, column?: string) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2022") return false;
+  if (!column) return true;
+
+  const missingColumn = typeof error.meta?.column === "string" ? error.meta.column : "";
+  return missingColumn === column || missingColumn.endsWith(`.${column}`);
+}
+
+async function loadAuthenticatedSession(sessionId: string): Promise<AuthenticatedSession | null> {
+  try {
+    return await db.authSession.findUnique({
+      where: { id: sessionId },
+      include: { user: { select: AUTH_USER_SESSION_SELECT } },
+    });
+  } catch (error) {
+    if (!isMissingPrismaColumnError(error, "role")) throw error;
+
+    console.warn("AuthUser.role is not available during session lookup; using CLIENT-only fallback.");
+    const rows = await db.$queryRaw<Array<{
+      revokedAt: Date | null;
+      expiresAt: Date;
+      tokenHash: string;
+      id: string;
+      email: string;
+      displayName: string;
+      eventId: string | null;
+      isActive: boolean;
+    }>>(
+      Prisma.sql`
+        SELECT
+          s."revokedAt",
+          s."expiresAt",
+          s."tokenHash",
+          u.id,
+          u.email,
+          u."displayName",
+          u."eventId",
+          u."isActive"
+        FROM "AuthSession" s
+        INNER JOIN "AuthUser" u ON u.id = s."userId"
+        WHERE s.id = ${sessionId}
+        LIMIT 1
+      `,
+    );
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      revokedAt: row.revokedAt,
+      expiresAt: row.expiresAt,
+      tokenHash: row.tokenHash,
+      user: {
+        id: row.id,
+        email: row.email,
+        role: AUTH_ROLES.CLIENT,
+        displayName: row.displayName,
+        eventId: row.eventId,
+        isActive: row.isActive,
+      },
+    };
+  }
+}
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -105,10 +192,7 @@ export async function authenticateRequest(request: NextRequest) {
   const payload = await verifySessionToken(token);
   if (!payload || !token) return null;
 
-  const session = await db.authSession.findUnique({
-    where: { id: payload.sessionId },
-    include: { user: true },
-  });
+  const session = await loadAuthenticatedSession(payload.sessionId);
 
   if (
     !session ||
@@ -121,6 +205,24 @@ export async function authenticateRequest(request: NextRequest) {
   }
 
   return { payload, user: session.user };
+}
+
+export async function readClientOnboardingSeen(userId: string) {
+  try {
+    const user = await db.authUser.findUnique({
+      where: { id: userId },
+      select: { hasSeenOnboarding: true },
+    });
+
+    return user?.hasSeenOnboarding ?? true;
+  } catch (error) {
+    if (isMissingPrismaColumnError(error, "hasSeenOnboarding")) {
+      console.warn("AuthUser.hasSeenOnboarding is not available yet; defaulting onboarding state to seen.");
+      return true;
+    }
+
+    throw error;
+  }
 }
 
 export async function requireApiRole(request: NextRequest, roles: AuthRole[]) {
