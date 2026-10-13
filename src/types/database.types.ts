@@ -68,6 +68,8 @@ export interface SessionPayload {
 }
 
 export interface ThemeConfig {
+  layoutStyle?: "oriental" | "minimalist" | "royal";
+  coverVideoUrl?: string | null;
   id?: string | null;
   slug: string;
   name: string;
@@ -117,6 +119,7 @@ export interface HomepageSettings {
 }
 
 export interface PublicEventPayload {
+  coverVideoUrl?: string | null;
   id: string;
   slug: string;
   name: string;

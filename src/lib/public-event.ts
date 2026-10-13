@@ -59,6 +59,7 @@ export function serializePublicEvent(event: PublicEventRecord): PublicEventPaylo
     galleryImages: photos,
     musicUrl: event.musicUrl,
     motionVideoUrl: canUseMotionVideo(planType) ? event.motionVideoUrl : null,
+    coverVideoUrl: canUseMotionVideo(planType) ? event.motionVideoUrl : null,
     whatsappGroupUrl: event.whatsappGroupUrl,
     invitationQuote: event.invitationQuote,
     giftIban: event.giftIban,

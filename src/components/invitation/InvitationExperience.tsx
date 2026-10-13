@@ -2,6 +2,8 @@
 
 import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+import { MotionCover } from "./MotionCover";
 import {
   AlertTriangle,
   CalendarDays,
@@ -57,7 +59,7 @@ const LABEL_CLASS = "text-xs font-semibold uppercase tracking-[0.18em] text-[#FF
 const ACTION_BUTTON_GROUP_CLASS = "w-full max-w-full flex flex-col gap-2 overflow-hidden box-border sm:flex-row sm:px-2";
 const ACTION_BUTTON_CLASS =
   "w-full max-w-full min-w-0 min-h-[44px] rounded-xl px-4 py-3 text-xs font-medium sm:flex-1 sm:text-sm truncate flex items-center justify-center gap-2 box-border";
-const CONTENT_REVEAL_TIME = 4.5;
+const CONTENT_REVEAL_TIME = 1.4;
 const OPENING_END_TIME = 10;
 const RSVP_STATUS_UNSET = "__unset__";
 
@@ -78,7 +80,7 @@ function formatEventDate(value: string | null) {
 
 function motionVideoSource(event: PublicEventPayload) {
   const theme = event.theme as VideoTheme;
-  return event.motionVideoUrl ?? theme.videoUrl ?? theme.customVideoUrl ?? theme.openingVideoUrl ?? theme.demoVideoUrl ?? null;
+  return event.coverVideoUrl?.trim() || theme.coverVideoUrl?.trim() || event.motionVideoUrl || theme.videoUrl || theme.customVideoUrl || theme.openingVideoUrl || theme.demoVideoUrl || null;
 }
 
 function buildWhatsAppHref(phone: string | null | undefined, text: string) {
@@ -286,7 +288,7 @@ function GuestTokenErrorCard({ message }: { message: string }) {
   );
 }
 
-function PhotoGallery({ images }: { images: string[] }) {
+function PhotoGallery({ images, layout }: { images: string[]; layout: "oriental" | "minimalist" | "royal" }) {
   const galleryImages = Array.from(new Set(images.filter(Boolean))).slice(0, 4);
 
   if (galleryImages.length === 0) {
@@ -299,9 +301,9 @@ function PhotoGallery({ images }: { images: string[] }) {
 
   return (
     <InfoCard icon={<Images className="size-5" />} label="Galerie" title="Nos plus beaux instants">
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div tabIndex={layout === "minimalist" ? 0 : undefined} aria-label="Photos du couple" className={layout === "minimalist" ? "mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4" : "mt-5 grid grid-cols-2 gap-3"}>
         {galleryImages.map((src, index) => (
-          <div key={`${src}-${index}`} className="relative h-48 w-full overflow-hidden rounded-2xl border border-white/20 shadow-md">
+          <div key={`${src}-${index}`} className={`relative h-56 overflow-hidden border border-white/20 shadow-md ${layout === "minimalist" ? "w-[85%] shrink-0 snap-center" : layout === "oriental" ? "w-full rounded-t-full" : "w-full rounded-2xl"}`}>
             <Image
               src={src}
               alt={`Photo du couple ${index + 1}`}
@@ -436,10 +438,12 @@ export function InvitationExperience({
   const [hasScrolled, setHasScrolled] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const reducedMotion = useReducedMotion();
   const [playbackFailed, setPlaybackFailed] = useState(false);
   const names = coupleNames(event);
   const theme = useMemo(() => normalizeThemeConfig(event.theme), [event.theme]);
+  const layout = theme.layoutStyle ?? "royal";
   const vars = useMemo(() => surfaceVars(theme), [theme]);
   const videoSrc = motionVideoSource({ ...event, theme });
   const posterSrc = event.coverPhotoUrl ?? event.officialPhotoUrls[0] ?? null;
@@ -455,9 +459,9 @@ export function InvitationExperience({
     }
 
     try {
-      video.muted = false;
-      video.volume = 1;
-      setIsMuted(false);
+      setHasStarted(true);
+      video.muted = true;
+      setIsMuted(true);
       await video.play();
       setHasStarted(true);
       setPlaybackFailed(false);
@@ -507,6 +511,7 @@ export function InvitationExperience({
       setShowContent(true);
     }
 
+    if (event.coverVideoUrl || theme.coverVideoUrl) return;
     if (!Number.isFinite(video.duration) || video.duration <= OPENING_END_TIME + 0.5) return;
 
     if (video.currentTime >= video.duration - 0.5) {
@@ -604,9 +609,9 @@ export function InvitationExperience({
   }, [event.id, guestToken]);
 
   return (
-    <div style={vars} className="relative w-full min-h-screen bg-[#0d0d0d] text-[#1a1a1a] overflow-x-hidden">
+    <div style={vars} data-layout={layout} className="invitation-layout relative w-full min-h-screen bg-[#0d0d0d] text-[#1a1a1a] overflow-x-hidden">
       <div className="fixed inset-0 w-full h-[100dvh] max-w-md mx-auto z-0 pointer-events-none overflow-hidden" style={{ background: event.theme.previewGradient }}>
-        {videoSrc ? (
+        {videoSrc && !playbackFailed ? (
           <video
             ref={videoRef}
             src={videoSrc}
@@ -614,7 +619,8 @@ export function InvitationExperience({
             playsInline
             preload="auto"
             controls={false}
-            loop={false}
+            autoPlay={hasStarted && !reducedMotion}
+            loop={Boolean(event.coverVideoUrl || theme.coverVideoUrl)}
             muted={isMuted}
             onTimeUpdate={handleTimeUpdate}
             onError={() => {
@@ -623,6 +629,7 @@ export function InvitationExperience({
               setShowContent(true);
             }}
             onEnded={(e) => {
+              setShowContent(true);
               const video = e.currentTarget;
               video.currentTime = Number.isFinite(video.duration) && video.duration > OPENING_END_TIME + 0.5 ? OPENING_END_TIME : 0;
               void video.play().catch(() => {
@@ -633,10 +640,12 @@ export function InvitationExperience({
             className="h-full w-full object-cover"
             style={{ objectFit: "cover" }}
           />
+        ) : posterSrc ? (
+          <Image src={posterSrc} alt="" fill sizes="448px" className="object-cover" priority />
         ) : (
           <div className="h-full w-full" style={{ background: event.theme.previewGradient }} />
         )}
-        <div className="absolute inset-0 bg-black/10" />
+        <motion.div className="absolute inset-0 bg-black/45" initial={false} animate={{ opacity: showContent ? 1 : 0.15 }} transition={{ duration: reducedMotion ? 0 : 1.2 }} />
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/10 to-transparent" />
       </div>
 
@@ -652,6 +661,7 @@ export function InvitationExperience({
       )}
 
       <div className="relative z-10 w-full max-w-md mx-auto flex flex-col">
+        {!showContent && <MotionCover started={hasStarted} theme={theme} onOpened={() => setShowContent(true)} />}
         {!hasStarted ? (
           <div
             role="button"
@@ -666,7 +676,7 @@ export function InvitationExperience({
             }}
             className="h-[100dvh] w-full cursor-pointer"
           >
-            <span className="sr-only">Lancer l&apos;invitation</span>
+            <span className="absolute inset-x-0 top-1/2 z-30 text-center text-white font-serif text-2xl">Touchez pour ouvrir</span>
           </div>
         ) : !showContent ? (
           <div className="h-[100dvh] w-full" aria-hidden="true" />
@@ -692,14 +702,17 @@ export function InvitationExperience({
               </button>
             </div>
 
-            <main
+            <motion.main
+              initial={reducedMotion ? false : { opacity: 0, y: layout === "oriental" ? 45 : 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.8 }}
               ref={detailsRef}
               className="w-full max-w-full overflow-hidden box-border rounded-t-[36px] border border-white/20 bg-black/10 px-4 pt-8 pb-24 shadow-2xl backdrop-blur-lg space-y-6 pointer-events-auto sm:px-5"
             >
-              <div className="space-y-2 border-b border-white/20 pb-6 text-center text-white drop-shadow-md">
+              <div className={`invitation-heading space-y-2 pb-6 text-white drop-shadow-md ${layout === "oriental" ? "rounded-t-[50%] border border-[#D4AF37] px-5 pt-16 text-center" : layout === "minimalist" ? "border-b border-white/30 text-left" : "border-y border-[#D4AF37] py-12 text-center"}`}>
                 <p className="text-xs uppercase tracking-widest text-[#FFE7A3]">Avec la bénédiction de nos familles</p>
-                <h1 className="font-serif text-4xl leading-tight text-white">{names}</h1>
-                <p className="text-sm italic text-white/85">{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
+                <h1 className={`leading-tight text-white ${layout === "oriental" ? "text-5xl" : layout === "royal" ? "font-serif text-5xl" : "font-serif text-4xl font-light"}`} style={{ fontFamily: layout === "oriental" ? "var(--font-great-vibes), cursive" : "var(--font-cormorant), Georgia, serif" }}>{names}</h1>
+                <p className={layout === "royal" ? "py-6 font-serif text-2xl italic leading-relaxed text-[#FFE7A3]" : "text-sm italic text-white/85"}>{event.invitationQuote ?? "Fi dounya wal akhir"}</p>
                 <div className="mx-auto grid max-w-sm gap-1 pt-3 text-sm font-medium text-[#FFE7A3]">
                   <p>{formatEventDate(event.eventDate)}</p>
                   {event.eventTime && <p>{event.eventTime}</p>}
@@ -709,14 +722,15 @@ export function InvitationExperience({
 
               {guestLookupError && <GuestTokenErrorCard message={guestLookupError} />}
               <GuestPassCard guest={guest} passUrl={passUrl} />
-              <PhotoGallery images={event.galleryImages} />
+              {layout !== "minimalist" && <PhotoGallery images={event.galleryImages} layout={layout} />}
               {!guestLookupError && <RSVPForm event={event} guestToken={guest?.qrToken ?? guestToken} guest={guest} />}
               <EventDetails event={event} />
+              {layout === "minimalist" && <PhotoGallery images={event.galleryImages} layout={layout} />}
 
               <footer className="pt-4 text-center text-xs uppercase tracking-widest text-white/60 drop-shadow-sm">
                 Élégance Invitations — Maison de Prestige
               </footer>
-            </main>
+            </motion.main>
           </>
         )}
       </div>

@@ -38,6 +38,8 @@ export const THEME_COMPAT_SELECT = {
 export type ThemeCompatRecord = Prisma.ThemeGetPayload<{ select: typeof THEME_COMPAT_SELECT }>;
 
 export type SerializableThemeInput = {
+  layoutStyle?: ThemeConfig["layoutStyle"] | null;
+  coverVideoUrl?: string | null;
   id?: string | null;
   slug?: string | null;
   name?: string | null;
@@ -89,6 +91,8 @@ export function serializeTheme(theme: SerializableThemeInput): ThemeConfig {
     slug: theme.slug ?? fallback.slug,
     name: theme.name ?? fallback.name,
     category,
+    layoutStyle: theme.layoutStyle ?? undefined,
+    coverVideoUrl: theme.coverVideoUrl,
     allowedPlans: normalizeAllowedPlans(theme.allowedPlans, fallback.allowedPlans ?? allowedPlansForCategory(category)),
     primaryColor: theme.primaryColor ?? theme.bgPrimary ?? fallback.primaryColor,
     secondaryColor: theme.secondaryColor ?? theme.cardBg ?? fallback.secondaryColor,

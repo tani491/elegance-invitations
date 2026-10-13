@@ -127,6 +127,11 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
     slug: theme?.slug || fallback.slug || SAFE_THEME_FALLBACK.slug,
     name: theme?.name || fallback.name || SAFE_THEME_FALLBACK.name,
     category,
+    layoutStyle: theme?.layoutStyle === "oriental" || theme?.layoutStyle === "minimalist" || theme?.layoutStyle === "royal"
+      ? theme.layoutStyle
+      : /orient|medina|arab/i.test(`${category} ${theme?.slug}`) ? "oriental"
+      : /minimal|modern|editorial/i.test(`${category} ${theme?.slug}`) ? "minimalist" : "royal",
+    coverVideoUrl: theme?.coverVideoUrl ?? null,
     allowedPlans: normalizeAllowedPlans(theme?.allowedPlans, fallback.allowedPlans ?? allowedPlansForCategory(category)),
     primaryColor,
     secondaryColor,
