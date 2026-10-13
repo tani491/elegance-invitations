@@ -57,149 +57,14 @@ export function normalizeDressCodeColors(value: unknown, maxColors = 4): DressCo
     .slice(0, maxColors);
 }
 
-export const DEFAULT_THEMES: ThemeConfig[] = [
-  {
-    slug: "enveloppe-de-cire",
-    name: "Enveloppe de Cire Standard",
-    category: "Privilege",
-    primaryColor: "#6B1F2A",
-    secondaryColor: "#FFF8ED",
-    accentColor: "#B8894D",
-    goldColor: "#D4AF37",
-    titleFont: "Cormorant Garamond",
-    animationType: "wax_seal_burst",
-    previewGradient: "linear-gradient(135deg, #6B1F2A 0%, #B8894D 46%, #FFF8ED 100%)",
-  },
-  {
-    slug: "ivoire-minimal",
-    name: "Minimaliste Epure",
-    category: "Privilege",
-    primaryColor: "#2C2A28",
-    secondaryColor: "#FAF7F2",
-    accentColor: "#C7A45A",
-    goldColor: "#C7A45A",
-    titleFont: "Montserrat",
-    animationType: "botanical_envelope",
-    previewGradient: "linear-gradient(135deg, #FAF7F2 0%, #EFE6D6 52%, #C7A45A 100%)",
-  },
-  {
-    slug: "roseraie-nude",
-    name: "Roseraie Nude",
-    category: "Privilege",
-    primaryColor: "#8A5968",
-    secondaryColor: "#FFF7F4",
-    accentColor: "#D8A4A9",
-    goldColor: "#C8A56A",
-    titleFont: "Cormorant Garamond",
-    animationType: "botanical_envelope",
-    previewGradient: "linear-gradient(135deg, #8A5968 0%, #D8A4A9 48%, #FFF7F4 100%)",
-  },
-  {
-    slug: "rideau-de-theatre",
-    name: "Rideaux de Theatre en Velours",
-    category: "Privilege",
-    primaryColor: "#54101A",
-    secondaryColor: "#FFF6EA",
-    accentColor: "#A01E30",
-    goldColor: "#E0B85C",
-    titleFont: "Cormorant Garamond",
-    animationType: "velvet_curtains",
-    previewGradient: "linear-gradient(135deg, #54101A 0%, #A01E30 48%, #E0B85C 100%)",
-  },
-  {
-    slug: "ruban-de-soie",
-    name: "Ruban de Soie Satine",
-    category: "Privilege",
-    primaryColor: "#442B3A",
-    secondaryColor: "#FFF4EA",
-    accentColor: "#B87C8A",
-    goldColor: "#D8B66D",
-    titleFont: "Cormorant Garamond",
-    animationType: "silk_ribbon_untie",
-    previewGradient: "linear-gradient(135deg, #442B3A 0%, #B87C8A 48%, #FFF4EA 100%)",
-  },
-  {
-    slug: "fleur-ficelle-botanique",
-    name: "Fleur & Ficelle Botanique",
-    category: "Privilege",
-    primaryColor: "#365143",
-    secondaryColor: "#FAF6EC",
-    accentColor: "#B89B72",
-    goldColor: "#C8A65B",
-    titleFont: "Cormorant Garamond",
-    animationType: "botanical_envelope",
-    previewGradient: "linear-gradient(135deg, #365143 0%, #B89B72 52%, #FAF6EC 100%)",
-  },
-  {
-    slug: "roseraie-boheme",
-    name: "Roseraie Boheme",
-    category: "Privilege",
-    primaryColor: "#7B4F5F",
-    secondaryColor: "#FFF7F4",
-    accentColor: "#C47B78",
-    goldColor: "#E8A598",
-    titleFont: "Cormorant Garamond",
-    animationType: "silk_ribbon_untie",
-    previewGradient: "linear-gradient(135deg, #7B4F5F 0%, #C47B78 48%, #E8A598 100%)",
-  },
-  {
-    slug: "medina-orientale",
-    name: "Medina Orientale",
-    category: "Privilege",
-    primaryColor: "#164B52",
-    secondaryColor: "#FBF3E4",
-    accentColor: "#C87533",
-    goldColor: "#D8B25B",
-    titleFont: "Cormorant Garamond",
-    animationType: "golden_palace_doors",
-    previewGradient: "linear-gradient(135deg, #164B52 0%, #C87533 54%, #FBF3E4 100%)",
-  },
-  {
-    slug: "portes-royales-dorees",
-    name: "Portes Royales Dorees & Vue Mer",
-    category: "Privilege",
-    primaryColor: "#123744",
-    secondaryColor: "#F8EFE0",
-    accentColor: "#D0904D",
-    goldColor: "#E3BC5D",
-    titleFont: "Cormorant Garamond",
-    animationType: "golden_palace_doors",
-    previewGradient: "linear-gradient(135deg, #123744 0%, #D0904D 48%, #F8EFE0 100%)",
-  },
-  {
-    slug: "defile-scenique",
-    name: "Defile Scenique Cathedrale / Mosquee",
-    category: "Privilege",
-    primaryColor: "#28213A",
-    secondaryColor: "#F7F0E4",
-    accentColor: "#7C6CA8",
-    goldColor: "#D8B25B",
-    titleFont: "Cormorant Garamond",
-    animationType: "ceremonial_walk",
-    previewGradient: "linear-gradient(135deg, #28213A 0%, #7C6CA8 48%, #D8B25B 100%)",
-  },
-  {
-    slug: "emeraude-or-imperial",
-    name: "Emeraude & Or Imperial",
-    category: "Privilege",
-    primaryColor: "#073E37",
-    secondaryColor: "#F4EBD9",
-    accentColor: "#12806F",
-    goldColor: "#DFB85C",
-    titleFont: "Cormorant Garamond",
-    animationType: "golden_palace_doors",
-    previewGradient: "linear-gradient(135deg, #073E37 0%, #12806F 52%, #DFB85C 100%)",
-  },
-];
-
-export function getDefaultTheme(slug = "medina-orientale") {
-  return DEFAULT_THEMES.find((theme) => theme.slug === slug) ?? DEFAULT_THEMES[0];
+export function getDefaultTheme(_slug?: string): ThemeConfig {
+  return { ...SAFE_THEME_FALLBACK };
 }
 
 const SAFE_THEME_FALLBACK = {
-  slug: "medina-orientale",
-  name: "Medina Orientale",
-  category: "Privilege",
+  slug: "",
+  name: "",
+  category: "",
   allowedPlans: ["privilege", "imperiale"],
   primaryColor: "#FAF6F0",
   secondaryColor: "rgba(255, 255, 255, 0.85)",
@@ -247,7 +112,7 @@ type ThemeConfigInput = {
 };
 
 export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined): ThemeConfig {
-  const fallback = theme?.slug ? getDefaultTheme(theme.slug) : SAFE_THEME_FALLBACK;
+  const fallback = SAFE_THEME_FALLBACK;
   const category = theme?.category || fallback.category || SAFE_THEME_FALLBACK.category;
   const primaryColor = theme?.primaryColor || theme?.bgPrimary || fallback.primaryColor || SAFE_THEME_FALLBACK.primaryColor;
   const secondaryColor = theme?.secondaryColor || theme?.cardBg || fallback.secondaryColor || SAFE_THEME_FALLBACK.secondaryColor;

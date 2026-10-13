@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { DEFAULT_THEMES, getDefaultTheme, normalizeThemeConfig } from "@/lib/theme-presets";
-import { allowedPlansForCategory, normalizeAllowedPlans, storeAllowedPlans } from "@/lib/plan-gating";
+import { getDefaultTheme, normalizeThemeConfig } from "@/lib/theme-presets";
+import { allowedPlansForCategory, normalizeAllowedPlans } from "@/lib/plan-gating";
 import type { Prisma } from "@prisma/client";
 import { SCROLL_ANIMATION_VALUES } from "@/types/database.types";
 import type { OpeningAnimationType, ScrollAnimationType, ThemeConfig } from "@/types/database.types";
@@ -76,60 +76,6 @@ function normalizeScrollAnimation(value: string | null | undefined): ScrollAnima
     : "fade-up";
 }
 
-export async function ensureDefaultThemes() {
-  try {
-    await Promise.all(
-      DEFAULT_THEMES.map((theme) =>
-        db.theme.upsert({
-          where: { slug: theme.slug },
-          update: {
-            name: theme.name,
-            category: theme.category,
-            allowedPlans: storeAllowedPlans(theme.allowedPlans ?? allowedPlansForCategory(theme.category)),
-            primaryColor: theme.primaryColor,
-            secondaryColor: theme.secondaryColor,
-            accentColor: theme.accentColor,
-            goldColor: theme.goldColor,
-            bgPrimary: theme.bgPrimary ?? theme.primaryColor,
-            cardBg: theme.cardBg ?? theme.secondaryColor,
-            accentGold: theme.accentGold ?? theme.goldColor,
-            textColor: theme.textColor ?? theme.primaryColor,
-            scrollAnimation: normalizeScrollAnimation(theme.scrollAnimation),
-            backdropUrl: theme.backdropUrl,
-            titleFont: theme.titleFont,
-            animationType: theme.animationType,
-            openingVideoUrl: theme.openingVideoUrl,
-            previewGradient: theme.previewGradient,
-          },
-          create: {
-            slug: theme.slug,
-            name: theme.name,
-            category: theme.category,
-            allowedPlans: storeAllowedPlans(theme.allowedPlans ?? allowedPlansForCategory(theme.category)),
-            primaryColor: theme.primaryColor,
-            secondaryColor: theme.secondaryColor,
-            accentColor: theme.accentColor,
-            goldColor: theme.goldColor,
-            bgPrimary: theme.bgPrimary ?? theme.primaryColor,
-            cardBg: theme.cardBg ?? theme.secondaryColor,
-            accentGold: theme.accentGold ?? theme.goldColor,
-            textColor: theme.textColor ?? theme.primaryColor,
-            scrollAnimation: normalizeScrollAnimation(theme.scrollAnimation),
-            backdropUrl: theme.backdropUrl,
-            titleFont: theme.titleFont,
-            animationType: theme.animationType,
-            openingVideoUrl: theme.openingVideoUrl,
-            previewGradient: theme.previewGradient,
-            demoVideoUrl: theme.demoVideoUrl,
-            isActive: theme.isActive ?? true,
-          },
-        }),
-      ),
-    );
-  } catch (error) {
-    console.error("Default theme sync skipped:", error);
-  }
-}
 
 export function serializeTheme(theme: SerializableThemeInput): ThemeConfig {
   if (!theme) return normalizeThemeConfig(getDefaultTheme());
@@ -167,18 +113,17 @@ export function serializeTheme(theme: SerializableThemeInput): ThemeConfig {
 }
 
 export async function getThemeOrDefault(slug?: string | null) {
-  await ensureDefaultThemes();
-  const fallback = getDefaultTheme(slug ?? undefined);
+  if (!slug) return null;
   try {
-    const theme = await db.theme.findUnique({ where: { slug: slug ?? fallback.slug } });
-    return theme ?? (await db.theme.findUnique({ where: { slug: fallback.slug } }));
+    const theme = await db.theme.findUnique({ where: { slug } });
+    return theme;
   } catch (error) {
     console.error("Theme lookup failed, retrying with compatible columns:", error);
     try {
-      const theme = await db.theme.findUnique({ where: { slug: slug ?? fallback.slug }, select: THEME_COMPAT_SELECT });
-      return theme ?? (await db.theme.findUnique({ where: { slug: fallback.slug }, select: THEME_COMPAT_SELECT }));
+      const theme = await db.theme.findUnique({ where: { slug }, select: THEME_COMPAT_SELECT });
+      return theme;
     } catch (retryError) {
-      console.error("Theme compatible lookup failed, using static fallback:", retryError);
+      console.error("Theme compatible lookup failed, returning no theme:", retryError);
       return null;
     }
   }

@@ -83,71 +83,6 @@ type LandingTestimonial = {
   photoUrl: string | null;
 };
 
-const TEMPLATES: Template[] = [
-  {
-    name: "Enveloppe de Cire",
-    category: "cire",
-    gradient: "linear-gradient(135deg, #0D0B0A 0%, #1A1712 52%, #C5A059 100%)",
-    accent: "#C5A059",
-    animationHint: "wax",
-  },
-  {
-    name: "Velours Royal",
-    category: "cire",
-    gradient: "linear-gradient(135deg, #0F0E0C 0%, #211D16 56%, #D4AF37 100%)",
-    accent: "#C5A059",
-    animationHint: "envelope",
-  },
-  {
-    name: "Rideau de Théâtre",
-    category: "ruban",
-    gradient: "linear-gradient(135deg, #0D0B0A 0%, #181512 46%, #AA7C11 100%)",
-    accent: "#C5A059",
-    animationHint: "ribbon",
-  },
-  {
-    name: "Médina Orientale",
-    category: "orientale",
-    gradient: "linear-gradient(135deg, #0D0B0A 0%, #242017 50%, #E6CA65 100%)",
-    accent: "#C5A059",
-    animationHint: "doors",
-  },
-  {
-    name: "Roseraie Bohème",
-    category: "boheme",
-    gradient: "linear-gradient(135deg, #0F0E0C 0%, #1C1913 54%, #D8D2C7 100%)",
-    accent: "#C5A059",
-    animationHint: "envelope",
-  },
-  {
-    name: "Classique Intemporel",
-    category: "minimaliste",
-    gradient: "linear-gradient(135deg, #0D0B0A 0%, #181614 52%, #0D0B0A 100%)",
-    accent: "#C5A059",
-    animationHint: "envelope",
-  },
-  {
-    name: "Porte Dorée",
-    category: "orientale",
-    gradient: "linear-gradient(135deg, #0D0B0A 0%, #D4AF37 42%, #AA7C11 100%)",
-    accent: "#C5A059",
-    animationHint: "doors",
-  },
-  {
-    name: "Soie Émeraude",
-    category: "ruban",
-    gradient: "linear-gradient(135deg, #0D0B0A 0%, #171512 48%, #C5A059 100%)",
-    accent: "#C5A059",
-    animationHint: "ribbon",
-  },
-  {
-    name: "Ivorie Pure",
-    category: "minimaliste",
-    gradient: "linear-gradient(135deg, #D8D2C7 0%, #FAF7F2 48%, #C5A059 100%)",
-    accent: "#C5A059",
-    animationHint: "envelope",
-  },
-];
 
 /* -------------------------------------------------------------------------- */
 /*  Section heading component                                                  */
@@ -248,148 +183,6 @@ function templateMediaSource(template?: Template | null) {
   return template?.openingVideoUrl ?? template?.demoVideoUrl ?? null;
 }
 
-const normalize = (str: string) =>
-  str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-
-const FILTER_STOP_WORDS = new Set(["and", "avec", "des", "de", "du", "et", "la", "le", "les", "the"]);
-
-const ALL_FILTER_VALUES = new Set(["all", "tous", "tout", "todos", "الكل"]);
-
-const STYLE_FILTER_ALIASES: Record<string, string[]> = {
-  orientale: [
-    "porte orientale",
-    "orientale",
-    "oriental",
-    "medina",
-    "porte doree",
-    "portes royales dorees",
-    "portes",
-    "doors",
-    "golden palace doors",
-    "palais",
-    "palace",
-    "imperial",
-  ],
-  cire: [
-    "cachet de cire",
-    "cire",
-    "enveloppe de cire",
-    "sceau",
-    "wax",
-    "wax seal",
-    "seal",
-    "wax seal burst",
-  ],
-  ruban: [
-    "ruban de soie",
-    "ruban",
-    "soie",
-    "silk",
-    "ribbon",
-    "silk ribbon untie",
-    "rideau",
-    "rideaux",
-    "curtain",
-    "curtains",
-    "velvet curtains",
-    "theatre",
-  ],
-  boheme: [
-    "boheme",
-    "bohemian",
-    "roseraie",
-    "rose",
-    "botanical",
-    "botanique",
-    "fleur",
-    "ficelle",
-    "floral",
-  ],
-  minimaliste: [
-    "minimaliste",
-    "minimalist",
-    "minimal",
-    "epure",
-    "pure",
-    "ivoire",
-    "classique",
-    "intemporel",
-  ],
-};
-
-function toSearchableValue(value?: string | null) {
-  return normalize(value ?? "").replace(/[_-]+/g, " ").replace(/\s+/g, " ");
-}
-
-function compactSearchValue(value: string) {
-  return toSearchableValue(value).replace(/[^a-z0-9]+/g, "");
-}
-
-function uniqueSearchTerms(values: Array<string | string[] | null | undefined>) {
-  const terms = values.flatMap((value) => {
-    const rawValues = Array.isArray(value) ? value : [value];
-    return rawValues.flatMap((rawValue) => {
-      const searchable = toSearchableValue(rawValue);
-      const words = searchable
-        .split(/[^a-z0-9]+/)
-        .filter((word) => word.length > 2 && !FILTER_STOP_WORDS.has(word));
-
-      return [searchable, ...words];
-    });
-  });
-
-  return Array.from(new Set(terms.filter(Boolean)));
-}
-
-function isAllFilter(filter: TemplateFilter) {
-  const slug = normalize(filter.slug);
-  const label = normalize(filter.label);
-
-  return ALL_FILTER_VALUES.has(slug) || ALL_FILTER_VALUES.has(label);
-}
-
-function filterKeywords(filter: TemplateFilter) {
-  const slug = normalize(filter.slug);
-  const label = normalize(filter.label);
-  const aliases = STYLE_FILTER_ALIASES[slug] ?? STYLE_FILTER_ALIASES[label] ?? [];
-
-  return uniqueSearchTerms([filter.slug, filter.label, aliases]);
-}
-
-function templateSearchValues(template: Template) {
-  return uniqueSearchTerms([
-    template.category,
-    template.name,
-    template.slug,
-    template.style,
-    template.tags,
-    template.animationHint,
-    template.titleFont,
-  ]);
-}
-
-function matchesKeyword(value: string, keyword: string) {
-  const compactValue = compactSearchValue(value);
-  const compactKeyword = compactSearchValue(keyword);
-
-  return (
-    value === keyword ||
-    value.includes(keyword) ||
-    keyword.includes(value) ||
-    compactValue.includes(compactKeyword) ||
-    compactKeyword.includes(compactValue)
-  );
-}
-
-function templateMatchesFilter(template: Template, filter: TemplateFilter) {
-  if (isAllFilter(filter)) return true;
-
-  const keywords = filterKeywords(filter);
-  const values = templateSearchValues(template);
-
-  return keywords.some((keyword) => values.some((value) => matchesKeyword(value, keyword)));
-}
-
 function isTemplateVisible(template: Template) {
   return template.isPublished !== false && template.isVisible !== false && template.isActive !== false;
 }
@@ -481,7 +274,7 @@ export default function HomePage() {
 
   /* Template filter state */
   const [activeFilter, setActiveFilter] = useState("all");
-  const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [homepageSettings, setHomepageSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE_SETTINGS);
   const [landingTestimonials, setLandingTestimonials] = useState<LandingTestimonial[]>([]);
   /* Phone mockup preview state */
@@ -492,7 +285,7 @@ export default function HomePage() {
       try {
         const response = await fetch("/api/themes", { cache: "no-store" });
         const json = await response.json();
-        if (!json.success || !Array.isArray(json.data)) return;
+        if (!response.ok || !json.success || !Array.isArray(json.data)) throw new Error("Catalogue indisponible");
         const nextTemplates: Template[] = (json.data as ThemeConfig[]).map((theme) => {
           const themeRecord = theme as ThemeConfig & {
             isPublished?: boolean;
@@ -522,10 +315,11 @@ export default function HomePage() {
         });
         setTemplates(nextTemplates);
         setPreviewTemplate((current) => (
-          current?.slug ? nextTemplates.find((theme: Template) => theme.slug === current.slug) ?? current : current
+          current?.slug ? nextTemplates.find((theme: Template) => theme.slug === current.slug) ?? null : current
         ));
       } catch {
-        setTemplates(TEMPLATES);
+        setTemplates([]);
+        setPreviewTemplate(null);
       }
     }
 
@@ -569,18 +363,14 @@ export default function HomePage() {
   }, []);
 
   const visibleTemplates = templates.filter(isTemplateVisible);
-  const filterOptions = t.templates.filters.filter((filter) =>
-    isAllFilter(filter) || visibleTemplates.some((template) => templateMatchesFilter(template, filter)),
-  );
-  const safeFilterOptions =
-    filterOptions.length > 0 ? filterOptions : [{ label: t.templates.filters[0]?.label ?? "Tous", slug: "all" }];
-  const selectedFilter =
-    safeFilterOptions.find((filter) => filter.slug === activeFilter) ??
-    safeFilterOptions.find(isAllFilter) ??
-    safeFilterOptions[0];
-  const filteredTemplates = selectedFilter && !isAllFilter(selectedFilter)
-    ? visibleTemplates.filter((template) => templateMatchesFilter(template, selectedFilter))
-    : visibleTemplates;
+  const safeFilterOptions: TemplateFilter[] = [
+    { label: t.templates.filters[0]?.label ?? "Tous", slug: "all" },
+    ...Array.from(new Set(visibleTemplates.map((template) => template.category))).map((category) => ({ label: category, slug: `category:${category}` })),
+  ];
+  const selectedFilter = safeFilterOptions.find((filter) => filter.slug === activeFilter) ?? safeFilterOptions[0];
+  const filteredTemplates = selectedFilter.slug === "all"
+    ? visibleTemplates
+    : visibleTemplates.filter((template) => `category:${template.category}` === selectedFilter.slug);
 
   const featuredTemplate = visibleTemplates.find((tpl) => templateMediaSource(tpl)) ?? visibleTemplates[0] ?? null;
   const secondaryTemplate =
@@ -591,20 +381,20 @@ export default function HomePage() {
   const heroPhone2Src = homepageSettings.heroPhone2 || templateMediaSource(secondaryTemplate) || DEFAULT_HERO_PHONE_MEDIA[1];
   const demoExperiences = [
     {
-      title: "Modèle B · Page Interactive",
+      title: featuredTemplate?.name ?? "Page Interactive",
       formula: "Formule Privilège",
       description: "Invitation interactive lisible, RSVP nominatif, galerie, itinéraire et pass QR.",
       template: featuredTemplate,
       demoUrl: homepageSettings.privilegeDemoUrl,
     },
     {
-      title: "Modèle A · Cinématique 9:16",
+      title: secondaryTemplate?.name ?? "Cinématique 9:16",
       formula: "Formule Impérial Cinematic Motion",
       description: "Ouverture vidéo verticale, boucle décorative fluide et accès rapide aux informations pratiques.",
       template: secondaryTemplate,
       demoUrl: homepageSettings.imperialDemoUrl,
     },
-  ];
+  ].filter((experience) => experience.template !== null);
 
   /* FAQ accordion state */
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -845,7 +635,7 @@ export default function HomePage() {
                     exit={{ opacity: 0, scale: 0.92 }}
                     transition={{ duration: 0.4, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <Card className={`${DEEP_SURFACE} group cursor-pointer gap-0 overflow-hidden rounded-lg py-0 shadow-[0_22px_70px_rgba(0,0,0,.28)] transition-transform duration-300 hover:-translate-y-1`}>
+                    <Card onClick={() => setPreviewTemplate(tpl)} className={`${DEEP_SURFACE} group cursor-pointer gap-0 overflow-hidden rounded-lg py-0 shadow-[0_22px_70px_rgba(0,0,0,.28)] transition-transform duration-300 hover:-translate-y-1`}>
                       <div
                         className="relative h-40 w-full overflow-hidden sm:h-48"
                         style={{ background: tpl.gradient }}
@@ -870,7 +660,9 @@ export default function HomePage() {
 
                       <CardContent className="flex flex-col items-center p-4 sm:p-5">
                         <h3 className="font-display text-base tracking-luxury text-[#FAF7F2] sm:text-lg">
-                          {tpl.name}
+                          <button type="button" className="cursor-pointer text-inherit" onClick={(event) => { event.stopPropagation(); setPreviewTemplate(tpl); }} aria-label={`Voir la démo de ${tpl.name}`}>
+                            {tpl.name}
+                          </button>
                         </h3>
                         <button
                           type="button"
@@ -1201,7 +993,7 @@ export default function HomePage() {
 
           <div className="mb-12 grid gap-5 md:grid-cols-2">
             {demoExperiences.map((demo) => (
-              <div key={demo.title} className={`${DEEP_SURFACE} rounded-lg p-5 shadow-[0_22px_70px_rgba(0,0,0,.25)] sm:p-6`}>
+              <div key={demo.formula} className={`${DEEP_SURFACE} rounded-lg p-5 shadow-[0_22px_70px_rgba(0,0,0,.25)] sm:p-6`}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C5A059]">{demo.formula}</p>

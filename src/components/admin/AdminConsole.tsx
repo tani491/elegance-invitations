@@ -25,7 +25,6 @@ import {
   assignablePlansFromAllowedPlans,
   canUseMotionVideo,
   canUseTheme,
-  categoryForAllowedPlans,
   planLabelForPlan,
   THEME_PLAN_OPTIONS,
   type AssignableThemePlan,
@@ -110,7 +109,7 @@ function isSupportedThemeVideo(file: File) {
 function defaultThemeForm(): ThemeModelForm {
   return {
     name: "",
-    category: "Privilege",
+    category: "",
     allowedPlans: DEFAULT_THEME_ALLOWED_PLANS,
     bgPrimary: "#1B0F12",
     cardBg: "#FDFBF7",
@@ -253,6 +252,7 @@ export default function AdminConsole() {
   const [savingTheme, setSavingTheme] = useState<string | null>(null);
   const [uploadingTheme, setUploadingTheme] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [editingCategories, setEditingCategories] = useState<Record<string, string>>({});
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
   const [createThemeForm, setCreateThemeForm] = useState<ThemeModelForm>(() => defaultThemeForm());
   const [createThemeVideo, setCreateThemeVideo] = useState<File | null>(null);
@@ -518,11 +518,10 @@ export default function AdminConsole() {
   }
 
   function updateThemeAllowedPlans(theme: ThemeConfig, allowedPlans: AssignableThemePlan[]) {
-    const category = categoryForAllowedPlans(allowedPlans);
     setThemes((prev) =>
-      prev.map((item) => (item.slug === theme.slug ? { ...item, allowedPlans, category } : item)),
+      prev.map((item) => (item.slug === theme.slug ? { ...item, allowedPlans } : item)),
     );
-    void updateTheme(theme.slug, { allowedPlans, category }, "Formules compatibles sauvegardees.");
+    void updateTheme(theme.slug, { allowedPlans }, "Formules compatibles sauvegardees.");
   }
 
   async function saveThemeName(theme: ThemeConfig) {
@@ -671,14 +670,9 @@ export default function AdminConsole() {
         return;
       }
 
-      setThemes((prev) => {
-        if (json.mode === "disabled") {
-          return prev.map((item) => (item.slug === theme.slug ? json.data : item));
-        }
-        return prev.filter((item) => item.slug !== theme.slug);
-      });
+      setThemes((prev) => prev.filter((item) => item.slug !== theme.slug));
       notifyThemeCatalogChanged();
-      toast.success(json.mode === "disabled" ? "Modele desactive." : "Modele supprime.");
+      toast.success("Modele supprime definitivement.");
     } catch (error) {
       console.error("Theme delete error:", error);
       toast.error("Suppression impossible.");
@@ -875,6 +869,11 @@ export default function AdminConsole() {
           </TabsContent>
 
           <TabsContent value="themes" className="space-y-4">
+            <datalist id="theme-categories">
+              {Array.from(new Set(themes.map((theme) => theme.category))).map((category) => (
+                <option key={category} value={category} />
+              ))}
+            </datalist>
             <div className="flex flex-col gap-3 rounded-lg border border-[#E5D9C7] bg-white/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Catalogue des modeles</p>
@@ -917,6 +916,19 @@ export default function AdminConsole() {
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
+                      <Label htmlFor="new-theme-category">Catégorie</Label>
+                      <Input
+                        id="new-theme-category"
+                        list="theme-categories"
+                        value={createThemeForm.category}
+                        onChange={(event) => setCreateThemeForm((prev) => ({ ...prev, category: event.target.value }))}
+                        placeholder="Choisir ou saisir une catégorie"
+                        required
+                        minLength={2}
+                        maxLength={100}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label>Nom du modele</Label>
                       <Input
                         value={createThemeForm.name}
@@ -934,7 +946,6 @@ export default function AdminConsole() {
                           setCreateThemeForm((prev) => ({
                             ...prev,
                             allowedPlans,
-                            category: categoryForAllowedPlans(allowedPlans),
                           }))
                         }
                       />
@@ -1128,6 +1139,27 @@ export default function AdminConsole() {
                           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
                             <div className="space-y-4">
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label htmlFor={`category-${theme.slug}`}>Catégorie</Label>
+                                  <Input
+                                    id={`category-${theme.slug}`}
+                                    list="theme-categories"
+                                    value={editingCategories[theme.slug] ?? theme.category}
+                                    minLength={2}
+                                    maxLength={100}
+                                    onChange={(event) => setEditingCategories((prev) => ({ ...prev, [theme.slug]: event.target.value }))}
+                                    onBlur={() => {
+                                      const category = (editingCategories[theme.slug] ?? theme.category).trim();
+                                      if (category.length >= 2 && category !== theme.category) void updateTheme(theme.slug, { category });
+                                    }}
+                                    onKeyDown={(event) => {
+                                      if (event.key === "Enter") {
+                                        event.preventDefault();
+                                        event.currentTarget.blur();
+                                      }
+                                    }}
+                                  />
+                                </div>
                                 <div className="space-y-2">
                                   <Label>Nom du modele</Label>
                                   <Input

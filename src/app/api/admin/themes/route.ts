@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { ensureDefaultThemes, serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
+import { serializeTheme, THEME_COMPAT_SELECT } from "@/lib/theme-store";
 import { requireApiRole } from "@/lib/server-auth";
-import { categoryForAllowedPlans, normalizeAllowedPlans, storeAllowedPlans } from "@/lib/plan-gating";
+import { normalizeAllowedPlans, storeAllowedPlans } from "@/lib/plan-gating";
 import { AUTH_ROLES, SCROLL_ANIMATION_VALUES } from "@/types/database.types";
-import { DEFAULT_THEMES } from "@/lib/theme-presets";
 import { slugify, uniqueSlug } from "@/lib/slug";
 
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
@@ -33,7 +32,7 @@ const openingAnimationSchema = z.enum([
 const themePayloadSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().min(2).optional(),
-  category: z.string().min(2).optional(),
+  category: z.string().trim().min(2).max(100).optional(),
   allowedPlans: allowedPlansSchema.optional(),
   primaryColor: hexColorSchema.optional(),
   secondaryColor: cssColorSchema.optional(),
@@ -59,7 +58,7 @@ const themePayloadSchema = z.object({
 const themeCreateSchema = themePayloadSchema.extend({
   slug: z.string().min(2).optional(),
   name: z.string().min(2),
-  category: z.string().min(2).default("Privilege"),
+  category: z.string().trim().min(2).max(100),
   bgPrimary: hexColorSchema.default("#5C1D24"),
   cardBg: cssColorSchema.default("#FAF7F2"),
   accentGold: hexColorSchema.default("#D4AF37"),
@@ -80,7 +79,6 @@ const themeDeleteSchema = z.object({
   slug: z.string().min(2),
 });
 
-const DEFAULT_THEME_SLUGS = new Set(DEFAULT_THEMES.map((theme) => theme.slug));
 
 function previewGradientFrom(input: {
   bgPrimary?: string;
@@ -115,7 +113,7 @@ function normalizeThemeWriteData(data: z.infer<typeof themePayloadSchema>) {
 
   return {
     ...(payload.name ? { name: payload.name.trim() } : {}),
-    ...(payload.category || allowedPlans ? { category: (payload.category ?? categoryForAllowedPlans(allowedPlans)).trim() } : {}),
+    ...(payload.category ? { category: payload.category.trim() } : {}),
     ...(allowedPlans ? { allowedPlans } : {}),
     ...(bgPrimary ? { bgPrimary, primaryColor: bgPrimary } : {}),
     ...(cardBg ? { cardBg, secondaryColor: cardBg } : {}),
@@ -195,7 +193,6 @@ export async function GET(request: NextRequest) {
   if (!session) return response;
 
   try {
-    await ensureDefaultThemes();
     let themes;
     let source = "database";
 
@@ -219,8 +216,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Admin themes fetch failed:", error);
     return NextResponse.json(
-      { success: true, data: DEFAULT_THEMES.map((theme) => serializeTheme(theme)), source: "static-fallback" },
-      { headers: { "Cache-Control": "no-store" } },
+      { success: false, data: [], error: "Chargement des modeles impossible." },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
 }
@@ -367,19 +364,6 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    if (DEFAULT_THEME_SLUGS.has(parsed.data.slug)) {
-      const disabled = await db.theme.update({
-        where: { slug: parsed.data.slug },
-        data: { isActive: false },
-        select: THEME_COMPAT_SELECT,
-      });
-
-      return NextResponse.json(
-        { success: true, data: serializeTheme(disabled), mode: "disabled" },
-        { headers: { "Cache-Control": "no-store" } },
-      );
-    }
-
     await db.theme.delete({ where: { slug: parsed.data.slug } });
 
     return NextResponse.json(

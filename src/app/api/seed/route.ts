@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { ensureDefaultThemes } from '@/lib/theme-store'
 import { hashPassword, normalizeEmail } from '@/lib/server-auth'
 import { AUTH_ROLES } from '@/types/database.types'
 
@@ -13,7 +12,6 @@ function isSeedAuthorized(request: NextRequest) {
 }
 
 async function initializeProductionEssentials() {
-  await ensureDefaultThemes();
 
   const email = normalizeEmail(process.env.DEFAULT_ADMIN_EMAIL ?? 'admin@elegance.sn');
   const password = process.env.DEFAULT_ADMIN_PASSWORD ?? 'EleganceAdmin2026!';
@@ -90,7 +88,6 @@ export async function POST(_request: NextRequest) {
   }
 
   try {
-    await ensureDefaultThemes()
     const medina = await db.theme.findUnique({ where: { slug: 'medina-orientale' } })
 
     // Delete all existing data in reverse dependency order
