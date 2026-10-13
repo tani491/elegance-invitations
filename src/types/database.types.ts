@@ -68,7 +68,8 @@ export interface SessionPayload {
 }
 
 export interface ThemeConfig {
-  layoutStyle?: "oriental" | "minimalist" | "royal";
+  layoutStyle?: "oriental" | "minimalist" | "royal" | "prestige" | "oriental-royal" | "minimalist-chic" | "prestige-majestic";
+  fontFamily?: string | null;
   coverVideoUrl?: string | null;
   id?: string | null;
   slug: string;

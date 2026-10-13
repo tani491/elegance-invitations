@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SITE_URL } from "@/lib/constants";
 import { getCachedInvitation, type CachedInvitationEvent } from "@/lib/cached-invitation";
 import { serializePublicEvent } from "@/lib/public-event";
-import { InvitationExperience } from "@/components/invitation/InvitationExperience";
+import { InvitationClient } from "@/components/invitation/InvitationClient";
 
 type InvitationPageProps = {
   params: Promise<{ slug: string }>;
@@ -119,7 +119,7 @@ export default async function InvitationPage({
   }
 
   try {
-    return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} autoOpen={shouldOpenDirectly(resolvedSearchParams)} />;
+    return <InvitationClient event={serializePublicEvent(event)} guestToken={guest} autoOpen={shouldOpenDirectly(resolvedSearchParams)} />;
   } catch (error) {
     console.error("Invitation serialization failed:", error);
     notFound();

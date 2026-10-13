@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SITE_URL } from "@/lib/constants";
 import { getCachedInvitation, type CachedInvitationEvent } from "@/lib/cached-invitation";
 import { serializePublicEvent } from "@/lib/public-event";
-import { InvitationExperience } from "@/components/invitation/InvitationExperience";
+import { InvitationClient } from "@/components/invitation/InvitationClient";
 
 type MobileInvitationPageProps = {
   params: Promise<{ slug: string }>;
@@ -115,7 +115,7 @@ export default async function MobileInvitationPage({ params, searchParams }: Mob
   }
 
   try {
-    return <InvitationExperience event={serializePublicEvent(event)} guestToken={guest} autoOpen={shouldOpenDirectly(resolvedSearchParams)} />;
+    return <InvitationClient event={serializePublicEvent(event)} guestToken={guest} autoOpen={shouldOpenDirectly(resolvedSearchParams)} />;
   } catch (error) {
     console.error("Mobile invitation serialization failed:", error);
     notFound();

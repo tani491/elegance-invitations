@@ -122,15 +122,28 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
   const videoUrl = theme?.videoUrl ?? theme?.openingVideoUrl ?? theme?.demoVideoUrl ?? fallback.openingVideoUrl ?? fallback.demoVideoUrl ?? null;
   const isActive = theme?.isActive ?? theme?.isVisible ?? fallback.isActive ?? true;
 
+  const rawLayout = typeof theme?.layoutStyle === "string" ? theme.layoutStyle.trim().toLowerCase() : "";
+  const layoutStyle =
+    rawLayout === "oriental" || rawLayout === "oriental-royal" || rawLayout === "oriental_royal"
+      ? "oriental"
+      : rawLayout === "minimalist" || rawLayout === "minimalist-chic" || rawLayout === "minimalist_chic"
+      ? "minimalist"
+      : rawLayout === "royal" || rawLayout === "prestige" || rawLayout === "prestige-majestic" || rawLayout === "prestige_majestic"
+      ? "royal"
+      : /orient|medina|arab/i.test(`${category} ${theme?.slug}`)
+      ? "oriental"
+      : /minimal|modern|editorial|satin/i.test(`${category} ${theme?.slug}`)
+      ? "minimalist"
+      : "royal";
+
+  const resolvedFont = normalizeTitleFontName(theme?.fontFamily ?? theme?.titleFont ?? fallback.titleFont ?? SAFE_THEME_FALLBACK.titleFont);
+
   return {
     id: theme?.id,
     slug: theme?.slug || fallback.slug || SAFE_THEME_FALLBACK.slug,
     name: theme?.name || fallback.name || SAFE_THEME_FALLBACK.name,
     category,
-    layoutStyle: theme?.layoutStyle === "oriental" || theme?.layoutStyle === "minimalist" || theme?.layoutStyle === "royal"
-      ? theme.layoutStyle
-      : /orient|medina|arab/i.test(`${category} ${theme?.slug}`) ? "oriental"
-      : /minimal|modern|editorial/i.test(`${category} ${theme?.slug}`) ? "minimalist" : "royal",
+    layoutStyle,
     coverVideoUrl: theme?.coverVideoUrl ?? null,
     allowedPlans: normalizeAllowedPlans(theme?.allowedPlans, fallback.allowedPlans ?? allowedPlansForCategory(category)),
     primaryColor,
@@ -142,7 +155,8 @@ export function normalizeThemeConfig(theme: ThemeConfigInput | null | undefined)
     accentGold: theme?.accentGold || goldColor || "#D4AF37",
     textColor: theme?.textColor || primaryColor || "#1B0F12",
     scrollAnimation: theme?.scrollAnimation || "fade-up",
-    titleFont: normalizeTitleFontName(theme?.titleFont ?? fallback.titleFont ?? SAFE_THEME_FALLBACK.titleFont),
+    titleFont: resolvedFont,
+    fontFamily: resolvedFont,
     animationType,
     openingStyle: theme?.openingStyle || animationType,
     videoUrl,
@@ -229,6 +243,7 @@ export function themeToCssVars(theme: ThemeConfigInput | null | undefined) {
     "--invitation-sheet-border": rgbaFromHex(accentGold, 0.34),
     "--invitation-button-bg": `linear-gradient(135deg, ${accentGold}, ${safeTheme.accentColor} 52%, ${bgPrimary})`,
     "--invitation-title-font": titleFontFamily(safeTheme.titleFont),
+    "--invitation-font-family": titleFontFamily(safeTheme.fontFamily || safeTheme.titleFont),
     "--primary": bgPrimary,
     "--accent": safeTheme.accentColor,
     "--gold": accentGold,
